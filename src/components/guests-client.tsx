@@ -30,6 +30,15 @@ interface Guest {
   nationality: string;
   address: string | null;
   documents: GuestDocument[];
+  bookings: Array<{
+    id: string;
+    status: string;
+    checkInDate: string;
+    checkOutDate: string;
+    actualCheckIn: string | null;
+    actualCheckOut: string | null;
+    room: { roomNumber: string; type: string };
+  }>;
 }
 
 export default function GuestsClient() {
@@ -38,7 +47,11 @@ export default function GuestsClient() {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [docModalOpen, setDocModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [selectedGuest, setSelectedGuest] = useState<Guest | null>(null);
+  const [selectedBookingGuest, setSelectedBookingGuest] = useState<Guest | null>(null);
+  const [availableRooms, setAvailableRooms] = useState<Array<{ id: string; roomNumber: string; type: string; pricePerNight: number }>>([]);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -46,6 +59,13 @@ export default function GuestsClient() {
     phone: "",
     nationality: "Indian",
     address: "",
+  });
+  const [assignForm, setAssignForm] = useState({
+    roomId: "",
+    checkInDate: "",
+    checkOutDate: "",
+    adults: "1",
+    notes: "",
   });
   const [docForm, setDocForm] = useState({ type: "aadhar", file: null as File | null });
 
@@ -57,8 +77,15 @@ export default function GuestsClient() {
     setLoading(false);
   }
 
+  async function loadAvailableRooms() {
+    const res = await fetch("/api/rooms");
+    const data = await res.json();
+    setAvailableRooms(data.filter((room: { status: string }) => room.status === "available"));
+  }
+
   useEffect(() => {
     loadGuests();
+    loadAvailableRooms();
   }, []);
 
   function handleSearch(e: React.FormEvent) {
@@ -93,13 +120,60 @@ export default function GuestsClient() {
     formData.append("file", docForm.file);
     formData.append("type", docForm.type);
 
-    await fetch(`/api/guests/${selectedGuest.id}/documents`, {
+    const res = await fetch(`/api/guests/${selectedGuest.id}/documents`, {
       method: "POST",
       body: formData,
     });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Failed to upload document");
+      return;
+    }
 
     setDocModalOpen(false);
+    setSelectedGuest(null);
     loadGuests();
+  }
+
+  function openDetailsModal(guest: Guest) {
+    setSelectedGuest(guest);
+    setDetailsModalOpen(true);
+  }
+
+  function openAssignRoomModal(guest: Guest) {
+    setSelectedBookingGuest(guest);
+    setAssignForm({ roomId: "", checkInDate: "", checkOutDate: "", adults: "1", notes: "" });
+    setAssignModalOpen(true);
+  }
+
+  async function handleAssignRoom(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedBookingGuest) return;
+
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        guestId: selectedBookingGuest.id,
+        roomId: assignForm.roomId,
+        checkInDate: assignForm.checkInDate,
+        checkOutDate: assignForm.checkOutDate,
+        adults: parseInt(assignForm.adults, 10),
+        notes: assignForm.notes,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Failed to create booking");
+      return;
+    }
+
+    setAssignModalOpen(false);
+    setSelectedBookingGuest(null);
+    loadGuests();
+    loadAvailableRooms();
   }
 
   function getRequiredDocs(nationality: string) {
@@ -187,6 +261,26 @@ export default function GuestsClient() {
                   <p className="text-sm text-amber-600">No documents uploaded yet</p>
                 )}
               </div>
+              {guest.bookings.length > 0 && (
+                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                  <p className="mb-2 font-medium text-slate-700">Recent bookings</p>
+                  <ul className="space-y-1">
+                    {guest.bookings.slice(0, 3).map((booking) => (
+                      <li key={booking.id}>
+                        Room {booking.room.roomNumber} ({booking.room.type}) · {booking.status.replace("_", " ")} · {new Date(booking.checkInDate).toLocaleDateString("en-IN")}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button variant="secondary" onClick={() => openDetailsModal(guest)}>
+                  View Details
+                </Button>
+                <Button onClick={() => openAssignRoomModal(guest)}>
+                  Assign Room
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -258,6 +352,132 @@ export default function GuestsClient() {
             </Button>
             <Button type="submit" className="flex-1" disabled={!docForm.file}>
               Upload
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={detailsModalOpen} onClose={() => setDetailsModalOpen(false)} title="Guest Details">
+        {selectedGuest ? (
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm text-slate-500">{selectedGuest.email || "No email"}</p>
+              <p className="text-sm text-slate-500">{selectedGuest.phone}</p>
+              <p className="text-sm text-slate-500">{selectedGuest.address || "No address"}</p>
+            </div>
+
+            <div>
+              <h4 className="mb-2 text-sm font-semibold text-slate-700">Documents</h4>
+              {selectedGuest.documents.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedGuest.documents.map((doc) => (
+                    <a
+                      key={doc.id}
+                      href={`/api/uploads?path=${encodeURIComponent(doc.filePath)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                    >
+                      <span className="capitalize">{doc.type}</span>
+                      <span className="text-slate-400">{doc.fileName}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-amber-600">No documents uploaded yet</p>
+              )}
+            </div>
+
+            <div>
+              <h4 className="mb-2 text-sm font-semibold text-slate-700">Booking history</h4>
+              {selectedGuest.bookings.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedGuest.bookings.map((booking) => (
+                    <div key={booking.id} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                      <p>
+                        Room {booking.room.roomNumber} ({booking.room.type}) · {booking.status.replace("_", " ")}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {new Date(booking.checkInDate).toLocaleDateString("en-IN")} - {new Date(booking.checkOutDate).toLocaleDateString("en-IN")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-amber-600">No bookings yet</p>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <Button variant="secondary" onClick={() => setDetailsModalOpen(false)}>
+                Close
+              </Button>
+              <Button onClick={() => {
+                if (selectedGuest) openAssignRoomModal(selectedGuest);
+                setDetailsModalOpen(false);
+              }}>
+                Assign Room
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-slate-500">Loading details...</p>
+        )}
+      </Modal>
+
+      <Modal open={assignModalOpen} onClose={() => setAssignModalOpen(false)} title={selectedBookingGuest ? `Assign Room to ${selectedBookingGuest.firstName}` : "Assign Room"}>
+        <form onSubmit={handleAssignRoom} className="space-y-4">
+          <div>
+            <Label>Room</Label>
+            <Select value={assignForm.roomId} onChange={(e) => setAssignForm({ ...assignForm, roomId: e.target.value })} required>
+              <option value="">Select room</option>
+              {availableRooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  Room {room.roomNumber} - {room.type} ({room.pricePerNight.toLocaleString("en-IN")}/night)
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Check-in Date</Label>
+              <Input
+                type="datetime-local"
+                value={assignForm.checkInDate}
+                onChange={(e) => setAssignForm({ ...assignForm, checkInDate: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label>Check-out Date</Label>
+              <Input
+                type="datetime-local"
+                value={assignForm.checkOutDate}
+                onChange={(e) => setAssignForm({ ...assignForm, checkOutDate: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <Label>Adults</Label>
+            <Input
+              type="number"
+              min="1"
+              value={assignForm.adults}
+              onChange={(e) => setAssignForm({ ...assignForm, adults: e.target.value })}
+              required
+            />
+          </div>
+          <div>
+            <Label>Notes</Label>
+            <Input value={assignForm.notes} onChange={(e) => setAssignForm({ ...assignForm, notes: e.target.value })} />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => setAssignModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1">
+              Assign Room
             </Button>
           </div>
         </form>
