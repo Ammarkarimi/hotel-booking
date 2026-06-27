@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Staff {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("staff") // admin, staff
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Room {
+  id            String    @id @default(cuid())
+  roomNumber    String    @unique
+  type          String    // single, double, suite, deluxe, family
+  pricePerNight Float
+  amenities     String    @default("[]") // JSON array stored as string
+  status        String    @default("available") // available, occupied, maintenance, reserved
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  bookings      Booking[]
+}
+
+model Guest {
+  id          String          @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String
+  nationality String          @default("Indian")
+  address     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  documents   GuestDocument[]
+  bookings    Booking[]
+}
+
+model GuestDocument {
+  id        String   @id @default(cuid())
+  guestId   String
+  type      String   // aadhar, pan, passport
+  fileName  String
+  filePath  String
+  mimeType  String?
+  createdAt DateTime @default(now())
+  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+}
+
+model Booking {
+  id              String    @id @default(cuid())
+  guestId         String
+  roomId          String
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  actualCheckIn   DateTime?
+  actualCheckOut  DateTime?
+  status          String    @default("reserved") // reserved, checked_in, checked_out, cancelled
+  adults          Int       @default(1)
+  children        Int       @default(0)
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  guest           Guest     @relation(fields: [guestId], references: [id])
+  room            Room      @relation(fields: [roomId], references: [id])
+  payments        Payment[]
+  bill            Bill?
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  bookingId String
+  amount    Float
+  method    String   // cash, card, upi, bank_transfer, other
+  type      String   @default("advance") // advance, balance, full
+  status    String   @default("completed") // pending, completed, failed
+  notes     String?
+  paidAt    DateTime @default(now())
+  createdAt DateTime @default(now())
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model Bill {
+  id                String   @id @default(cuid())
+  bookingId         String   @unique
+  roomCharges       Float
+  additionalCharges Float    @default(0)
+  taxRate           Float    @default(12)
+  taxAmount         Float
+  discount          Float    @default(0)
+  totalAmount       Float
+  nights            Int
+  generatedAt       DateTime @default(now())
+  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
