@@ -77,47 +77,51 @@ See `.env.example` for a complete template.
 
 ## Production Deployment (Vercel + Neon)
 
-Recommended stack: **Vercel** for the Next.js app, **Neon** (or Supabase/Vercel Postgres) for PostgreSQL, and **Vercel Blob** for file uploads.
+Recommended stack: **Vercel** for the Next.js app, **Neon** for PostgreSQL, and **Vercel Blob** for file uploads.
 
-### Step 1: Provision PostgreSQL
+> **Important:** Set up the database **before** deploying. The build runs `prisma generate` and `prisma migrate deploy`, which require `DATABASE_URL`. Without it you will see error `P1012: Environment variable not found: DATABASE_URL`.
 
-**Option A — Neon (recommended)**
-
-1. Create a free account at [neon.tech](https://neon.tech)
-2. Create a new project and database
-3. Copy the connection string (use the **pooled** connection string for serverless)
-4. Ensure `?sslmode=require` is included
-
-**Option B — Vercel Postgres**
-
-1. In the Vercel dashboard, go to **Storage** → **Create Database** → **Postgres**
-2. Connect it to your project — Vercel sets `DATABASE_URL` automatically
-
-**Option C — Supabase**
-
-1. Create a project at [supabase.com](https://supabase.com)
-2. Go to **Settings** → **Database** and copy the connection string (URI format)
-
-### Step 2: Provision file storage (Vercel Blob)
-
-1. In the Vercel dashboard, go to **Storage** → **Create Database** → **Blob**
-2. Connect it to your project — Vercel sets `BLOB_READ_WRITE_TOKEN` automatically
-3. Set `STORAGE_DRIVER=blob` in environment variables (optional; auto-detected from token)
-
-### Step 3: Deploy to Vercel
+### Step 1: Import project on Vercel
 
 1. Push your code to GitHub
 2. Import the repository at [vercel.com/new](https://vercel.com/new)
-3. Add environment variables in **Project Settings** → **Environment Variables**:
 
-   | Variable | Value |
-   |----------|-------|
-   | `DATABASE_URL` | Your PostgreSQL connection string |
-   | `JWT_SECRET` | A long random secret (`openssl rand -base64 32`) |
-   | `BLOB_READ_WRITE_TOKEN` | From Vercel Blob (if not auto-linked) |
-   | `STORAGE_DRIVER` | `blob` |
+### Step 2: Provision PostgreSQL (required before first deploy)
 
-4. Deploy. The build runs `prisma migrate deploy` automatically (see `vercel.json` and `package.json`).
+Vercel does not offer a native "PostgreSQL" button. Use a marketplace provider:
+
+**Neon (recommended)**
+
+1. In Vercel → your project → **Storage** → **Create Database**
+2. Under **Marketplace Database Providers**, click **Create** next to **Neon** (Serverless Postgres)
+3. Connect it to this project — Vercel adds `DATABASE_URL` automatically
+4. Ensure it is enabled for **Production**, **Preview**, and **Development** environments
+
+**Supabase (alternative)**
+
+1. Same Storage page → **Create** next to **Supabase** (Postgres backend)
+2. Or create at [supabase.com](https://supabase.com) and paste the connection string into `DATABASE_URL`
+
+### Step 3: Add remaining environment variables
+
+In **Project Settings** → **Environment Variables**, add:
+
+| Variable | Value | Environments |
+|----------|-------|--------------|
+| `DATABASE_URL` | Auto-set by Neon, or paste your Postgres URL | Production, Preview, Development |
+| `JWT_SECRET` | Long random secret (`openssl rand -base64 32`) | Production, Preview, Development |
+| `BLOB_READ_WRITE_TOKEN` | From Vercel Blob (step 4) | Production, Preview, Development |
+| `STORAGE_DRIVER` | `blob` | Production (optional; auto-detected) |
+
+### Step 4: Provision file storage (Vercel Blob)
+
+1. **Storage** → **Create** → **Blob** (under Direct Vercel Storage Options)
+2. Connect to your project — sets `BLOB_READ_WRITE_TOKEN` automatically
+
+### Step 5: Deploy
+
+1. **Redeploy** after all env vars are set (Deployments → ⋯ → Redeploy)
+2. Build runs `prisma generate` → `prisma migrate deploy` → `next build`
 
 ### Step 4: Seed production data (one-time)
 
@@ -134,6 +138,21 @@ Or run seed from a Vercel one-off script / local machine pointed at production D
 
 ```bash
 DATABASE_URL="your-production-url" npm run db:migrate
+```
+
+### Troubleshooting: `P1012 Environment variable not found: DATABASE_URL`
+
+This means Vercel does not have `DATABASE_URL` set **at build time**. Fix:
+
+1. Vercel → your project → **Storage** → **Create** → **Neon** → connect to project
+2. **Settings** → **Environment Variables** → confirm `DATABASE_URL` exists for **Production**, **Preview**, and **Development**
+3. Add `JWT_SECRET` if missing
+4. **Deployments** → latest failed deploy → **⋯** → **Redeploy** (do not skip env var sync)
+
+If you created Neon outside Vercel, paste the pooled connection string manually:
+
+```
+postgresql://user:password@host/dbname?sslmode=require
 ```
 
 ## Local Development Without Docker
