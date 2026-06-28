@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { withAuth, notFound } from "@/lib/api";
+import { withAuth, notFound, badRequest } from "@/lib/api";
 
 export async function GET(
   _request: NextRequest,
@@ -64,6 +64,11 @@ export async function DELETE(
     const { id } = await params;
     const guest = await prisma.guest.findUnique({ where: { id } });
     if (!guest) return notFound("Guest not found");
+
+    const existingBooking = await prisma.booking.findFirst({ where: { guestId: id } });
+    if (existingBooking) {
+      return badRequest("Cannot delete guest with existing bookings");
+    }
 
     await prisma.guest.delete({ where: { id } });
     return NextResponse.json({ success: true });

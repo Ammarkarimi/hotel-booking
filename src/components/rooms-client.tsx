@@ -216,33 +216,33 @@ export default function RoomsClient() {
                   Guest: {room.currentGuest.firstName} {room.currentGuest.lastName}
                 </p>
               )}
-
-              <div className="mt-auto flex flex-col gap-2 sm:flex-row">
-                <Button type="button" variant="secondary" className="flex-1" onClick={() => openEditModal(room)}>
-                  <Edit className="h-3 w-3" />
-                  Edit
-                </Button>
-                <Button type="button" variant="ghost" className="flex-1" onClick={() => openHousekeepingModal(room)}>
-                  Housekeeping
-                </Button>
-                {room.status === "housekeeping" && room.houseKeeperName ? (
-                  <Button
-                    type="button"
-                    variant="success"
-                    className="flex-1"
-                    onClick={() => handleHousekeepingDone(room.id)}
-                  >
-                    <CheckCircle className="h-3 w-3" />
-                    Done
-                  </Button>
-                ) : null}
-                <Button type="button" variant="danger" className="flex-1" onClick={() => handleDelete(room.id)}>
-                  <Trash2 className="h-3 w-3" />
-                  Delete
-                </Button>
-              </div>
             </div>
-            </CardContent>
+
+            <div className="mt-auto flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" className="min-w-[120px] flex-1" onClick={() => openEditModal(room)}>
+                <Edit className="h-3 w-3" />
+                Edit
+              </Button>
+              <Button type="button" variant="ghost" className="min-w-[120px] flex-1" onClick={() => openHousekeepingModal(room)}>
+                Housekeeping
+              </Button>
+              {room.status === "housekeeping" && room.houseKeeperName ? (
+                <Button
+                  type="button"
+                  variant="success"
+                  className="min-w-[120px] flex-1"
+                  onClick={() => handleHousekeepingDone(room.id)}
+                >
+                  <CheckCircle className="h-3 w-3" />
+                  Done
+                </Button>
+              ) : null}
+              <Button type="button" variant="danger" className="min-w-[120px] flex-1" onClick={() => handleDelete(room.id)}>
+                <Trash2 className="h-3 w-3" />
+                Delete
+              </Button>
+            </div>
+          </CardContent>
           </Card>
         ))}
       </div>
