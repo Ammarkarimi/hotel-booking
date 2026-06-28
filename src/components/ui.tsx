@@ -19,12 +19,13 @@ export function CardContent({ className, children, ...props }: React.HTMLAttribu
   return <div className={cn("px-6 py-4", className)} {...props}>{children}</div>;
 }
 
-export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" }>(
+export const Button = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" | "success" }>(
   ({ className, variant = "primary", children, ...props }, ref) => {
     const variants = {
       primary: "bg-primary-600 text-white hover:bg-primary-700",
       secondary: "bg-slate-100 text-slate-700 hover:bg-slate-200",
       danger: "bg-red-600 text-white hover:bg-red-700",
+      success: "bg-emerald-600 text-white hover:bg-emerald-700",
       ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
     };
     return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit } from "lucide-react";
+import { Plus, Trash2, Edit, CheckCircle } from "lucide-react";
 import {
   Button,
   Card,
@@ -138,6 +138,20 @@ export default function RoomsClient() {
     loadRooms();
   }
 
+  async function handleHousekeepingDone(id: string) {
+    const res = await fetch(`/api/rooms/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "available", houseKeeperName: null }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || "Could not complete housekeeping");
+      return;
+    }
+    loadRooms();
+  }
+
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this room?")) return;
     const res = await fetch(`/api/rooms?id=${id}`, { method: "DELETE" });
@@ -166,20 +180,21 @@ export default function RoomsClient() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room) => (
-          <Card key={room.id}>
-            <CardContent>
-              <div className="mb-3 flex items-start justify-between">
-                <div>
-                  <h3 className="text-xl font-bold text-slate-900">Room {room.roomNumber}</h3>
-                  <p className="text-sm capitalize text-slate-500">{room.type}</p>
+          <Card key={room.id} className="h-full min-h-[380px]">
+            <CardContent className="flex h-full flex-col justify-between">
+              <div>
+                <div className="mb-3 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900">Room {room.roomNumber}</h3>
+                    <p className="text-sm capitalize text-slate-500">{room.type}</p>
+                  </div>
+                  <Badge variant={room.status}>{room.status}</Badge>
                 </div>
-                <Badge variant={room.status}>{room.status}</Badge>
-              </div>
 
-              <p className="mb-3 text-lg font-semibold text-primary-600">
-                {formatCurrency(room.pricePerNight)}
-                <span className="text-sm font-normal text-slate-500">/night</span>
-              </p>
+                <p className="mb-3 text-lg font-semibold text-primary-600">
+                  {formatCurrency(room.pricePerNight)}
+                  <span className="text-sm font-normal text-slate-500">/night</span>
+                </p>
 
               {room.amenities.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-1">
@@ -202,15 +217,26 @@ export default function RoomsClient() {
                 </p>
               )}
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Button variant="secondary" className="flex-1" onClick={() => openEditModal(room)}>
+              <div className="mt-auto flex flex-col gap-2 sm:flex-row">
+                <Button type="button" variant="secondary" className="flex-1" onClick={() => openEditModal(room)}>
                   <Edit className="h-3 w-3" />
                   Edit
                 </Button>
-                <Button variant="ghost" className="flex-1" onClick={() => openHousekeepingModal(room)}>
+                <Button type="button" variant="ghost" className="flex-1" onClick={() => openHousekeepingModal(room)}>
                   Housekeeping
                 </Button>
-                <Button variant="danger" className="flex-1" onClick={() => handleDelete(room.id)}>
+                {room.status === "housekeeping" && room.houseKeeperName ? (
+                  <Button
+                    type="button"
+                    variant="success"
+                    className="flex-1"
+                    onClick={() => handleHousekeepingDone(room.id)}
+                  >
+                    <CheckCircle className="h-3 w-3" />
+                    Done
+                  </Button>
+                ) : null}
+                <Button type="button" variant="danger" className="flex-1" onClick={() => handleDelete(room.id)}>
                   <Trash2 className="h-3 w-3" />
                   Delete
                 </Button>

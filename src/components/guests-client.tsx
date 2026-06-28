@@ -274,13 +274,13 @@ export default function GuestsClient() {
                 </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
-                <Button variant="secondary" onClick={() => openDetailsModal(guest)}>
+                <Button type="button" variant="secondary" onClick={() => openDetailsModal(guest)}>
                   View Details
                 </Button>
-                <Button onClick={() => openAssignRoomModal(guest)}>
+                <Button type="button" onClick={() => openAssignRoomModal(guest)}>
                   Assign Room
                 </Button>
-                <Button variant="danger" onClick={async () => {
+                <Button type="button" variant="danger" onClick={async () => {
                   if (!confirm(`Delete guest ${guest.firstName} ${guest.lastName}?`)) return;
                   const res = await fetch(`/api/guests/${guest.id}`, { method: "DELETE" });
                   if (!res.ok) {

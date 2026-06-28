@@ -55,6 +55,17 @@ interface Analytics {
       room: { roomNumber: string };
     };
   }>;
+  checkoutsToday: Array<{
+    id: string;
+    guestName: string;
+    roomNumber: string;
+    checkOutDate: string;
+  }>;
+  housekeepingRooms: Array<{
+    id: string;
+    roomNumber: string;
+    houseKeeperName: string;
+  }>;
 }
 
 const PIE_COLORS = ["#22c55e", "#a855f7", "#f97316", "#eab308"];
@@ -78,7 +89,7 @@ export default function DashboardClient() {
     return <div className="text-red-500">Failed to load analytics</div>;
   }
 
-  const { summary, revenueByRoomType, roomStatusOverview, recentPayments } = data;
+  const { summary, revenueByRoomType, roomStatusOverview, recentPayments, checkoutsToday, housekeepingRooms } = data;
 
   const occupancyData = [
     { name: "Occupied", value: summary.occupied },
@@ -113,10 +124,10 @@ export default function DashboardClient() {
           icon={<Users className="h-5 w-5" />}
         />
         <StatCard
-          title="Total Revenue"
-          value={formatCurrency(summary.totalRevenue)}
-          subtitle={`Today: ${formatCurrency(summary.todayRevenue)}`}
-          icon={<IndianRupee className="h-5 w-5" />}
+          title="Due Today"
+          value={checkoutsToday.length}
+          subtitle="Guests checking out today"
+          icon={<CheckCircle className="h-5 w-5" />}
         />
         <StatCard
           title="Available Rooms"
@@ -175,6 +186,58 @@ export default function DashboardClient() {
               </ResponsiveContainer>
             ) : (
               <p className="py-8 text-center text-slate-500">No revenue data yet</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold">Guests Checking Out Today</h2>
+          </CardHeader>
+          <CardContent>
+            {checkoutsToday.length > 0 ? (
+              <div className="space-y-3">
+                {checkoutsToday.map((checkout) => (
+                  <div key={checkout.id} className="rounded-lg border border-slate-100 px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-slate-900">{checkout.guestName}</p>
+                        <p className="text-sm text-slate-500">Room {checkout.roomNumber}</p>
+                      </div>
+                      <Badge variant="warning">Due today</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-slate-500">No checkouts scheduled for today</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold">Housekeeping</h2>
+          </CardHeader>
+          <CardContent>
+            {housekeepingRooms.length > 0 ? (
+              <div className="space-y-3">
+                {housekeepingRooms.map((room) => (
+                  <div key={room.id} className="rounded-lg border border-slate-100 px-4 py-3">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-slate-900">Room {room.roomNumber}</p>
+                        <p className="text-sm text-slate-500">Housekeeper: {room.houseKeeperName}</p>
+                      </div>
+                      <Badge variant="info">Cleaning</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="py-8 text-center text-slate-500">No rooms currently in housekeeping</p>
             )}
           </CardContent>
         </Card>

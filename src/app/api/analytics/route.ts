@@ -7,7 +7,7 @@ export async function GET() {
   return withAuth(async () => {
     const rooms = await prisma.room.findMany();
     const bookings = await prisma.booking.findMany({
-      include: { payments: true, bill: true, room: true },
+      include: { payments: true, bill: true, room: true, guest: true },
     });
     const payments = await prisma.payment.findMany({
       where: { status: "completed" },
@@ -34,12 +34,38 @@ export async function GET() {
       })
       .reduce((sum, p) => sum + p.amount, 0);
 
+    const today = new Date();
     const activeBookings = bookings.filter((b) => b.status === "checked_in").length;
     const pendingPayments = bookings.filter((b) => {
       if (!b.bill) return false;
       const paid = b.payments.reduce((s, p) => s + p.amount, 0);
       return paid < b.bill.totalAmount;
     }).length;
+
+    const checkoutsToday = bookings
+      .filter((b) => b.status === "checked_in")
+      .filter((b) => {
+        const out = new Date(b.checkOutDate);
+        return (
+          out.getDate() === today.getDate() &&
+          out.getMonth() === today.getMonth() &&
+          out.getFullYear() === today.getFullYear()
+        );
+      })
+      .map((b) => ({
+        id: b.id,
+        guestName: `${b.guest.firstName} ${b.guest.lastName}`,
+        roomNumber: b.room.roomNumber,
+        checkOutDate: b.checkOutDate,
+      }));
+
+    const housekeepingRooms = rooms
+      .filter((r) => r.status === "housekeeping")
+      .map((r) => ({
+        id: r.id,
+        roomNumber: r.roomNumber,
+        houseKeeperName: r.houseKeeperName || "",
+      }));
 
     const revenueByRoomType: Record<string, number> = {};
     for (const bill of bills) {
@@ -83,6 +109,8 @@ export async function GET() {
       revenueByRoomType,
       roomStatusOverview,
       recentPayments,
+      checkoutsToday,
+      housekeepingRooms,
     });
   });
 }
