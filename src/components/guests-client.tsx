@@ -280,6 +280,18 @@ export default function GuestsClient() {
                 <Button onClick={() => openAssignRoomModal(guest)}>
                   Assign Room
                 </Button>
+                <Button variant="danger" onClick={async () => {
+                  if (!confirm(`Delete guest ${guest.firstName} ${guest.lastName}?`)) return;
+                  const res = await fetch(`/api/guests/${guest.id}`, { method: "DELETE" });
+                  if (!res.ok) {
+                    const data = await res.json();
+                    alert(data.error || "Could not delete guest");
+                    return;
+                  }
+                  loadGuests();
+                }}>
+                  Delete
+                </Button>
               </div>
             </CardContent>
           </Card>

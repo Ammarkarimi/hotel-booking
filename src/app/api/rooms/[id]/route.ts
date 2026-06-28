@@ -55,6 +55,7 @@ export async function PUT(
         ...(pricePerNight !== undefined && { pricePerNight: parseFloat(pricePerNight) }),
         ...(amenitiesStr && { amenities: amenitiesStr }),
         ...(status && { status }),
+        houseKeeperName: body.houseKeeperName === undefined ? undefined : body.houseKeeperName || null,
       },
     });
 

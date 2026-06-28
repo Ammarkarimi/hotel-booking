@@ -50,6 +50,8 @@ export default function BookingsClient() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [filter, setFilter] = useState("all");
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [transferBooking, setTransferBooking] = useState<Booking | null>(null);
   const [form, setForm] = useState({
     guestId: "",
     roomId: "",
@@ -58,6 +60,7 @@ export default function BookingsClient() {
     adults: "1",
     notes: "",
   });
+  const [transferForm, setTransferForm] = useState({ newRoomId: "", notes: "" });
 
   async function loadData() {
     const [bookingsRes, guestsRes, roomsRes] = await Promise.all([
@@ -90,11 +93,11 @@ export default function BookingsClient() {
     loadData();
   }
 
-  async function handleAction(bookingId: string, action: string) {
+  async function handleAction(bookingId: string, action: string, extra?: Record<string, unknown>) {
     const res = await fetch(`/api/bookings/${bookingId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, ...extra }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -102,6 +105,23 @@ export default function BookingsClient() {
       return;
     }
     loadData();
+  }
+
+  async function handleTransferSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!transferBooking) return;
+    if (!transferForm.newRoomId) {
+      alert("Please choose a new room to transfer to.");
+      return;
+    }
+
+    await handleAction(transferBooking.id, "transfer", {
+      newRoomId: transferForm.newRoomId,
+      notes: transferForm.notes,
+    });
+    setTransferModalOpen(false);
+    setTransferBooking(null);
+    setTransferForm({ newRoomId: "", notes: "" });
   }
 
   const availableRooms = rooms.filter((r) => r.status === "available");
@@ -197,6 +217,13 @@ export default function BookingsClient() {
                           <LogIn className="h-4 w-4" />
                           Check In
                         </Button>
+                        <Button variant="secondary" onClick={() => {
+                          setTransferBooking(booking);
+                          setTransferForm({ newRoomId: "", notes: booking.notes || "" });
+                          setTransferModalOpen(true);
+                        }}>
+                          Transfer
+                        </Button>
                         <Button variant="danger" onClick={() => handleAction(booking.id, "cancel")}>
                           <XCircle className="h-4 w-4" />
                           Cancel
@@ -204,9 +231,32 @@ export default function BookingsClient() {
                       </>
                     )}
                     {booking.status === "checked_in" && (
-                      <Button onClick={() => handleAction(booking.id, "check_out")}>
-                        <LogOut className="h-4 w-4" />
-                        Check Out
+                      <>
+                        <Button onClick={() => handleAction(booking.id, "check_out")}>
+                          <LogOut className="h-4 w-4" />
+                          Check Out
+                        </Button>
+                        <Button variant="secondary" onClick={() => {
+                          setTransferBooking(booking);
+                          setTransferForm({ newRoomId: "", notes: booking.notes || "" });
+                          setTransferModalOpen(true);
+                        }}>
+                          Transfer
+                        </Button>
+                      </>
+                    )}
+                    {(booking.status === "reserved" || booking.status === "cancelled") && (
+                      <Button variant="danger" onClick={async () => {
+                        if (!confirm("Delete this booking?")) return;
+                        const res = await fetch(`/api/bookings/${booking.id}`, { method: "DELETE" });
+                        if (!res.ok) {
+                          const data = await res.json();
+                          alert(data.error);
+                          return;
+                        }
+                        loadData();
+                      }}>
+                        Delete
                       </Button>
                     )}
                   </div>
@@ -283,6 +333,49 @@ export default function BookingsClient() {
             </Button>
             <Button type="submit" className="flex-1">
               Create Booking
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={transferModalOpen}
+        onClose={() => {
+          setTransferModalOpen(false);
+          setTransferBooking(null);
+        }}
+        title={transferBooking ? `Transfer Booking for ${transferBooking.guest.firstName}` : "Transfer Booking"}
+      >
+        <form onSubmit={handleTransferSubmit} className="space-y-4">
+          <div>
+            <Label>New Room</Label>
+            <Select
+              value={transferForm.newRoomId}
+              onChange={(e) => setTransferForm({ ...transferForm, newRoomId: e.target.value })}
+              required
+            >
+              <option value="">Select room</option>
+              {availableRooms.map((room) => (
+                <option key={room.id} value={room.id}>
+                  Room {room.roomNumber} - {room.type} ({formatCurrency(room.pricePerNight)}/night)
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label>Notes</Label>
+            <Input
+              value={transferForm.notes}
+              onChange={(e) => setTransferForm({ ...transferForm, notes: e.target.value })}
+              placeholder="Add transfer notes"
+            />
+          </div>
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="secondary" className="flex-1" onClick={() => setTransferModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" className="flex-1">
+              Transfer Booking
             </Button>
           </div>
         </form>

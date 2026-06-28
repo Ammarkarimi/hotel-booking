@@ -139,6 +139,72 @@ export async function POST(
       return NextResponse.json(fullBooking);
     }
 
+    if (action === "transfer") {
+      const { newRoomId, notes } = body;
+      if (!newRoomId) return badRequest("New room is required for transfer");
+      if (!["reserved", "checked_in"].includes(booking.status)) {
+        return badRequest("Only reserved or checked-in bookings can be transferred");
+      }
+
+      const newRoom = await prisma.room.findUnique({ where: { id: newRoomId } });
+      if (!newRoom) return badRequest("New room not found");
+      if (newRoom.status !== "available") {
+        return badRequest("New room is not available");
+      }
+
+      await prisma.$transaction(async (tx) => {
+        await tx.booking.update({
+          where: { id },
+          data: {
+            roomId: newRoomId,
+            ...(notes !== undefined && { notes }),
+          },
+        });
+        await tx.room.update({
+          where: { id: booking.roomId },
+          data: { status: "available" },
+        });
+        await tx.room.update({
+          where: { id: newRoomId },
+          data: { status: booking.status === "checked_in" ? "occupied" : "reserved" },
+        });
+      });
+
+      const fullBooking = await prisma.booking.findUnique({
+        where: { id },
+        include: { guest: true, room: true, payments: true, bill: true },
+      });
+
+      return NextResponse.json(fullBooking);
+    }
+
     return badRequest("Invalid action");
+  });
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withAuth(async () => {
+    const { id } = await params;
+    const booking = await prisma.booking.findUnique({ where: { id } });
+    if (!booking) return notFound("Booking not found");
+
+    if (["checked_in", "checked_out"].includes(booking.status)) {
+      return badRequest("Can only delete reserved or cancelled bookings");
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.booking.delete({ where: { id } });
+      if (booking.status === "reserved") {
+        await tx.room.update({
+          where: { id: booking.roomId },
+          data: { status: "available" },
+        });
+      }
+    });
+
+    return NextResponse.json({ success: true });
   });
 }

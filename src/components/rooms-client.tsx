@@ -21,6 +21,7 @@ interface Room {
   pricePerNight: number;
   amenities: string[];
   status: string;
+  houseKeeperName?: string | null;
   currentGuest?: { firstName: string; lastName: string } | null;
 }
 
@@ -29,13 +30,17 @@ export default function RoomsClient() {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
+  const [housekeepingModalOpen, setHousekeepingModalOpen] = useState(false);
+  const [housekeepingRoom, setHousekeepingRoom] = useState<Room | null>(null);
   const [form, setForm] = useState({
     roomNumber: "",
     type: "single",
     pricePerNight: "",
     amenities: "",
     status: "available",
+    houseKeeperName: "",
   });
+  const [housekeepingForm, setHousekeepingForm] = useState({ houseKeeperName: "" });
 
   async function loadRooms() {
     const res = await fetch("/api/rooms");
@@ -50,7 +55,7 @@ export default function RoomsClient() {
 
   function openAddModal() {
     setEditingRoom(null);
-    setForm({ roomNumber: "", type: "single", pricePerNight: "", amenities: "", status: "available" });
+    setForm({ roomNumber: "", type: "single", pricePerNight: "", amenities: "", status: "available", houseKeeperName: "" });
     setModalOpen(true);
   }
 
@@ -62,8 +67,41 @@ export default function RoomsClient() {
       pricePerNight: String(room.pricePerNight),
       amenities: room.amenities.join(", "),
       status: room.status,
+      houseKeeperName: room.houseKeeperName || "",
     });
     setModalOpen(true);
+  }
+
+  function openHousekeepingModal(room: Room) {
+    setHousekeepingRoom(room);
+    setHousekeepingForm({ houseKeeperName: room.houseKeeperName || "" });
+    setHousekeepingModalOpen(true);
+  }
+
+  async function handleHousekeepingSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!housekeepingRoom) return;
+
+    const payload = {
+      status: "housekeeping",
+      houseKeeperName: housekeepingForm.houseKeeperName,
+    };
+
+    const res = await fetch(`/api/rooms/${housekeepingRoom.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      alert(data.error || "Could not assign housekeeper");
+      return;
+    }
+
+    setHousekeepingModalOpen(false);
+    setHousekeepingRoom(null);
+    loadRooms();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,6 +117,7 @@ export default function RoomsClient() {
       pricePerNight: parseFloat(form.pricePerNight),
       amenities,
       status: form.status,
+      houseKeeperName: form.houseKeeperName || null,
     };
 
     if (editingRoom) {
@@ -152,19 +191,28 @@ export default function RoomsClient() {
                 </div>
               )}
 
+              {room.houseKeeperName && (
+                <p className="mb-3 text-sm text-slate-700">
+                  Housekeeper: <strong>{room.houseKeeperName}</strong>
+                </p>
+              )}
               {room.currentGuest && (
                 <p className="mb-3 text-sm text-purple-600">
                   Guest: {room.currentGuest.firstName} {room.currentGuest.lastName}
                 </p>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Button variant="secondary" className="flex-1" onClick={() => openEditModal(room)}>
                   <Edit className="h-3 w-3" />
                   Edit
                 </Button>
-                <Button variant="danger" onClick={() => handleDelete(room.id)}>
+                <Button variant="ghost" className="flex-1" onClick={() => openHousekeepingModal(room)}>
+                  Housekeeping
+                </Button>
+                <Button variant="danger" className="flex-1" onClick={() => handleDelete(room.id)}>
                   <Trash2 className="h-3 w-3" />
+                  Delete
                 </Button>
               </div>
             </CardContent>
@@ -221,6 +269,14 @@ export default function RoomsClient() {
               ))}
             </Select>
           </div>
+          <div>
+            <Label>Housekeeper Name</Label>
+            <Input
+              value={form.houseKeeperName}
+              onChange={(e) => setForm({ ...form, houseKeeperName: e.target.value })}
+              placeholder="Optional"
+            />
+          </div>
           <div className="flex gap-2 pt-2">
             <Button type="button" variant="secondary" className="flex-1" onClick={() => setModalOpen(false)}>
               Cancel
@@ -231,6 +287,31 @@ export default function RoomsClient() {
           </div>
         </form>
       </Modal>
-    </div>
-  );
+        <Modal
+          open={housekeepingModalOpen}
+          onClose={() => setHousekeepingModalOpen(false)}
+          title={housekeepingRoom ? `Assign Housekeeper to Room ${housekeepingRoom.roomNumber}` : "Assign Housekeeper"}
+        >
+          <form onSubmit={handleHousekeepingSubmit} className="space-y-4">
+            <div>
+              <Label>Housekeeper Name</Label>
+              <Input
+                value={housekeepingForm.houseKeeperName}
+                onChange={(e) => setHousekeepingForm({ houseKeeperName: e.target.value })}
+                placeholder="Enter name"
+                required
+              />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button type="button" variant="secondary" className="flex-1" onClick={() => setHousekeepingModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="flex-1">
+                Save
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      </div>
+    );
 }

@@ -18,15 +18,16 @@ model Staff {
 }
 
 model Room {
-  id            String    @id @default(cuid())
-  roomNumber    String    @unique
-  type          String    // single, double, suite, deluxe, family
-  pricePerNight Float
-  amenities     String    @default("[]") // JSON array stored as string
-  status        String    @default("available") // available, occupied, maintenance, reserved
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  bookings      Booking[]
+  id              String    @id @default(cuid())
+  roomNumber      String    @unique
+  type            String    // single, double, suite, deluxe, family
+  pricePerNight   Float
+  amenities       String    @default("[]") // JSON array stored as string
+  status          String    @default("available") // available, occupied, maintenance, reserved, housekeeping
+  houseKeeperName String?   // assigned housekeeper for cleaning
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  bookings        Booking[]
 }
 
 model Guest {

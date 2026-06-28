@@ -55,3 +55,17 @@ export async function PUT(
     return NextResponse.json(updated);
   });
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  return withAuth(async () => {
+    const { id } = await params;
+    const guest = await prisma.guest.findUnique({ where: { id } });
+    if (!guest) return notFound("Guest not found");
+
+    await prisma.guest.delete({ where: { id } });
+    return NextResponse.json({ success: true });
+  });
+}

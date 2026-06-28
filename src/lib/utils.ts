@@ -56,7 +56,7 @@ export function getPaymentStatus(totalAmount: number, paidAmount: number): "pend
 }
 
 export const ROOM_TYPES = ["single", "double", "suite", "deluxe", "family"] as const;
-export const ROOM_STATUSES = ["available", "occupied", "maintenance", "reserved"] as const;
+export const ROOM_STATUSES = ["available", "occupied", "maintenance", "reserved", "housekeeping"] as const;
 export const DOCUMENT_TYPES = ["aadhar", "pan", "passport"] as const;
 export const PAYMENT_METHODS = ["cash", "card", "upi", "bank_transfer", "other"] as const;
 export const BOOKING_STATUSES = ["reserved", "checked_in", "checked_out", "cancelled"] as const;
