@@ -241,6 +241,7 @@ export default function RoomsClient() {
                   Delete
                 </Button>
               </div>
+            </div>
             </CardContent>
           </Card>
         ))}
