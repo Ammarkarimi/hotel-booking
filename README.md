@@ -13,6 +13,9 @@ It is designed for people with **no technical knowledge**: plain words instead
 of hotel jargon, big buttons, one obvious next step on every screen, friendly
 confirmations, and it works on a phone.
 
+> **Full reference guide:** [docs/](docs/README.md) covers the owner panel, the hotel
+> software, hosting, troubleshooting and technical details.
+>
 > Why these features? See [docs/RESEARCH.md](docs/RESEARCH.md) — a summary of
 > what competitors (Cloudbeds, Little Hotelier, eZee, Hotelogix, RoomRaccoon…)
 > offer and what small-hotel owners actually complain about and ask for.
