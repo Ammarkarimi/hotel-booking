@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAdmin, fail } from "@/lib/api";
 import { dateFromKey, isDateKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
     if (body.percent === 0) fail("The price change cannot be 0%");
     const rate = await prisma.seasonalRate.create({
       data: {
+        hotelId: currentHotelId(),
         name: body.name,
         startDate: dateFromKey(body.startDate),
         endDate: dateFromKey(body.endDate),

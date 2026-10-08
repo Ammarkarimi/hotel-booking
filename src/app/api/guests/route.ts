@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { guestData, guestSchema } from "@/lib/guests";
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     const body = guestSchema.parse(await request.json());
     const data = guestData(body);
     const guest = await prisma.guest.create({
-      data: { ...data, firstName: body.firstName, phone: body.phone },
+      data: { hotelId: currentHotelId(), ...data, firstName: body.firstName, phone: body.phone },
       include: { documents: true },
     });
     await logActivity(user, "Guest added", `${guest.firstName} ${guest.lastName}`.trim());

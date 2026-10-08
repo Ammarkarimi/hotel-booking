@@ -13,19 +13,33 @@ function getJwtSecret(): Uint8Array {
 export const COOKIE_NAME = "hotel-session";
 export const SESSION_DURATION = 60 * 60 * 24 * 7;
 
+// The software provider's own sign-in for /platform. A separate cookie and token type,
+// so a hotel account can never open the provider panel and vice versa.
+export const PLATFORM_COOKIE_NAME = "platform-session";
+export const PLATFORM_SESSION_DURATION = 60 * 60 * 12;
+
 export interface SessionUser {
   id: string;
   email: string;
   name: string;
   role: string;
+  hotelId: string;
+}
+
+export interface PlatformSession {
+  email: string;
+  /** Changes when the provider's password changes, which signs out old sessions. */
+  key: string;
 }
 
 export async function createSessionToken(user: SessionUser): Promise<string> {
   return new SignJWT({
+    typ: "hotel",
     id: user.id,
     email: user.email,
     name: user.name,
     role: user.role,
+    hotelId: user.hotelId,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -36,12 +50,32 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, getJwtSecret());
+    if (payload.typ === "platform") return null;
     return {
       id: payload.id as string,
       email: payload.email as string,
       name: payload.name as string,
       role: payload.role as string,
+      hotelId: payload.hotelId as string,
     };
+  } catch {
+    return null;
+  }
+}
+
+export async function createPlatformToken(session: PlatformSession): Promise<string> {
+  return new SignJWT({ typ: "platform", email: session.email, key: session.key })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime(`${PLATFORM_SESSION_DURATION}s`)
+    .sign(getJwtSecret());
+}
+
+export async function verifyPlatformToken(token: string): Promise<PlatformSession | null> {
+  try {
+    const { payload } = await jwtVerify(token, getJwtSecret());
+    if (payload.typ !== "platform") return null;
+    return { email: payload.email as string, key: payload.key as string };
   } catch {
     return null;
   }

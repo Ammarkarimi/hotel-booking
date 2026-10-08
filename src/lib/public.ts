@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
-import { prisma } from "./db";
+import type { Hotel } from "@prisma/client";
+import { prisma, rawPrisma, runForHotel } from "./db";
 import { fail } from "./api";
 import { diffDays } from "./dates";
 import type { BillingContext, HotelSettingsRecord } from "./settings";
 import { parseAmenities } from "./utils";
+
+/** Web addresses that can never be a hotel's booking page name. */
+export const RESERVED_SLUGS = ["confirmation", "api", "new"];
+
+/**
+ * Public booking pages say which hotel they are for with `?hotel=<slug>`.
+ * Runs `fn` with every query limited to that hotel. Paused hotels take no bookings.
+ */
+export async function withPublicHotel<T>(request: Request, fn: (hotel: Hotel) => Promise<T>): Promise<T> {
+  const slug = new URL(request.url).searchParams.get("hotel")?.trim().toLowerCase();
+  const hotel = slug ? await rawPrisma.hotel.findUnique({ where: { slug } }) : null;
+  if (!hotel) fail("This hotel's booking page was not found. Please check the link.", 404);
+  if (hotel.status !== "active") fail("Online booking is currently closed. Please call the hotel.", 403);
+  return runForHotel(hotel.id, () => fn(hotel));
+}
 
 export function publicHotel(s: HotelSettingsRecord) {
   return {

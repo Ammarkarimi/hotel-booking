@@ -222,7 +222,9 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
 }
 
 function WebsiteTab({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDTO>) => void }) {
-  const link = typeof window !== "undefined" ? `${window.location.origin}/book` : "/book";
+  const { settings } = useApp();
+  const path = `/book/${settings.bookingSlug}`;
+  const link = typeof window !== "undefined" ? `${window.location.origin}${path}` : path;
   return (
     <Card>
       <CardHeader title="Online booking website" description="Guests can book directly with you from their phone — no commission." />
@@ -231,7 +233,7 @@ function WebsiteTab({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDTO>)
         <div className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-3">
           <span className="text-sm text-slate-600">Your booking link:</span>
           <code className="rounded bg-white px-2 py-1 text-sm">{link}</code>
-          <a href="/book" target="_blank" rel="noopener noreferrer">
+          <a href={path} target="_blank" rel="noopener noreferrer">
             <Button size="sm" variant="outline">
               <ExternalLink className="h-4 w-4" /> Open
             </Button>

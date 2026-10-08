@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma, rawPrisma } from "@/lib/db";
 import { withAdmin, fail } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
@@ -24,10 +24,11 @@ const schema = z.object({
 export async function POST(request: NextRequest) {
   return withAdmin(async (user) => {
     const body = schema.parse(await request.json());
-    const existing = await prisma.staff.findUnique({ where: { email: body.email } });
+    // Sign-in emails are unique across every hotel using the software.
+    const existing = await rawPrisma.staff.findUnique({ where: { email: body.email } });
     if (existing) fail("Someone already uses this email to sign in");
     const staff = await prisma.staff.create({
-      data: { name: body.name, email: body.email, role: body.role, passwordHash: await hashPassword(body.password) },
+      data: { hotelId: currentHotelId(), name: body.name, email: body.email, role: body.role, passwordHash: await hashPassword(body.password) },
       select: publicFields,
     });
     await logActivity(user, "Staff account added", `${staff.name} (${staff.role})`);

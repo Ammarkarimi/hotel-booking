@@ -11,6 +11,10 @@ export interface ShellSettings {
   currency: string;
   timezone: string;
   today: string;
+  /** This hotel's public booking page is /book/<bookingSlug>. */
+  bookingSlug: string;
+  /** Shown to owners when the software subscription is overdue. */
+  subscriptionNotice?: string | null;
 }
 
 type ToastTone = "success" | "error" | "info";

@@ -84,7 +84,7 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff.</p>
+          <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff. Owners can ask their software provider.</p>
 
           {SHOW_DEMO && (
             <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
