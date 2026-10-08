@@ -29,12 +29,12 @@ async function seedBasics() {
   await prisma.staff.upsert({
     where: { email: "admin@hotel.com" },
     update: {},
-    create: { email: "admin@hotel.com", passwordHash: await bcrypt.hash("admin123", 10), name: "Hotel Owner", role: "admin" },
+    create: { email: "admin@hotel.com", passwordHash: await bcrypt.hash("admin123", 10), name: "Anil Sharma", role: "admin" },
   });
   await prisma.staff.upsert({
     where: { email: "staff@hotel.com" },
     update: {},
-    create: { email: "staff@hotel.com", passwordHash: await bcrypt.hash("staff123", 10), name: "Front Desk", role: "staff" },
+    create: { email: "staff@hotel.com", passwordHash: await bcrypt.hash("staff123", 10), name: "Pooja Verma", role: "staff" },
   });
 
   // Everything below is demo content: a sample hotel profile and rooms.

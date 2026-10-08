@@ -2,13 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Hotel } from "lucide-react";
-import { Button, Card, CardContent, Input, Label } from "@/components/ui";
+import { Eye, EyeOff, Hotel } from "lucide-react";
+import { Button, Card, CardContent, Field, Input } from "@/components/ui";
+
+const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -16,24 +19,21 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || "Login failed");
+        setError(data.error || "Could not sign in");
         return;
       }
-
       router.push("/");
       router.refresh();
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Cannot reach the server. Please check your internet connection.");
     } finally {
       setLoading(false);
     }
@@ -41,54 +41,62 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="pt-8">
+      <Card className="w-full max-w-md shadow-2xl">
+        <CardContent className="px-6 py-8 sm:px-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-100 text-primary-600">
-              <Hotel className="h-7 w-7" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 text-primary-600">
+              <Hotel className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-bold text-slate-900">Hotel Billing Manager</h1>
-            <p className="mt-1 text-sm text-slate-500">Sign in to manage your hotel</p>
+            <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
+            <p className="mt-1 text-[15px] text-slate-500">Sign in to manage your hotel</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@hotel.com"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-            </div>
+            <Field label="Email" htmlFor="email">
+              <Input id="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@hotel.com" required autoFocus />
+            </Field>
+            <Field label="Password" htmlFor="password">
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-slate-400 hover:text-slate-700"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </Field>
 
-            {error && (
-              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</div>
-            )}
+            {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+            <Button type="submit" size="lg" className="w-full" loading={loading}>
+              Sign in
             </Button>
           </form>
 
-          <div className="mt-6 rounded-lg bg-slate-50 p-3 text-xs text-slate-500">
-            <p className="font-medium text-slate-700">Demo credentials:</p>
-            <p>Admin: admin@hotel.com / admin123</p>
-            <p>Staff: staff@hotel.com / staff123</p>
-          </div>
+          <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff.</p>
+
+          {SHOW_DEMO && (
+            <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+              <p className="mb-1 font-semibold text-slate-800">Demo accounts</p>
+              <button type="button" className="block hover:underline" onClick={() => { setEmail("admin@hotel.com"); setPassword("admin123"); }}>
+                Owner: admin@hotel.com / admin123
+              </button>
+              <button type="button" className="block hover:underline" onClick={() => { setEmail("staff@hotel.com"); setPassword("staff123"); }}>
+                Front desk: staff@hotel.com / staff123
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
