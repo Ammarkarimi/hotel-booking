@@ -1,241 +1,160 @@
-# Hotel Billing Manager
+# Hotel Manager — simple hotel booking & front-desk software
 
-A full-stack hotel management and billing system for managing rooms, guests, bookings, payments, and analytics.
+A complete, easy-to-use system for small and independent hotels, guest houses
+and homestays: bookings, a room calendar, check-in/check-out, guest records with
+ID photos, billing with GST invoices, payments, housekeeping, owner reports,
+staff accounts and a commission-free **online booking website** for guests.
+
+It is designed for people with **no technical knowledge**: plain words instead
+of hotel jargon, big buttons, one obvious next step on every screen, friendly
+confirmations, and it works on a phone.
+
+> Why these features? See [docs/RESEARCH.md](docs/RESEARCH.md) — a summary of
+> what competitors (Cloudbeds, Little Hotelier, eZee, Hotelogix, RoomRaccoon…)
+> offer and what small-hotel owners actually complain about and ask for.
 
 ## Features
 
-- **Room Management** — Add, edit, and remove rooms with type, price, amenities, and status tracking
-- **Guest Management** — Register guests with personal details and upload identity documents (Aadhar, PAN, Passport)
-- **Check-in / Check-out** — Complete booking workflow from reservation to checkout with automatic bill generation
-- **Billing & Payments** — Generate bills, record advance/balance payments, track pending/partial/paid status
-- **Analytics Dashboard** — Occupancy rates, revenue overview, room status, and recent payment activity
-- **Staff Authentication** — JWT-based login with admin and staff roles
+| Area | What you can do |
+|---|---|
+| **Today screen** | Arrivals with one-tap *Check in*, departures with *Check out* and bill, colour-coded board of every room, money received today (by cash/UPI/card), money still to collect, rooms to clean, setup checklist, staff activity |
+| **New booking wizard** | 4 steps: dates (quick “2 nights” buttons) → free rooms with total price → returning-guest search or new guest → price, discount, source, advance payment. **Walk-in** mode checks the guest in immediately. Confirmation via **WhatsApp** or print |
+| **No double bookings** | Availability is date-based; the database locks a room while a booking is saved, so two people can never book the same room for the same night |
+| **Room calendar** | Tape chart of all rooms for 7/14 days; tap an empty box to book that room from that date |
+| **Booking page** | Live bill (room nights, weekend/festival prices, discount, extras, taxes), payments and refunds, extend stay, change dates, move room, early/late checkout, no-show, cancel, undo check-in |
+| **Extras** | Add food, laundry, minibar, taxi, extra bed or damage charges to the guest’s bill |
+| **Billing & GST** | Indian GST slabs (0% / 5% / 18% by nightly tariff, editable) or one flat tax rate; separate tax on extras; final invoice snapshot at checkout |
+| **Printables** | GST tax invoice (GSTINs, SAC codes, CGST/SGST, amount in words), proforma bill, booking confirmation, guest registration card with Form C fields for foreign guests |
+| **Guests** | Profiles with stays, nights, total paid and money owed; ID photo upload from the phone camera; passport/visa for foreigners; company & GSTIN; VIP and “do not allow” flags |
+| **Housekeeping** | Needs cleaning / being cleaned / clean board; rooms become dirty automatically at checkout; rooms with guests arriving today shown first |
+| **Payments** | Cash, UPI, card, bank transfer; refunds; daily cash-drawer totals |
+| **Reports (owner)** | Occupancy, room earnings, ADR, RevPAR, money received and owed, daily charts, bookings by source, payment methods, room types, extras, GST summary, CSV downloads for Excel |
+| **Prices** | Normal price per room, weekend price change %, special prices for date ranges (festivals, off-season), special agreed price per booking |
+| **Online booking website** | `/book` — guests pick dates, see prices per room type and book (pay at hotel). Bookings appear marked “Our website”. Spam-protected |
+| **Staff & security** | Owner/manager and front-desk roles (front desk can’t see reports, change settings or delete records), activity history of who did what, login rate limiting, disabled staff lose access immediately |
+| **Help** | Built-in step-by-step guide written in plain words |
 
-## Tech Stack
+## Quick start (local)
 
-- **Frontend:** Next.js 15, React 19, Tailwind CSS 4
-- **Backend:** Next.js API Routes
-- **Database:** PostgreSQL with Prisma ORM
-- **File Storage:** Local filesystem (dev) or Vercel Blob (production)
-- **Auth:** JWT sessions with HTTP-only cookies
-- **Charts:** Recharts
-
-## Prerequisites
-
-- Node.js 18+ and npm
-- PostgreSQL 16+ (local install, Docker, or managed cloud database)
-
-## Quick Start (Local Development)
-
-### 1. Start PostgreSQL with Docker
+Requirements: **Node.js 20+** and **PostgreSQL 14+**.
 
 ```bash
+# 1. Start PostgreSQL (or use your own)
 docker compose up -d
-```
 
-This starts PostgreSQL on `localhost:5432` with credentials from `.env.example`.
-
-### 2. Configure environment
-
-```bash
+# 2. Configure
 cp .env.example .env
-```
 
-Edit `.env` if needed. The default `DATABASE_URL` works with the Docker Compose setup.
-
-### 3. Install, migrate, and seed
-
-```bash
+# 3. Install, create the database tables and load demo data
 npm install
-npm run db:setup:dev
+npm run db:setup:dev     # migrations + demo hotel with rooms, guests and bookings
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open <http://localhost:3000> and sign in:
 
-> **First-time setup:** `db:setup:dev` runs `prisma migrate dev` (creates/applies migrations) and seeds demo data. For subsequent runs where migrations already exist, use `npm run db:setup`.
+| Role | Email | Password |
+|---|---|---|
+| Owner / manager | `admin@hotel.com` | `admin123` |
+| Front desk | `staff@hotel.com` | `staff123` |
 
-## Default Credentials
+The guest booking website is at <http://localhost:3000/book>.
 
-| Role  | Email             | Password  |
-|-------|-------------------|-----------|
-| Admin | admin@hotel.com   | admin123  |
-| Staff | staff@hotel.com   | staff123  |
+**Change these passwords** after the first sign-in (*My account*, or *Settings → Staff*).
 
-## Environment Variables
+## Setting up a real hotel
+
+1. Deploy (see below) and run `npm run db:seed` once — this creates only the two
+   sign-in accounts, no demo data.
+2. Sign in as the owner. The **Getting started** checklist on the Today screen
+   walks you through:
+   - *Settings → Hotel details*: name, address, phone, GSTIN, check-in/out times
+   - *Rooms → Add room*: each room with type, normal price and facilities
+   - *Settings → Prices & tax*: GST slabs or flat tax, weekend and festival prices
+   - *Settings → Staff*: one sign-in per staff member
+   - *Settings → Online booking*: copy your booking link and share it
+
+## Environment variables
 
 | Variable | Required | Description |
-|----------|----------|-------------|
+|---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
-| `JWT_SECRET` | Production | Secret for signing session tokens. Generate with `openssl rand -base64 32` |
+| `JWT_SECRET` | Production | Secret for sign-in sessions. Generate with `openssl rand -base64 32` |
 | `STORAGE_DRIVER` | No | `local` (default) or `blob`. Auto-selects `blob` when `BLOB_READ_WRITE_TOKEN` is set |
-| `UPLOAD_DIR` | No | Local upload directory (default: `./uploads`). Only used when `STORAGE_DRIVER=local` |
-| `BLOB_READ_WRITE_TOKEN` | Production (Vercel) | Vercel Blob storage token for persistent file uploads |
-| `NODE_ENV` | Auto | Set to `production` on deployment hosts |
+| `UPLOAD_DIR` | No | Folder for ID uploads when `STORAGE_DRIVER=local` (default `./uploads`) |
+| `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token for ID uploads |
+| `NEXT_PUBLIC_DEMO_MODE` | No | `true` shows the demo sign-in accounts on the login page in production |
 
-See `.env.example` for a complete template.
+## Deploying (Vercel + Neon)
 
-## Production Deployment (Vercel + Neon)
+1. Push to GitHub and import the repository at [vercel.com/new](https://vercel.com/new).
+2. **Storage → Create → Neon** (Postgres) and connect it to the project; this sets `DATABASE_URL`.
+3. **Storage → Create → Blob** and connect it; this sets `BLOB_READ_WRITE_TOKEN` (for ID photos).
+4. Add `JWT_SECRET` under *Settings → Environment Variables*.
+5. Deploy. The build runs `prisma generate → prisma migrate deploy → next build`.
+6. Once, from your computer: `DATABASE_URL="<production url>" npm run db:seed`.
 
-Recommended stack: **Vercel** for the Next.js app, **Neon** for PostgreSQL, and **Vercel Blob** for file uploads.
+Any Node host with PostgreSQL works (Railway, Render, a VPS): set the variables,
+run `npm run build` and `npm start`. For local file storage, keep `./uploads` on a
+persistent disk.
 
-> **Important:** Set up the database **before** deploying. The build runs `prisma generate` and `prisma migrate deploy`, which require `DATABASE_URL`. Without it you will see error `P1012: Environment variable not found: DATABASE_URL`.
+### Upgrading an existing installation
 
-### Step 1: Import project on Vercel
-
-1. Push your code to GitHub
-2. Import the repository at [vercel.com/new](https://vercel.com/new)
-
-### Step 2: Provision PostgreSQL (required before first deploy)
-
-Vercel does not offer a native "PostgreSQL" button. Use a marketplace provider:
-
-**Neon (recommended)**
-
-1. In Vercel → your project → **Storage** → **Create Database**
-2. Under **Marketplace Database Providers**, click **Create** next to **Neon** (Serverless Postgres)
-3. Connect it to this project — Vercel adds `DATABASE_URL` automatically
-4. Ensure it is enabled for **Production**, **Preview**, and **Development** environments
-
-**Supabase (alternative)**
-
-1. Same Storage page → **Create** next to **Supabase** (Postgres backend)
-2. Or create at [supabase.com](https://supabase.com) and paste the connection string into `DATABASE_URL`
-
-### Step 3: Add remaining environment variables
-
-In **Project Settings** → **Environment Variables**, add:
-
-| Variable | Value | Environments |
-|----------|-------|--------------|
-| `DATABASE_URL` | Auto-set by Neon, or paste your Postgres URL | Production, Preview, Development |
-| `JWT_SECRET` | Long random secret (`openssl rand -base64 32`) | Production, Preview, Development |
-| `BLOB_READ_WRITE_TOKEN` | From Vercel Blob (step 4) | Production, Preview, Development |
-| `STORAGE_DRIVER` | `blob` | Production (optional; auto-detected) |
-
-### Step 4: Provision file storage (Vercel Blob)
-
-1. **Storage** → **Create** → **Blob** (under Direct Vercel Storage Options)
-2. Connect to your project — sets `BLOB_READ_WRITE_TOKEN` automatically
-
-### Step 5: Deploy
-
-1. **Redeploy** after all env vars are set (Deployments → ⋯ → Redeploy)
-2. Build runs `prisma generate` → `prisma migrate deploy` → `next build`
-
-### Step 4: Seed production data (one-time)
-
-After the first successful deploy, seed the admin account:
-
-```bash
-# Set DATABASE_URL to your production database, then:
-npm run db:seed
-```
-
-Or run seed from a Vercel one-off script / local machine pointed at production DB.
-
-### Manual migration (if needed)
-
-```bash
-DATABASE_URL="your-production-url" npm run db:migrate
-```
-
-### Troubleshooting: `P1012 Environment variable not found: DATABASE_URL`
-
-This means Vercel does not have `DATABASE_URL` set **at build time**. Fix:
-
-1. Vercel → your project → **Storage** → **Create** → **Neon** → connect to project
-2. **Settings** → **Environment Variables** → confirm `DATABASE_URL` exists for **Production**, **Preview**, and **Development**
-3. Add `JWT_SECRET` if missing
-4. **Deployments** → latest failed deploy → **⋯** → **Redeploy** (do not skip env var sync)
-
-If you created Neon outside Vercel, paste the pooled connection string manually:
-
-```
-postgresql://user:password@host/dbname?sslmode=require
-```
-
-## Local Development Without Docker
-
-If you have PostgreSQL installed locally:
-
-```bash
-# Create database
-createdb hotel_billing
-
-# Update .env
-DATABASE_URL="postgresql://YOUR_USER:YOUR_PASSWORD@localhost:5432/hotel_billing?schema=public"
-
-npm install
-npm run db:setup:dev
-npm run dev
-```
-
-## File Upload Storage
-
-| Environment | Driver | Configuration |
-|-------------|--------|---------------|
-| Local dev | `local` | Files saved to `./uploads/` (gitignored) |
-| Vercel production | `blob` | Requires `BLOB_READ_WRITE_TOKEN` |
-| Docker/Railway (VM) | `local` | Mount a persistent volume to `./uploads` and set `STORAGE_DRIVER=local` |
-
-Uploaded documents are served through `/api/uploads?path=...` with authentication — files are never publicly accessible without a valid session.
-
-## End-to-End Workflow
-
-1. **Add a room** — Go to Rooms → Add Room
-2. **Register a guest** — Go to Guests → Register Guest → Upload identity documents
-3. **Create booking** — Go to Bookings → New Booking → select guest and available room
-4. **Record advance payment** — Go to Billing → Record Payment (advance)
-5. **Check in guest** — Go to Bookings → Check In
-6. **Check out guest** — Go to Bookings → Check Out (auto-generates bill)
-7. **Record balance payment** — Go to Billing → Record Payment (balance)
-8. **View analytics** — Dashboard shows occupancy, revenue, and room status
-
-## API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Staff login |
-| GET/POST | `/api/rooms` | List/create rooms |
-| PUT/DELETE | `/api/rooms/[id]` | Update/delete room |
-| GET/POST | `/api/guests` | List/create guests |
-| POST | `/api/guests/[id]/documents` | Upload identity document |
-| GET/POST | `/api/bookings` | List/create bookings |
-| POST | `/api/bookings/[id]` | Check-in, check-out, cancel |
-| GET/POST | `/api/payments` | List/record payments |
-| GET/POST | `/api/bills` | List/generate bills |
-| GET | `/api/analytics` | Dashboard analytics |
-
-## Project Structure
-
-```
-src/
-├── app/              # Pages and API routes
-├── components/       # React UI components
-├── lib/              # Database, auth, storage utilities
-prisma/
-├── schema.prisma     # Database schema
-├── migrations/       # PostgreSQL migrations
-└── seed.ts           # Demo data
-docker-compose.yml    # Local PostgreSQL
-vercel.json           # Vercel build configuration
-```
+The migration `20261008000000_hotel_suite` upgrades databases from the earlier
+“Hotel Billing Manager” version in place: existing rooms, guests, bookings,
+payments and bills are kept, bookings get numbers starting at 1001, and old
+`reserved`/`housekeeping` room statuses are converted. Run `npm run db:migrate`
+(Vercel does this automatically on deploy).
 
 ## Scripts
 
 | Command | Description |
-|---------|-------------|
-| `npm run dev` | Start dev server |
-| `npm run build` | Generate Prisma client, run migrations, production build |
-| `npm run db:setup` | Apply migrations and seed (CI/production) |
-| `npm run db:setup:dev` | Create/apply migrations in dev and seed |
-| `npm run db:migrate` | Apply pending migrations (`prisma migrate deploy`) |
-| `npm run db:migrate:dev` | Create/apply migrations in development |
-| `npm run db:seed` | Re-seed demo data |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` / `npm start` | Production build (applies migrations) / start |
+| `npm test` | Unit tests for dates, pricing, GST, folio maths and amount-in-words |
+| `npm run lint` / `npm run typecheck` | ESLint / TypeScript checks |
+| `npm run db:migrate` | Apply database migrations |
+| `npm run db:seed` | Create the owner and front-desk sign-in accounts only |
+| `npm run db:seed:demo` | Also load a demo hotel with rooms, guests and bookings |
+| `npm run db:setup:dev` | Migrate + demo data (development) |
 
-## Limitations
+## How it works (for developers)
 
-- Basic role-based auth (admin/staff) without granular permissions
-- Single-hotel setup (no multi-property support)
-- GST/tax calculation is simplified (flat percentage)
+- **Next.js 15 (App Router) + React 19 + Tailwind CSS 4**, API routes, **Prisma + PostgreSQL**.
+- Stays are counted in calendar nights. Dates are handled as `YYYY-MM-DD` keys
+  (`src/lib/dates.ts`) and “today” uses the hotel’s time zone setting, so night
+  counts are identical on any server.
+- All pricing and billing maths is pure and unit-tested (`src/lib/pricing.ts`):
+  nightly prices with weekend/seasonal adjustments, GST slab selection, discount
+  capping, extras tax, payments and refunds.
+- `src/lib/bookings.ts` holds availability (overstaying guests keep their room;
+  guests leaving today don’t block tonight), per-room advisory locks against
+  double booking, and the folio/serialisation used by every screen.
+- At checkout a `Bill` snapshot freezes the invoice so later price changes never
+  alter past bills.
+- Every change is written to `ActivityLog`.
+
+```
+src/
+├── app/
+│   ├── (app)/            # Signed-in screens: Today, calendar, bookings, guests, rooms, …
+│   ├── api/              # JSON API (public/* is the guest booking website API)
+│   ├── book/             # Public online booking website
+│   ├── print/            # Invoice, confirmation and registration card
+│   └── login/
+├── components/           # UI kit, app shell, booking actions, forms
+└── lib/                  # dates, pricing, bookings, reports, settings, auth
+prisma/
+├── schema.prisma
+├── migrations/
+└── seed.ts               # accounts (+ demo hotel with --demo)
+docs/RESEARCH.md          # competitor & customer research
+```
+
+## Not included (yet)
+
+- OTA channel manager (Booking.com / MakeMyTrip / Airbnb sync) — needs paid
+  partner agreements. Record OTA bookings with the matching *source* for now.
+- Online card payment on the booking website (guests pay at the hotel).
+- Restaurant POS, multi-property, GST e-invoicing (IRN).
