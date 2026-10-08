@@ -5,6 +5,10 @@ and homestays: bookings, a room calendar, check-in/check-out, guest records with
 ID photos, billing with GST invoices, payments, housekeeping, owner reports,
 staff accounts and a commission-free **online booking website** for guests.
 
+One installation serves **many hotels**. As the software provider you run your
+own **owner panel at `/platform`**: create a hotel and its owner's sign-in, and
+see every month which hotels have paid you. Each hotel only ever sees its own data.
+
 It is designed for people with **no technical knowledge**: plain words instead
 of hotel jargon, big buttons, one obvious next step on every screen, friendly
 confirmations, and it works on a phone.
@@ -30,7 +34,8 @@ confirmations, and it works on a phone.
 | **Payments** | Cash, UPI, card, bank transfer; refunds; daily cash-drawer totals |
 | **Reports (owner)** | Occupancy, room earnings, ADR, RevPAR, money received and owed, daily charts, bookings by source, payment methods, room types, extras, GST summary, CSV downloads for Excel |
 | **Prices** | Normal price per room, weekend price change %, special prices for date ranges (festivals, off-season), special agreed price per booking |
-| **Online booking website** | `/book` — guests pick dates, see prices per room type and book (pay at hotel). Bookings appear marked “Our website”. Spam-protected |
+| **Owner panel (`/platform`)** | For you, the software provider: add hotels and hand out the owner's sign-in (copy or send on WhatsApp), monthly fee and free months, record payments (UPI/bank/cash, several months at once, part payments), see who has paid this month and who is late, give anyone a new password, pause a hotel that doesn't pay, see which hotels actually use the software |
+| **Online booking website** | `/book/<hotel>` — guests pick dates, see prices per room type and book (pay at hotel). Bookings appear marked “Our website”. Spam-protected |
 | **Staff & security** | Owner/manager and front-desk roles (front desk can’t see reports, change settings or delete records), activity history of who did what, login rate limiting, disabled staff lose access immediately |
 | **Help** | Built-in step-by-step guide written in plain words |
 
@@ -58,14 +63,40 @@ Open <http://localhost:3000> and sign in:
 | Owner / manager | `admin@hotel.com` | `admin123` |
 | Front desk | `staff@hotel.com` | `staff123` |
 
-The guest booking website is at <http://localhost:3000/book>.
+The guest booking website is at <http://localhost:3000/book/sunrise-residency>.
+
+The provider's owner panel is at <http://localhost:3000/platform>. Set
+`PLATFORM_ADMIN_EMAIL` and `PLATFORM_ADMIN_PASSWORD` in `.env` first (see below).
 
 **Change these passwords** after the first sign-in (*My account*, or *Settings → Staff*).
+
+## Selling the software to hotels (`/platform`)
+
+1. In your hosting settings add `PLATFORM_ADMIN_EMAIL` (your email) and
+   `PLATFORM_ADMIN_PASSWORD` (at least 10 characters), then redeploy. This is the
+   only owner-panel account. It lives in the hosting settings, not in the
+   database, so nobody can create another one from inside the app. Without both
+   variables `/platform` stays locked. To change the password, change the variable
+   and redeploy; every open owner-panel session is signed out.
+2. Open `https://<your-site>/platform` and sign in.
+3. **Add a hotel**: hotel name, owner's name, email and phone, monthly fee, and the
+   first month to charge (pick a later month to give free months). You get the
+   owner's sign-in details once, ready to copy or send on WhatsApp.
+4. Each month, open the hotel and **Record a payment** when they pay you. The
+   list shows who has paid this month, who is late and how much is still owed.
+   Owners of hotels with late months see a polite reminder when they sign in.
+5. If a hotel stops paying, **Pause** it: its staff can't sign in and its booking
+   page stops taking bookings, but nothing is deleted. *Switch back on* restores
+   access at once.
+
+Sign-in emails are unique across all hotels, so hotel staff simply sign in at
+`/login` and land in their own hotel.
 
 ## Setting up a real hotel
 
 1. Deploy (see below) and run `npm run db:seed` once — this creates only the two
-   sign-in accounts, no demo data.
+   sign-in accounts for the first hotel, no demo data. Further hotels are created
+   from `/platform`.
 2. Sign in as the owner. The **Getting started** checklist on the Today screen
    walks you through:
    - *Settings → Hotel details*: name, address, phone, GSTIN, check-in/out times
@@ -84,6 +115,9 @@ The guest booking website is at <http://localhost:3000/book>.
 | `UPLOAD_DIR` | No | Folder for ID uploads when `STORAGE_DRIVER=local` (default `./uploads`) |
 | `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token for ID uploads |
 | `NEXT_PUBLIC_DEMO_MODE` | No | `true` shows the demo sign-in accounts on the login page in production |
+| `PLATFORM_ADMIN_EMAIL` | For `/platform` | The software provider's sign-in email for the owner panel |
+| `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Its password, at least 10 characters. Changing it signs out open owner-panel sessions |
+| `PLATFORM_TIMEZONE` | No | Time zone that decides "this month" for subscriptions (default `Asia/Kolkata`) |
 
 ## Deploying (Vercel + Neon)
 
@@ -117,13 +151,19 @@ payments and bills are kept, bookings get numbers starting at 1001, and old
 `reserved`/`housekeeping` room statuses are converted. Run `npm run db:migrate`
 (Vercel does this automatically on deploy).
 
+The migration `20261009000000_multi_hotel` turns a single-hotel installation into
+a multi-hotel one: all existing data is moved into one hotel named after the
+current hotel profile, with no monthly fee until you set one in `/platform`. Its
+booking page moves to `/book/<hotel-name>`; the old `/book` link keeps redirecting
+there while it is the only hotel.
+
 ## Scripts
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build (applies migrations) / start |
-| `npm test` | Unit tests for dates, pricing, GST, folio maths and amount-in-words |
+| `npm test` | Unit tests for dates, pricing, GST, folio maths, amount-in-words and subscriptions |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript checks |
 | `npm run db:migrate` | Apply database migrations |
 | `npm run db:seed` | Create the owner and front-desk sign-in accounts only |
@@ -145,13 +185,24 @@ payments and bills are kept, bookings get numbers starting at 1001, and old
 - At checkout a `Bill` snapshot freezes the invoice so later price changes never
   alter past bills.
 - Every change is written to `ActivityLog`.
+- **Multi-hotel isolation** (`src/lib/db.ts`): every table except `Hotel` and
+  `SubscriptionPayment` has a `hotelId`. The `prisma` client used by the hotel
+  screens adds the signed-in hotel to every query and every new row, inside
+  transactions too. `withAuth` sets that hotel for each request. A query made
+  without a hotel throws instead of returning everyone's data. Only sign-in,
+  booking-token lookups and `/platform` use `rawPrisma`.
+- The owner panel has its own cookie and token type (`src/lib/platform.ts`), so
+  a hotel session can never open `/platform` and an owner-panel session can't
+  open a hotel's screens. Subscription maths (paid, part paid, late, paid until)
+  is pure and unit-tested in `src/lib/subscription.ts`.
 
 ```
 src/
 ├── app/
 │   ├── (app)/            # Signed-in screens: Today, calendar, bookings, guests, rooms, …
 │   ├── api/              # JSON API (public/* is the guest booking website API)
-│   ├── book/             # Public online booking website
+│   ├── book/[hotel]/     # Public online booking website, one per hotel
+│   ├── platform/         # Software provider's owner panel (hotels, subscriptions)
 │   ├── print/            # Invoice, confirmation and registration card
 │   └── login/
 ├── components/           # UI kit, app shell, booking actions, forms
@@ -168,4 +219,5 @@ docs/RESEARCH.md          # competitor & customer research
 - OTA channel manager (Booking.com / MakeMyTrip / Airbnb sync) — needs paid
   partner agreements. Record OTA bookings with the matching *source* for now.
 - Online card payment on the booking website (guests pay at the hotel).
-- Restaurant POS, multi-property, GST e-invoicing (IRN).
+- Online subscription payments from hotels (record them in `/platform` for now).
+- One owner running several hotels from one sign-in, restaurant POS, GST e-invoicing (IRN).
