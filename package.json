@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "node scripts/vercel-build.mjs",
     "start": "next start",
     "lint": "eslint .",
     "db:generate": "prisma generate",
@@ -17,7 +17,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
     "db:setup:dev": "prisma migrate dev && tsx prisma/seed.ts --demo",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "vercel-build": "node scripts/vercel-build.mjs",
     "test": "tsx --test src/lib/__tests__/*.test.ts",
     "typecheck": "tsc --noEmit",
     "db:seed:demo": "tsx prisma/seed.ts --demo"

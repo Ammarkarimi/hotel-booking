@@ -1,5 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 
+// Read lazily (not at import time) so a missing secret can never break `next build`;
+// it fails at sign-in instead, with a clear message.
 function getJwtSecret(): Uint8Array {
   const secret = process.env.JWT_SECRET;
   if (!secret && process.env.NODE_ENV === "production") {
@@ -7,8 +9,6 @@ function getJwtSecret(): Uint8Array {
   }
   return new TextEncoder().encode(secret || "hotel-billing-dev-secret");
 }
-
-const JWT_SECRET = getJwtSecret();
 
 export const COOKIE_NAME = "hotel-session";
 export const SESSION_DURATION = 60 * 60 * 24 * 7;
@@ -30,12 +30,12 @@ export async function createSessionToken(user: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION}s`)
-    .sign(JWT_SECRET);
+    .sign(getJwtSecret());
 }
 
 export async function verifySessionToken(token: string): Promise<SessionUser | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, getJwtSecret());
     return {
       id: payload.id as string,
       email: payload.email as string,
