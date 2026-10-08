@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       bookings: bookings.map((b) => {
         let checkOut = toDateKey(b.checkOutDate);
         // Guests staying past their leaving date still fill the room until they check out.
-        if (b.status === "checked_in" && checkOut <= today) checkOut = addDays(today, 1);
+        if (b.status === "checked_in" && checkOut < today) checkOut = addDays(today, 1);
         return {
           id: b.id,
           number: b.number,

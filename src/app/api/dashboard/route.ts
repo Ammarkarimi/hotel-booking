@@ -55,7 +55,8 @@ export async function GET() {
       },
       select: { roomId: true },
     });
-    const takenTonight = new Set([...bookedTonight.map((b) => b.roomId), ...inHouse.map((b) => b.roomId)]);
+    const overstaying = inHouse.filter((b) => b.checkOutDate < today);
+    const takenTonight = new Set([...bookedTonight.map((b) => b.roomId), ...overstaying.map((b) => b.roomId)]);
     const usable = rooms.filter((r) => r.status !== "maintenance");
     const freeTonight = usable.filter((r) => !takenTonight.has(r.id));
 

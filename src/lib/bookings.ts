@@ -35,10 +35,11 @@ export function validateStay(checkIn: string, checkOut: string) {
 /**
  * A guest who is still checked in after their planned leaving date keeps the
  * room until they actually check out, so treat their stay as running to tomorrow.
+ * A guest leaving today does not block tonight: the room can be sold again.
  */
 function effectiveCheckOut(b: { status: string; checkOutDate: Date }, today: string) {
   const out = toDateKey(b.checkOutDate);
-  if (b.status === "checked_in" && out <= today) return addDays(today, 1);
+  if (b.status === "checked_in" && out < today) return addDays(today, 1);
   return out;
 }
 

@@ -16,10 +16,11 @@
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "db:setup": "prisma migrate deploy && tsx prisma/seed.ts",
-    "db:setup:dev": "prisma migrate dev && tsx prisma/seed.ts",
+    "db:setup:dev": "prisma migrate dev && tsx prisma/seed.ts --demo",
     "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "test": "tsx --test src/lib/__tests__/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:seed:demo": "tsx prisma/seed.ts --demo"
   },
   "dependencies": {
     "@prisma/client": "^6.9.0",
