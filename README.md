@@ -91,8 +91,19 @@ The guest booking website is at <http://localhost:3000/book>.
 2. **Storage → Create → Neon** (Postgres) and connect it to the project; this sets `DATABASE_URL`.
 3. **Storage → Create → Blob** and connect it; this sets `BLOB_READ_WRITE_TOKEN` (for ID photos).
 4. Add `JWT_SECRET` under *Settings → Environment Variables*.
-5. Deploy. The build runs `prisma generate → prisma migrate deploy → next build`.
+5. Deploy. Production builds run `prisma generate → prisma migrate deploy → next build`.
+   Preview builds (pull requests and branches) skip the migration step so they never
+   change your live database; for fully working previews, add a separate preview
+   database as `DATABASE_URL` for the *Preview* environment.
 6. Once, from your computer: `DATABASE_URL="<production url>" npm run db:seed`.
+
+### Troubleshooting: build fails with `P1012 Environment variable not found: DATABASE_URL`
+
+That Vercel project has no database configured. Open the project → **Storage** →
+connect a Postgres database (or add `DATABASE_URL` under *Settings → Environment
+Variables* for **Production**), add `JWT_SECRET`, and redeploy. If two Vercel projects
+are connected to this repository, keep the one that has the database and delete or
+disconnect the other.
 
 Any Node host with PostgreSQL works (Railway, Render, a VPS): set the variables,
 run `npm run build` and `npm start`. For local file storage, keep `./uploads` on a
