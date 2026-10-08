@@ -146,13 +146,13 @@ export default function ReportsPage() {
           <p className="text-sm text-slate-500">
             {formatDate(data.from)} to {formatDate(data.to)} · {data.days} day{data.days > 1 ? "s" : ""}
           </p>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard title="How full (occupancy)" value={`${t.occupancy}%`} subtitle={`${t.roomNightsSold} of ${t.availableRoomNights} room-nights`} icon={<Percent className="h-5 w-5" />} tone="sky" />
-            <StatCard title="Room earnings" value={formatCurrency(t.roomRevenue)} subtitle="Before tax, after discounts" icon={<BedDouble className="h-5 w-5" />} />
-            <StatCard title="Average price per night" value={formatCurrency(t.adr)} subtitle="ADR" icon={<IndianRupee className="h-5 w-5" />} tone="slate" />
-            <StatCard title="Earnings per room" value={formatCurrency(t.revpar)} subtitle="RevPAR: per available room per night" icon={<TrendingUp className="h-5 w-5" />} tone="slate" />
-            <StatCard title="Money received" value={formatCurrency(t.collected)} subtitle={t.refunds ? `after ${formatCurrency(t.refunds)} refunds` : "Cash, UPI, card, bank"} icon={<Wallet className="h-5 w-5" />} tone="green" />
-            <StatCard title="Money owed to you" value={formatCurrency(t.outstanding)} subtitle="All unpaid bills (any date)" icon={<Wallet className="h-5 w-5" />} tone={t.outstanding > 0 ? "red" : "green"} />
+            <StatCard title="Room earnings" value={formatCurrency(Math.round(t.roomRevenue))} subtitle="Before tax, after discounts" icon={<BedDouble className="h-5 w-5" />} />
+            <StatCard title="Average price per night" value={formatCurrency(Math.round(t.adr))} subtitle="ADR" icon={<IndianRupee className="h-5 w-5" />} tone="slate" />
+            <StatCard title="Earnings per room" value={formatCurrency(Math.round(t.revpar))} subtitle="RevPAR: per available room per night" icon={<TrendingUp className="h-5 w-5" />} tone="slate" />
+            <StatCard title="Money received" value={formatCurrency(Math.round(t.collected))} subtitle={t.refunds ? `after ${formatCurrency(t.refunds)} refunds` : "Cash, UPI, card, bank"} icon={<Wallet className="h-5 w-5" />} tone="green" />
+            <StatCard title="Money owed to you" value={formatCurrency(Math.round(t.outstanding))} subtitle="All unpaid bills (any date)" icon={<Wallet className="h-5 w-5" />} tone={t.outstanding > 0 ? "red" : "green"} />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-2">

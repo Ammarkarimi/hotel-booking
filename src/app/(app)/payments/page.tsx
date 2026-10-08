@@ -95,7 +95,7 @@ export default function PaymentsPage() {
         )}
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatCard title="Total received" value={formatCurrency(total)} subtitle={refunds ? `after ${formatCurrency(refunds)} refunds` : `${inRange.length} payment(s)`} icon={<Wallet className="h-5 w-5" />} />
         {PAYMENT_METHODS.map((m) => (
           <StatCard key={m} title={label(m)} value={formatCurrency(byMethod[m] || 0)} tone="slate" />

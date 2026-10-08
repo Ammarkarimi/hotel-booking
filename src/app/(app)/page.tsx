@@ -224,7 +224,7 @@ export default function TodayPage() {
 
       {isAdmin && <SetupChecklist data={data} />}
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-5">
         <StatCard title="Guests staying" value={`${stats.occupied} / ${stats.totalRooms - stats.maintenance}`} subtitle={`${stats.occupancy}% full tonight`} icon={<Users className="h-5 w-5" />} tone="sky" />
         <StatCard title="Free rooms tonight" value={stats.freeTonight} subtitle={stats.maintenance ? `${stats.maintenance} not usable` : "Ready to sell"} icon={<BedDouble className="h-5 w-5" />} tone="green" onClick={() => router.push("/bookings/new")} />
         <StatCard title="Rooms to clean" value={stats.dirty} subtitle="Tap to see list" icon={<Sparkles className="h-5 w-5" />} tone={stats.dirty ? "red" : "green"} onClick={() => router.push("/housekeeping")} />
