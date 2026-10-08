@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { fail, handleError } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { dateFromKey } from "@/lib/dates";
-import { findAvailableRooms, findConflicts, lockRooms, parseStayDate, validateStay } from "@/lib/bookings";
-import { assertWebsiteOpen, noStore, validatePublicStay } from "@/lib/public";
+import { findAvailableRooms, findConflicts, lockRooms, nextBookingNumber, parseStayDate, validateStay } from "@/lib/bookings";
+import { assertWebsiteOpen, noStore, validatePublicStay, withPublicHotel } from "@/lib/public";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity";
 
@@ -30,57 +30,63 @@ export async function POST(request: NextRequest) {
     }
     const body = schema.parse(await request.json());
     if (body.website) fail("Could not complete the booking");
-    const ctx = await getBillingContext();
-    assertWebsiteOpen(ctx.settings);
-    const checkIn = parseStayDate(body.checkIn, "arrival");
-    const checkOut = parseStayDate(body.checkOut, "leaving");
-    validateStay(checkIn, checkOut);
-    validatePublicStay(ctx, checkIn, checkOut);
-    const guests = body.adults + body.children;
-
-    const candidates = (await findAvailableRooms(ctx, { checkIn, checkOut, guests }))
-      .filter((r) => r.room.type === body.roomType)
-      .sort((a, b) => a.room.pricePerNight - b.room.pricePerNight);
-    if (candidates.length === 0) fail("Sorry, this room type was just booked by someone else. Please choose another.", 409);
-
-    const booking = await prisma.$transaction(async (tx) => {
-      const roomIds = candidates.map((c) => c.room.id);
-      await lockRooms(tx, roomIds);
-      const busy = new Set((await findConflicts({ roomIds, checkIn, checkOut, today: ctx.today }, tx)).map((c) => c.roomId));
-      const pick = candidates.find((c) => !busy.has(c.room.id));
-      if (!pick) fail("Sorry, this room type was just booked by someone else. Please choose another.", 409);
-
-      const existing = await tx.guest.findFirst({
-        where: { phone: body.phone, firstName: { equals: body.firstName, mode: "insensitive" } },
-      });
-      const guest =
-        existing ??
-        (await tx.guest.create({
-          data: { firstName: body.firstName, lastName: body.lastName, phone: body.phone, email: body.email || null },
-        }));
-      if (existing && body.email && !existing.email) {
-        await tx.guest.update({ where: { id: existing.id }, data: { email: body.email } });
-      }
-
-      return tx.booking.create({
-        data: {
-          guestId: guest.id,
-          roomId: pick.room.id,
-          checkInDate: dateFromKey(checkIn),
-          checkOutDate: dateFromKey(checkOut),
-          adults: body.adults,
-          children: body.children,
-          source: "website",
-          ratePerNight: pick.room.pricePerNight,
-          notes: body.notes ? `Guest note: ${body.notes}` : null,
-        },
-        include: { guest: true, room: true },
-      });
-    });
-
-    await logActivity(null, "Website booking", `#${booking.number} for ${booking.guest.firstName} ${booking.guest.lastName} (Room ${booking.room.roomNumber}), ${checkIn} to ${checkOut}`);
-    return noStore({ token: booking.publicToken, number: booking.number }, { status: 201 });
+    return await withPublicHotel(request, () => createBooking(body));
   } catch (error) {
     return handleError(error);
   }
+}
+
+async function createBooking(body: z.infer<typeof schema>) {
+  const ctx = await getBillingContext();
+  assertWebsiteOpen(ctx.settings);
+  const checkIn = parseStayDate(body.checkIn, "arrival");
+  const checkOut = parseStayDate(body.checkOut, "leaving");
+  validateStay(checkIn, checkOut);
+  validatePublicStay(ctx, checkIn, checkOut);
+  const guests = body.adults + body.children;
+
+  const candidates = (await findAvailableRooms(ctx, { checkIn, checkOut, guests }))
+    .filter((r) => r.room.type === body.roomType)
+    .sort((a, b) => a.room.pricePerNight - b.room.pricePerNight);
+  if (candidates.length === 0) fail("Sorry, this room type was just booked by someone else. Please choose another.", 409);
+
+  const booking = await prisma.$transaction(async (tx) => {
+    const roomIds = candidates.map((c) => c.room.id);
+    await lockRooms(tx, roomIds);
+    const busy = new Set((await findConflicts({ roomIds, checkIn, checkOut, today: ctx.today }, tx)).map((c) => c.roomId));
+    const pick = candidates.find((c) => !busy.has(c.room.id));
+    if (!pick) fail("Sorry, this room type was just booked by someone else. Please choose another.", 409);
+
+    const existing = await tx.guest.findFirst({
+      where: { phone: body.phone, firstName: { equals: body.firstName, mode: "insensitive" } },
+    });
+    const guest =
+      existing ??
+      (await tx.guest.create({
+        data: { hotelId: currentHotelId(), firstName: body.firstName, lastName: body.lastName, phone: body.phone, email: body.email || null },
+      }));
+    if (existing && body.email && !existing.email) {
+      await tx.guest.update({ where: { id: existing.id }, data: { email: body.email } });
+    }
+
+    return tx.booking.create({
+      data: {
+        hotelId: currentHotelId(),
+        number: await nextBookingNumber(tx),
+        guestId: guest.id,
+        roomId: pick.room.id,
+        checkInDate: dateFromKey(checkIn),
+        checkOutDate: dateFromKey(checkOut),
+        adults: body.adults,
+        children: body.children,
+        source: "website",
+        ratePerNight: pick.room.pricePerNight,
+        notes: body.notes ? `Guest note: ${body.notes}` : null,
+      },
+      include: { guest: true, room: true },
+    });
+  });
+
+  await logActivity(null, "Website booking", `#${booking.number} for ${booking.guest.firstName} ${booking.guest.lastName} (Room ${booking.room.roomNumber}), ${checkIn} to ${checkOut}`);
+  return noStore({ token: booking.publicToken, number: booking.number }, { status: 201 });
 }

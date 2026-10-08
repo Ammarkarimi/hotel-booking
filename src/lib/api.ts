@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getSession, type SessionUser } from "./auth";
+import { runForHotel } from "./db";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -61,7 +62,8 @@ export async function withAuth<T>(
     const session = await getSession();
     if (!session) return unauthorized();
     if (opts.admin && !isAdmin(session)) return forbidden();
-    return await handler(session);
+    // Everything the handler reads or writes is limited to this person's hotel.
+    return await runForHotel(session.hotelId, () => handler(session));
   } catch (error) {
     return handleError(error);
   }

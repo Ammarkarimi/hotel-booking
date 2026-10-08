@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { login, createSession, COOKIE_NAME, SESSION_DURATION } from "@/lib/auth";
+import { login, createSession, COOKIE_NAME, SESSION_DURATION, SUSPENDED_MESSAGE } from "@/lib/auth";
 import { badRequest } from "@/lib/api";
+import { runForHotel } from "@/lib/db";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity";
 
@@ -17,13 +18,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Too many attempts. Please wait 15 minutes and try again." }, { status: 429 });
     }
 
-    const user = await login(email, password);
-    if (!user) {
-      return NextResponse.json({ error: "Email or password is not correct" }, { status: 401 });
+    const result = await login(email, password);
+    if ("error" in result) {
+      return result.error === "suspended"
+        ? NextResponse.json({ error: SUSPENDED_MESSAGE }, { status: 403 })
+        : NextResponse.json({ error: "Email or password is not correct" }, { status: 401 });
     }
+    const { user } = result;
 
     const token = await createSession(user);
-    await logActivity(user, "Signed in");
+    await runForHotel(user.hotelId, () => logActivity(user, "Signed in"));
     const response = NextResponse.json({ user });
     response.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,

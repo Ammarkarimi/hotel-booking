@@ -27,7 +27,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const room = await prisma.room.findUnique({ where: { id } });
     if (!room) fail("Room not found", 404);
     if (body.roomNumber && body.roomNumber !== room.roomNumber) {
-      const clash = await prisma.room.findUnique({ where: { roomNumber: body.roomNumber } });
+      const clash = await prisma.room.findFirst({ where: { roomNumber: body.roomNumber } });
       if (clash) fail(`Room ${body.roomNumber} already exists`);
     }
     if (body.status === "maintenance") {

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { prisma } from "@/lib/db";
+import { prisma, runForHotel } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, serializeBooking, type SerializedBooking } from "@/lib/bookings";
@@ -333,10 +333,13 @@ export default async function PrintPage({ params }: Params) {
   const { kind, id } = await params;
   if (!["invoice", "confirmation", "registration"].includes(kind)) notFound();
 
-  const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
-  if (!booking) notFound();
-  const ctx = await getBillingContext();
-  const b = serializeBooking(booking, ctx);
+  const data = await runForHotel(session.hotelId, async () => {
+    const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
+    return booking ? { booking, ctx: await getBillingContext() } : null;
+  });
+  if (!data) notFound();
+  const { ctx } = data;
+  const b = serializeBooking(data.booking, ctx);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-100">

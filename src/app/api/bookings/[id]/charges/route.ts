@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, fail, isAdmin } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { bookingLabel, loadBooking, serializeBooking } from "@/lib/bookings";
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const description = body.description || label(body.category);
     await prisma.charge.create({
       data: {
+        hotelId: currentHotelId(),
         bookingId: id,
         category: body.category,
         description,

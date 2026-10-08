@@ -1,4 +1,4 @@
-import { prisma } from "./db";
+import { currentHotelId, prisma } from "./db";
 import type { SessionUser } from "./session";
 
 /** Records who did what, so the owner can always see the history. Never throws. */
@@ -6,6 +6,7 @@ export async function logActivity(user: SessionUser | null, action: string, deta
   try {
     await prisma.activityLog.create({
       data: {
+        hotelId: currentHotelId(),
         staffId: user?.id ?? null,
         staffName: user?.name ?? "Website",
         action,

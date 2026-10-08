@@ -1,11 +1,9 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-import { prisma } from "./db";
+import type { Prisma } from "@prisma/client";
+import { currentHotelId, prisma, type Db } from "./db";
 import { addDays, dateFromKey, isDateKey, nightsBetween, rangesOverlap, toDateKey } from "./dates";
 import { computeFolio, priceNights, round2, type Folio } from "./pricing";
 import type { BillingContext } from "./settings";
 import { fail } from "./api";
-
-type Db = PrismaClient | Prisma.TransactionClient;
 
 export const ACTIVE_STATUSES = ["reserved", "checked_in"];
 
@@ -190,8 +188,18 @@ export function bookingLabel(b: { number: number; guest?: { firstName: string; l
  * Serialises booking changes per room inside a transaction so two people
  * booking the same room at the same moment cannot both succeed.
  */
-export async function lockRooms(tx: Prisma.TransactionClient, roomIds: string[]) {
+export async function lockRooms(tx: Db, roomIds: string[]) {
   for (const id of [...new Set(roomIds)].sort()) {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${id}))`;
   }
+}
+
+/** Hands out the hotel's next booking number (1001, 1002, ...). Call inside the booking's transaction. */
+export async function nextBookingNumber(tx: Db) {
+  const hotel = await tx.hotel.update({
+    where: { id: currentHotelId() },
+    data: { bookingSeq: { increment: 1 } },
+    select: { bookingSeq: true },
+  });
+  return hotel.bookingSeq;
 }

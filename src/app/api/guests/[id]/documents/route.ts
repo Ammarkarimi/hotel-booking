@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, fail } from "@/lib/api";
 import { saveUploadedFile } from "@/lib/upload";
 import { deleteStoredFile } from "@/lib/storage";
@@ -25,9 +25,9 @@ export async function POST(request: NextRequest, { params }: Params) {
     if (file.size > MAX_BYTES) fail("The file is too large. Please use a file under 8 MB.");
     if (file.type && !ALLOWED_MIME.includes(file.type)) fail("Only photos (JPG, PNG) or PDF files can be uploaded");
 
-    const saved = await saveUploadedFile(file, `guests/${id}`);
+    const saved = await saveUploadedFile(file, `hotels/${currentHotelId()}/guests/${id}`);
     const document = await prisma.guestDocument.create({
-      data: { guestId: id, type, fileName: saved.fileName, filePath: saved.filePath, mimeType: saved.mimeType },
+      data: { hotelId: currentHotelId(), guestId: id, type, fileName: saved.fileName, filePath: saved.filePath, mimeType: saved.mimeType },
     });
     await logActivity(user, "ID document uploaded", `${guest.firstName} ${guest.lastName}: ${label(type)}`.trim());
     return NextResponse.json(document, { status: 201 });

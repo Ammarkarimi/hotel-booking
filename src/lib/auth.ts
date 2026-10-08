@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
-import { prisma } from "./db";
+import { rawPrisma } from "./db";
 import {
   COOKIE_NAME,
   createSessionToken,
@@ -10,6 +10,9 @@ import {
 
 export type { SessionUser };
 export { COOKIE_NAME, SESSION_DURATION } from "./session";
+
+export const SUSPENDED_MESSAGE =
+  "This hotel's account is paused. Please contact your software provider to switch it back on.";
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -33,10 +36,11 @@ export async function getSession(): Promise<SessionUser | null> {
   if (!token) return null;
   const session = await verifySessionToken(token);
   if (!session) return null;
-  // Removed or disabled staff lose access immediately, and role changes apply.
-  const staff = await prisma.staff.findUnique({ where: { id: session.id } });
-  if (!staff || !staff.active) return null;
-  return { id: staff.id, email: staff.email, name: staff.name, role: staff.role };
+  // Removed or disabled staff lose access immediately, role changes apply,
+  // and a paused hotel is signed out everywhere.
+  const staff = await rawPrisma.staff.findUnique({ where: { id: session.id }, include: { hotel: true } });
+  if (!staff || !staff.active || staff.hotel.status !== "active") return null;
+  return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, hotelId: staff.hotelId };
 }
 
 export async function requireSession(): Promise<SessionUser> {
@@ -47,17 +51,22 @@ export async function requireSession(): Promise<SessionUser> {
   return session;
 }
 
-export async function login(email: string, password: string): Promise<SessionUser | null> {
-  const staff = await prisma.staff.findUnique({ where: { email: email.trim().toLowerCase() } });
-  if (!staff || !staff.active) return null;
+export type LoginResult = { user: SessionUser } | { error: "invalid" | "suspended" };
+
+export async function login(email: string, password: string): Promise<LoginResult> {
+  const staff = await rawPrisma.staff.findUnique({
+    where: { email: email.trim().toLowerCase() },
+    include: { hotel: true },
+  });
+  if (!staff || !staff.active) return { error: "invalid" };
 
   const valid = await verifyPassword(password, staff.passwordHash);
-  if (!valid) return null;
+  if (!valid) return { error: "invalid" };
+  // Only tell someone the hotel is paused once they have proved who they are.
+  if (staff.hotel.status !== "active") return { error: "suspended" };
 
+  await rawPrisma.staff.update({ where: { id: staff.id }, data: { lastLoginAt: new Date() } });
   return {
-    id: staff.id,
-    email: staff.email,
-    name: staff.name,
-    role: staff.role,
+    user: { id: staff.id, email: staff.email, name: staff.name, role: staff.role, hotelId: staff.hotelId },
   };
 }

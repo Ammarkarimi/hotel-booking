@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/db";
+import { rawPrisma, runForHotel } from "@/lib/db";
 import { fail, handleError } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, folioFor } from "@/lib/bookings";
@@ -10,9 +10,9 @@ import { noStore, publicHotel } from "@/lib/public";
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   try {
     const { token } = await params;
-    const booking = await prisma.booking.findUnique({ where: { publicToken: token }, include: bookingInclude });
+    const booking = await rawPrisma.booking.findUnique({ where: { publicToken: token }, include: { ...bookingInclude, hotel: true } });
     if (!booking) fail("Booking not found", 404);
-    const ctx = await getBillingContext();
+    const ctx = await runForHotel(booking.hotelId, getBillingContext);
     const folio = folioFor(booking, ctx);
     return noStore({
       number: booking.number,
@@ -27,7 +27,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       total: folio.grandTotal,
       paid: folio.netPaid,
       balance: folio.balance,
-      hotel: publicHotel(ctx.settings),
+      hotel: { ...publicHotel(ctx.settings), slug: booking.hotel.slug },
     });
   } catch (error) {
     return handleError(error);

@@ -98,7 +98,7 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
 
         <div className="my-3 border-t border-slate-100" />
         <a
-          href="/book"
+          href={`/book/${settings.bookingSlug}`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
@@ -231,6 +231,7 @@ function GlobalSearch() {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const { settings } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   useEffect(() => setMenuOpen(false), [pathname]);
@@ -277,6 +278,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             </Link>
           </div>
         </header>
+        {settings.subscriptionNotice && (
+          <div role="status" className="no-print border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 sm:px-6">
+            {settings.subscriptionNotice}
+          </div>
+        )}
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>

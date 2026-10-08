@@ -21,7 +21,7 @@ interface Confirmation {
   total: number;
   paid: number;
   balance: number;
-  hotel: { hotelName: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string; bookingTerms: string | null; currency: string };
+  hotel: { slug: string; hotelName: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string; bookingTerms: string | null; currency: string };
 }
 
 export default function ConfirmationPage() {
@@ -79,7 +79,7 @@ export default function ConfirmationPage() {
               </a>
             )}
             <Button variant="outline" onClick={() => window.print()}><Printer className="h-5 w-5" /> Print / save</Button>
-            <Link href="/book"><Button variant="ghost" className="w-full">Back to hotel page</Button></Link>
+            <Link href={`/book/${c.hotel.slug}`}><Button variant="ghost" className="w-full">Back to hotel page</Button></Link>
           </div>
         </CardContent>
       </Card>

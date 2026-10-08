@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { dateFromKey, isDateKey } from "@/lib/dates";
@@ -10,6 +10,7 @@ import {
   bookingInclude,
   bookingLabel,
   lockRooms,
+  nextBookingNumber,
   parseStayDate,
   serializeBooking,
   syncRoomStatus,
@@ -126,6 +127,7 @@ export async function POST(request: NextRequest) {
           (
             await tx.guest.create({
               data: {
+                hotelId: currentHotelId(),
                 firstName: body.guest.firstName,
                 lastName: body.guest.lastName || "",
                 phone: body.guest.phone,
@@ -146,6 +148,8 @@ export async function POST(request: NextRequest) {
 
       const created = await tx.booking.create({
         data: {
+          hotelId: currentHotelId(),
+          number: await nextBookingNumber(tx),
           guestId: guest.id,
           roomId: room.id,
           checkInDate: dateFromKey(checkIn),
@@ -166,6 +170,7 @@ export async function POST(request: NextRequest) {
       if (body.advance && body.advance.amount > 0) {
         await tx.payment.create({
           data: {
+            hotelId: currentHotelId(),
             bookingId: created.id,
             amount: body.advance.amount,
             method: body.advance.method,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { dateFromKey, todayKey, toDateKey } from "@/lib/dates";
@@ -42,11 +42,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   return withAdmin(async (user) => {
     const body = roomSchema.parse(await request.json());
-    const existing = await prisma.room.findUnique({ where: { roomNumber: body.roomNumber } });
+    const existing = await prisma.room.findFirst({ where: { roomNumber: body.roomNumber } });
     if (existing) fail(`Room ${body.roomNumber} already exists`);
 
     const room = await prisma.room.create({
       data: {
+        hotelId: currentHotelId(),
         roomNumber: body.roomNumber,
         type: body.type.toLowerCase(),
         floor: body.floor || null,

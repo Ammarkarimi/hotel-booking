@@ -7,8 +7,57 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// A hotel that pays to use the software. Every other record belongs to exactly one hotel,
+// and hotels never see each other's data.
+model Hotel {
+  id                   String                @id @default(cuid())
+  name                 String
+  slug                 String                @unique // booking website address: /book/<slug>
+  status               String                @default("active") // active, suspended
+  contactName          String?
+  contactPhone         String?
+  contactEmail         String?
+  city                 String?
+  monthlyFee           Float                 @default(0)
+  billingStart         String // first month that is charged, "YYYY-MM"
+  notes                String?
+  bookingSeq           Int                   @default(1000) // last booking number handed out
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  staff                Staff[]
+  settings             HotelSettings?
+  seasonalRates        SeasonalRate[]
+  rooms                Room[]
+  guests               Guest[]
+  guestDocuments       GuestDocument[]
+  bookings             Booking[]
+  charges              Charge[]
+  payments             Payment[]
+  bills                Bill[]
+  activities           ActivityLog[]
+  subscriptionPayments SubscriptionPayment[]
+}
+
+// Money a hotel paid the software provider for its monthly subscription.
+model SubscriptionPayment {
+  id          String   @id @default(cuid())
+  hotelId     String
+  month       String // the month this payment is for, "YYYY-MM"
+  amount      Float
+  clearsMonth Boolean  @default(true) // false = part payment, the month is still due
+  method      String   @default("upi") // cash, upi, bank_transfer, card, other
+  reference   String?
+  notes       String?
+  paidOn      DateTime @db.Date
+  createdAt   DateTime @default(now())
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, month])
+}
+
 model Staff {
   id           String        @id @default(cuid())
+  hotelId      String
   email        String        @unique
   passwordHash String
   name         String
@@ -16,49 +65,60 @@ model Staff {
   active       Boolean       @default(true)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  lastLoginAt  DateTime?
   activities   ActivityLog[]
+  hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
 }
 
-// Single row (id = "default") holding the hotel's profile and preferences.
+// One row per hotel holding its profile and preferences.
 model HotelSettings {
-  id                 String   @id @default("default")
-  hotelName          String   @default("My Hotel")
-  tagline            String?
-  address            String?
-  city               String?
-  phone              String?
-  email              String?
-  gstin              String?
-  currency           String   @default("INR")
-  timezone           String   @default("Asia/Kolkata")
-  taxMode            String   @default("flat") // flat, india_gst
-  taxRate            Float    @default(12) // used when taxMode = flat
-  gstSlabs           String   @default("[{\"upTo\":1000,\"rate\":0},{\"upTo\":7500,\"rate\":5},{\"upTo\":null,\"rate\":18}]")
-  extrasTaxRate      Float    @default(5) // tax on food, laundry and other extras
-  weekendSurcharge   Float    @default(0) // % change on Friday & Saturday nights
-  checkInTime        String   @default("12:00")
-  checkOutTime       String   @default("11:00")
-  invoicePrefix      String   @default("INV")
-  bookingTerms       String?
-  websiteEnabled     Boolean  @default(true)
-  websiteAbout       String?
-  updatedAt          DateTime @updatedAt
+  id               String   @id @default(cuid())
+  hotelId          String   @unique
+  hotelName        String   @default("My Hotel")
+  tagline          String?
+  address          String?
+  city             String?
+  phone            String?
+  email            String?
+  gstin            String?
+  currency         String   @default("INR")
+  timezone         String   @default("Asia/Kolkata")
+  taxMode          String   @default("flat") // flat, india_gst
+  taxRate          Float    @default(12) // used when taxMode = flat
+  gstSlabs         String   @default("[{\"upTo\":1000,\"rate\":0},{\"upTo\":7500,\"rate\":5},{\"upTo\":null,\"rate\":18}]")
+  extrasTaxRate    Float    @default(5) // tax on food, laundry and other extras
+  weekendSurcharge Float    @default(0) // % change on Friday & Saturday nights
+  checkInTime      String   @default("12:00")
+  checkOutTime     String   @default("11:00")
+  invoicePrefix    String   @default("INV")
+  bookingTerms     String?
+  websiteEnabled   Boolean  @default(true)
+  websiteAbout     String?
+  updatedAt        DateTime @updatedAt
+  hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
 
 // Date ranges where room prices go up or down (festivals, holidays, off-season).
 model SeasonalRate {
   id        String   @id @default(cuid())
+  hotelId   String
   name      String
   startDate DateTime @db.Date
   endDate   DateTime @db.Date // inclusive
   roomType  String? // null = all room types
   percent   Float // +20 = 20% more expensive, -10 = 10% cheaper
   createdAt DateTime @default(now())
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
 }
 
 model Room {
   id                String    @id @default(cuid())
-  roomNumber        String    @unique
+  hotelId           String
+  roomNumber        String
   type              String // single, double, twin, suite, deluxe, family, dormitory
   floor             String?
   capacity          Int       @default(2)
@@ -72,36 +132,40 @@ model Room {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   bookings          Booking[]
+  hotel             Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
 
 model Guest {
-  id            String          @id @default(cuid())
-  firstName     String
-  lastName      String          @default("")
-  email         String?
-  phone         String
-  nationality   String          @default("Indian")
-  address       String?
-  idType        String?
-  idNumber      String?
-  company       String?
-  gstin         String?
-  dateOfBirth   DateTime?       @db.Date
-  passportNo    String?
-  visaNo        String?
-  notes         String?
-  vip           Boolean         @default(false)
-  blacklisted   Boolean         @default(false)
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  documents     GuestDocument[]
-  bookings      Booking[]
+  id          String          @id @default(cuid())
+  hotelId     String
+  firstName   String
+  lastName    String          @default("")
+  email       String?
+  phone       String
+  nationality String          @default("Indian")
+  address     String?
+  idType      String?
+  idNumber    String?
+  company     String?
+  gstin       String?
+  dateOfBirth DateTime?       @db.Date
+  passportNo  String?
+  visaNo      String?
+  notes       String?
+  vip         Boolean         @default(false)
+  blacklisted Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  documents   GuestDocument[]
+  bookings    Booking[]
+  hotel       Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
-  @@index([phone])
+  @@index([hotelId, phone])
 }
 
 model GuestDocument {
   id        String   @id @default(cuid())
+  hotelId   String
   guestId   String
   type      String // aadhar, pan, passport, driving_licence, voter_id, visa, other
   fileName  String
@@ -109,43 +173,50 @@ model GuestDocument {
   mimeType  String?
   createdAt DateTime @default(now())
   guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
 }
 
 model Booking {
-  id             String        @id @default(cuid())
-  number         Int           @unique @default(autoincrement())
-  publicToken    String        @unique @default(cuid())
+  id             String    @id @default(cuid())
+  hotelId        String
+  number         Int // counts up per hotel, starting at 1001
+  publicToken    String    @unique @default(cuid())
   guestId        String
   roomId         String
   checkInDate    DateTime
   checkOutDate   DateTime
   actualCheckIn  DateTime?
   actualCheckOut DateTime?
-  status         String        @default("reserved") // reserved, checked_in, checked_out, cancelled, no_show
-  source         String        @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
-  ratePerNight   Float         @default(0) // agreed base price per night
-  fixedRate      Boolean       @default(false) // true = ignore weekend / seasonal price changes
-  discount       Float         @default(0)
-  adults         Int           @default(1)
-  children       Int           @default(0)
+  status         String    @default("reserved") // reserved, checked_in, checked_out, cancelled, no_show
+  source         String    @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
+  ratePerNight   Float     @default(0) // agreed base price per night
+  fixedRate      Boolean   @default(false) // true = ignore weekend / seasonal price changes
+  discount       Float     @default(0)
+  adults         Int       @default(1)
+  children       Int       @default(0)
   notes          String?
   cancelReason   String?
   createdById    String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  guest          Guest         @relation(fields: [guestId], references: [id])
-  room           Room          @relation(fields: [roomId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  guest          Guest     @relation(fields: [guestId], references: [id])
+  room           Room      @relation(fields: [roomId], references: [id])
   payments       Payment[]
   charges        Charge[]
   bill           Bill?
+  hotel          Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
+  @@unique([hotelId, number])
   @@index([roomId, checkInDate, checkOutDate])
-  @@index([status])
+  @@index([hotelId, status])
 }
 
 // Extra items added to a guest's bill (food, laundry, minibar, etc).
 model Charge {
   id          String   @id @default(cuid())
+  hotelId     String
   bookingId   String
   category    String   @default("other") // food, laundry, minibar, transport, extra_bed, damage, other
   description String
@@ -155,10 +226,14 @@ model Charge {
   date        DateTime @default(now())
   createdAt   DateTime @default(now())
   booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
 }
 
 model Payment {
   id         String   @id @default(cuid())
+  hotelId    String
   bookingId  String
   amount     Float
   method     String // cash, card, upi, bank_transfer, other
@@ -170,12 +245,16 @@ model Payment {
   paidAt     DateTime @default(now())
   createdAt  DateTime @default(now())
   booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, paidAt])
 }
 
 // Final invoice snapshot created when the guest checks out.
 model Bill {
   id                String   @id @default(cuid())
-  invoiceNumber     String?  @unique
+  hotelId           String
+  invoiceNumber     String?
   bookingId         String   @unique
   roomCharges       Float
   additionalCharges Float    @default(0)
@@ -188,16 +267,21 @@ model Bill {
   nights            Int
   generatedAt       DateTime @default(now())
   booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel             Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, invoiceNumber])
 }
 
 model ActivityLog {
   id        String   @id @default(cuid())
+  hotelId   String
   staffId   String?
   staffName String
   action    String
   details   String?
   createdAt DateTime @default(now())
   staff     Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
-  @@index([createdAt])
+  @@index([hotelId, createdAt])
 }

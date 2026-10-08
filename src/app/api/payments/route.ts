@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
 
     await prisma.payment.create({
       data: {
+        hotelId: currentHotelId(),
         bookingId: body.bookingId,
         amount: body.amount,
         method: body.method,

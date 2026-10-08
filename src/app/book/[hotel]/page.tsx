@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BedDouble, CalendarDays, Check, Clock, MapPin, MessageCircle, Phone, Users } from "lucide-react";
 import { Button, Card, CardContent, Field, Input, Loading, Textarea, Tip } from "@/components/ui";
@@ -46,6 +46,8 @@ async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export default function PublicBookingPage() {
   const router = useRouter();
+  const { hotel: slug } = useParams<{ hotel: string }>();
+  const hotelParam = `hotel=${encodeURIComponent(slug)}`;
   const [hotel, setHotel] = useState<Hotel | null>(null);
   const [error, setError] = useState("");
   const [checkIn, setCheckIn] = useState("");
@@ -60,14 +62,14 @@ export default function PublicBookingPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    getJson<Hotel>("/api/public/hotel")
+    getJson<Hotel>(`/api/public/hotel?${hotelParam}`)
       .then((h) => {
         setHotel(h);
         setCheckIn(h.today);
         setCheckOut(addDays(h.today, 1));
       })
       .catch((e) => setError(e.message));
-  }, []);
+  }, [hotelParam]);
 
   const nights = checkIn && checkOut ? diffDays(checkIn, checkOut) : 0;
   const fmt = (n: number) => formatCurrency(n, hotel?.currency);
@@ -78,7 +80,7 @@ export default function PublicBookingPage() {
     setChosen(null);
     setSearching(true);
     try {
-      const r = await getJson<{ options: Option[] }>(`/api/public/availability?checkIn=${checkIn}&checkOut=${checkOut}&guests=${adults + children}`);
+      const r = await getJson<{ options: Option[] }>(`/api/public/availability?${hotelParam}&checkIn=${checkIn}&checkOut=${checkOut}&guests=${adults + children}`);
       setOptions(r.options);
       setTimeout(() => document.getElementById("results")?.scrollIntoView({ behavior: "smooth" }), 50);
     } catch (err) {
@@ -95,7 +97,7 @@ export default function PublicBookingPage() {
     setSubmitting(true);
     setError("");
     try {
-      const r = await getJson<{ token: string }>("/api/public/bookings", {
+      const r = await getJson<{ token: string }>(`/api/public/bookings?${hotelParam}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, checkIn, checkOut, adults, children, roomType: chosen.type }),

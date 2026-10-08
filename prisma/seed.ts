@@ -3,14 +3,29 @@
  *
  *   npm run db:seed        -> owner + front-desk sign-in accounts only (safe for production)
  *   npm run db:seed:demo   -> also a sample hotel profile, rooms, guests, bookings and payments for trying the software
+ *
+ * Everything goes into the first hotel (created as "My Hotel" if there is none).
+ * More hotels are added from the software provider's panel at /platform.
  */
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { currentHotelId, prisma, rawPrisma, runForHotel } from "../src/lib/db";
 import { addDays, dateFromKey, todayKey } from "../src/lib/dates";
 import { computeFolio, parseGstSlabs, priceNights } from "../src/lib/pricing";
 
-const prisma = new PrismaClient();
 const withDemo = process.argv.includes("--demo");
+
+async function firstHotel() {
+  const existing = await rawPrisma.hotel.findFirst({ orderBy: { createdAt: "asc" } });
+  return (
+    existing ??
+    rawPrisma.hotel.create({ data: { name: "My Hotel", slug: "my-hotel", billingStart: todayKey("Asia/Kolkata").slice(0, 7) } })
+  );
+}
+
+async function nextBookingNumber() {
+  const hotel = await rawPrisma.hotel.update({ where: { id: currentHotelId() }, data: { bookingSeq: { increment: 1 } } });
+  return hotel.bookingSeq;
+}
 
 const ROOMS = [
   { roomNumber: "101", type: "single", floor: "Ground", capacity: 1, pricePerNight: 1800, amenities: ["WiFi", "AC", "TV", "Hot Water"], description: "Cosy room for one with a comfortable single bed." },
@@ -26,15 +41,17 @@ const ROOMS = [
 ];
 
 async function seedBasics() {
-  await prisma.staff.upsert({
+  const hotelId = currentHotelId();
+  // Sign-in emails are unique across all hotels, so look them up without the hotel filter.
+  await rawPrisma.staff.upsert({
     where: { email: "admin@hotel.com" },
     update: {},
-    create: { email: "admin@hotel.com", passwordHash: await bcrypt.hash("admin123", 10), name: "Anil Sharma", role: "admin" },
+    create: { hotelId, email: "admin@hotel.com", passwordHash: await bcrypt.hash("admin123", 10), name: "Anil Sharma", role: "admin" },
   });
-  await prisma.staff.upsert({
+  await rawPrisma.staff.upsert({
     where: { email: "staff@hotel.com" },
     update: {},
-    create: { email: "staff@hotel.com", passwordHash: await bcrypt.hash("staff123", 10), name: "Pooja Verma", role: "staff" },
+    create: { hotelId, email: "staff@hotel.com", passwordHash: await bcrypt.hash("staff123", 10), name: "Pooja Verma", role: "staff" },
   });
 
   // Everything below is demo content: a sample hotel profile and rooms.
@@ -42,12 +59,12 @@ async function seedBasics() {
 
   if ((await prisma.room.count()) === 0) {
     for (const r of ROOMS) {
-      await prisma.room.create({ data: { ...r, amenities: JSON.stringify(r.amenities) } });
+      await prisma.room.create({ data: { hotelId, ...r, amenities: JSON.stringify(r.amenities) } });
     }
   }
 
   // The migration creates an empty "My Hotel" settings row; fill it in only if nobody has edited it.
-  const current = await prisma.hotelSettings.findUnique({ where: { id: "default" } });
+  const current = await prisma.hotelSettings.findUnique({ where: { hotelId } });
   if (current && current.hotelName !== "My Hotel") return;
   const profile = {
     hotelName: "Sunrise Residency",
@@ -63,7 +80,13 @@ async function seedBasics() {
       websiteAbout:
         "Sunrise Residency is a friendly, family-run hotel a short walk from MG Road metro. Clean rooms, fast WiFi, hot breakfast and 24-hour front desk.",
   };
-  await prisma.hotelSettings.upsert({ where: { id: "default" }, update: profile, create: { id: "default", ...profile } });
+  await prisma.hotelSettings.upsert({ where: { hotelId }, update: profile, create: { hotelId, ...profile } });
+  const hotel = await rawPrisma.hotel.findUniqueOrThrow({ where: { id: hotelId } });
+  const slugFree = !(await rawPrisma.hotel.findUnique({ where: { slug: "sunrise-residency" } }));
+  await rawPrisma.hotel.update({
+    where: { id: hotelId },
+    data: { name: profile.hotelName, city: "Bengaluru", ...(hotel.slug === "my-hotel" && slugFree && { slug: "sunrise-residency" }) },
+  });
 }
 
 const DEMO_GUESTS = [
@@ -126,18 +149,19 @@ async function seedDemo() {
     console.log("Bookings already exist — skipping demo bookings.");
     return;
   }
-  const settings = await prisma.hotelSettings.findUniqueOrThrow({ where: { id: "default" } });
+  const hotelId = currentHotelId();
+  const settings = await prisma.hotelSettings.findUniqueOrThrow({ where: { hotelId } });
   const today = todayKey(settings.timezone);
   const tax = { taxMode: settings.taxMode, taxRate: settings.taxRate, gstSlabs: parseGstSlabs(settings.gstSlabs), extrasTaxRate: settings.extrasTaxRate };
 
   await prisma.seasonalRate.create({
-    data: { name: "Year-end holidays", startDate: dateFromKey(`${today.slice(0, 4)}-12-24`), endDate: dateFromKey(`${today.slice(0, 4)}-12-31`), percent: 25 },
+    data: { hotelId, name: "Year-end holidays", startDate: dateFromKey(`${today.slice(0, 4)}-12-24`), endDate: dateFromKey(`${today.slice(0, 4)}-12-31`), percent: 25 },
   });
 
   const guests = [];
-  for (const g of DEMO_GUESTS) guests.push(await prisma.guest.create({ data: g }));
+  for (const g of DEMO_GUESTS) guests.push(await prisma.guest.create({ data: { hotelId, ...g } }));
   const rooms = Object.fromEntries((await prisma.room.findMany()).map((r) => [r.roomNumber, r]));
-  const owner = await prisma.staff.findUniqueOrThrow({ where: { email: "admin@hotel.com" } });
+  const owner = await rawPrisma.staff.findUniqueOrThrow({ where: { email: "admin@hotel.com" } });
 
   for (const p of DEMO_PLANS) {
     const room = rooms[p.room];
@@ -147,6 +171,8 @@ async function seedDemo() {
 
     const booking = await prisma.booking.create({
       data: {
+        hotelId,
+        number: await nextBookingNumber(),
         guestId: guests[p.guest].id,
         roomId: room.id,
         checkInDate: dateFromKey(checkIn),
@@ -167,12 +193,12 @@ async function seedDemo() {
 
     for (const [category, description, quantity, unitPrice] of p.charges ?? []) {
       await prisma.charge.create({
-        data: { bookingId: booking.id, category, description, quantity, unitPrice, amount: quantity * unitPrice, date: at(addDays(checkIn, 1), 20) },
+        data: { hotelId, bookingId: booking.id, category, description, quantity, unitPrice, amount: quantity * unitPrice, date: at(addDays(checkIn, 1), 20) },
       });
     }
     if (p.advance) {
       await prisma.payment.create({
-        data: { bookingId: booking.id, amount: p.advance[0], method: p.advance[1], type: "advance", receivedBy: owner.name, paidAt: at(addDays(checkIn, p.from >= 0 ? -1 : 0), 12) },
+        data: { hotelId, bookingId: booking.id, amount: p.advance[0], method: p.advance[1], type: "advance", receivedBy: owner.name, paidAt: at(addDays(checkIn, p.from >= 0 ? -1 : 0), 12) },
       });
     }
 
@@ -187,6 +213,7 @@ async function seedDemo() {
       });
       await prisma.bill.create({
         data: {
+          hotelId,
           bookingId: booking.id,
           invoiceNumber: `${settings.invoicePrefix}-${booking.number}`,
           roomCharges: folio.roomTotal,
@@ -203,7 +230,7 @@ async function seedDemo() {
       });
       if (p.settle && folio.balance > 0) {
         await prisma.payment.create({
-          data: { bookingId: booking.id, amount: folio.balance, method: p.settle, type: "balance", receivedBy: owner.name, paidAt: at(checkOut, 10) },
+          data: { hotelId, bookingId: booking.id, amount: folio.balance, method: p.settle, type: "balance", receivedBy: owner.name, paidAt: at(checkOut, 10) },
         });
       }
     }
@@ -218,13 +245,16 @@ async function seedDemo() {
   await prisma.room.update({ where: { id: rooms["203"].id }, data: { housekeeping: "dirty" } });
   await prisma.room.update({ where: { id: rooms["101"].id }, data: { housekeeping: "cleaning", houseKeeperName: "Lakshmi" } });
 
-  await prisma.activityLog.create({ data: { staffId: owner.id, staffName: owner.name, action: "Demo data loaded", details: `${DEMO_PLANS.length} bookings` } });
+  await prisma.activityLog.create({ data: { hotelId, staffId: owner.id, staffName: owner.name, action: "Demo data loaded", details: `${DEMO_PLANS.length} bookings` } });
   console.log(`Demo data created: ${DEMO_GUESTS.length} guests, ${DEMO_PLANS.length} bookings.`);
 }
 
 async function main() {
-  await seedBasics();
-  if (withDemo) await seedDemo();
+  const hotel = await firstHotel();
+  await runForHotel(hotel.id, async () => {
+    await seedBasics();
+    if (withDemo) await seedDemo();
+  });
   console.log("Seed complete. Sign in with:");
   console.log("  Owner / manager: admin@hotel.com / admin123");
   console.log("  Front desk:      staff@hotel.com / staff123");
@@ -237,5 +267,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await rawPrisma.$disconnect();
   });

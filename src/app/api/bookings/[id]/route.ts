@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { dateFromKey, toDateKey } from "@/lib/dates";
@@ -183,6 +183,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           if (body.payment && body.payment.amount > 0) {
             await tx.payment.create({
               data: {
+                hotelId: currentHotelId(),
                 bookingId: id,
                 amount: body.payment.amount,
                 method: body.payment.method,
@@ -203,6 +204,7 @@ export async function POST(request: NextRequest, { params }: Params) {
             where: { bookingId: id },
             update: {},
             create: {
+              hotelId: currentHotelId(),
               bookingId: id,
               invoiceNumber: `${ctx.settings.invoicePrefix}-${booking.number}`,
               roomCharges: folio.roomTotal,

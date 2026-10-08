@@ -1,12 +1,14 @@
-import { prisma } from "./db";
+import { currentHotelId, prisma } from "./db";
 import { parseGstSlabs, type PricingRules, type TaxRules } from "./pricing";
 import { todayKey } from "./dates";
 
+/** The current hotel's profile and preferences (created with defaults on first use). */
 export async function getSettings() {
+  const hotelId = currentHotelId();
   return prisma.hotelSettings.upsert({
-    where: { id: "default" },
+    where: { hotelId },
     update: {},
-    create: { id: "default" },
+    create: { hotelId },
   });
 }
 

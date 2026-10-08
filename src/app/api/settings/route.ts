@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/db";
+import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, withAdmin } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { logActivity } from "@/lib/activity";
@@ -10,7 +10,8 @@ export async function GET() {
   return withAuth(async () => {
     const settings = await getSettings();
     const seasonalRates = await prisma.seasonalRate.findMany({ orderBy: { startDate: "asc" } });
-    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), seasonalRates });
+    const hotel = await prisma.hotel.findUniqueOrThrow({ where: { id: currentHotelId() }, select: { slug: true } });
+    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), seasonalRates, bookingSlug: hotel.slug });
   });
 }
 
@@ -57,8 +58,9 @@ export async function PUT(request: NextRequest) {
       ...(rest.gstin !== undefined && { gstin: rest.gstin ? rest.gstin.toUpperCase() : null }),
       ...(gstSlabs && { gstSlabs: JSON.stringify(gstSlabs) }),
     };
-    await getSettings();
-    const settings = await prisma.hotelSettings.update({ where: { id: "default" }, data });
+    const current = await getSettings();
+    const settings = await prisma.hotelSettings.update({ where: { id: current.id }, data });
+    if (body.hotelName) await prisma.hotel.update({ where: { id: currentHotelId() }, data: { name: body.hotelName } });
     await logActivity(user, "Settings changed", Object.keys(body).join(", "));
     return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs) });
   });
