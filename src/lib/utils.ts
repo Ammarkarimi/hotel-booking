@@ -35,13 +35,14 @@ export function formatDate(date: Date | string): string {
   }).format(new Date(date));
 }
 
-export function formatDateTime(date: Date | string): string {
+export function formatDateTime(date: Date | string, timeZone?: string): string {
   return new Intl.DateTimeFormat("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    ...(timeZone && { timeZone }),
   }).format(new Date(date));
 }
 
