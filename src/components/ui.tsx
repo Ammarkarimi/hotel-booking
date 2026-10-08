@@ -4,7 +4,10 @@ import { cn, label } from "@/lib/utils";
 import { Loader2, X } from "lucide-react";
 import {
   ButtonHTMLAttributes,
+  cloneElement,
   forwardRef,
+  isValidElement,
+  useId,
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
@@ -140,13 +143,22 @@ export function Field({
   className?: string;
   htmlFor?: string;
 }) {
+  // Link the label to a single Input / Select / Textarea so clicking the label
+  // focuses it and screen readers announce the field name.
+  const autoId = useId();
+  let control = children;
+  let target = htmlFor;
+  if (!target && isValidElement<{ id?: string }>(children) && [Input, Select, Textarea].includes(children.type as never)) {
+    target = children.props.id ?? autoId;
+    if (!children.props.id) control = cloneElement(children, { id: target });
+  }
   return (
     <div className={className}>
-      <Label htmlFor={htmlFor}>
+      <Label htmlFor={target}>
         {text}
         {optional && <span className="ml-1 font-normal text-slate-400">(optional)</span>}
       </Label>
-      {children}
+      {control}
       {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </div>
   );
