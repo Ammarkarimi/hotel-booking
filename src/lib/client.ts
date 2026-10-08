@@ -14,8 +14,8 @@ export async function api<T = unknown>(url: string, options: { method?: string; 
   } catch {
     throw new Error("Cannot reach the server. Please check your internet connection.");
   }
-  if (res.status === 401 && typeof window !== "undefined" && !url.includes("/api/auth/login")) {
-    window.location.href = "/login";
+  if (res.status === 401 && typeof window !== "undefined" && !url.includes("/login")) {
+    window.location.href = url.startsWith("/api/platform") ? "/platform/login" : "/login";
     throw new Error("Please sign in again.");
   }
   const data = await res.json().catch(() => ({}));
