@@ -177,7 +177,9 @@ function NewBookingWizard() {
           ...(customRate !== "" && { ratePerNight: Number(customRate) }),
           notes,
           checkInNow: walkIn,
-          ...(guest ? { guestId: guest.id } : { guest: { ...newGuest, idNumber: newGuest.idNumber || undefined } }),
+          ...(guest
+            ? { guestId: guest.id }
+            : { guest: { ...newGuest, idType: newGuest.idNumber ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
           ...(Number(advance) > 0 && { advance: { amount: Number(advance), method } }),
         },
       });

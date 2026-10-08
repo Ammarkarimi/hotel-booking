@@ -480,8 +480,8 @@ function SettingsView() {
     if (!s) return;
     setSaving(true);
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { seasonalRates, ...body } = s;
+      const body: Partial<SettingsDTO> = { ...s };
+      delete body.seasonalRates;
       await api("/api/settings", { method: "PUT", body });
       toast("Settings saved");
       router.refresh();
