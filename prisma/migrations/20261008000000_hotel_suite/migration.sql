@@ -1,5 +1,7 @@
 -- AlterTable
-ALTER TABLE "Bill" ADD COLUMN     "invoiceNumber" TEXT;
+ALTER TABLE "Bill" ADD COLUMN     "extrasTax" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "invoiceNumber" TEXT,
+ADD COLUMN     "roomTax" DOUBLE PRECISION NOT NULL DEFAULT 0;
 
 -- AlterTable
 ALTER TABLE "Booking" ADD COLUMN     "cancelReason" TEXT,
@@ -154,3 +156,6 @@ UPDATE "Room" SET "status" = 'available' WHERE "status" = 'reserved';
 
 -- Hotel settings row.
 INSERT INTO "HotelSettings" ("id", "updatedAt") VALUES ('default', CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING;
+
+-- Existing bills: all tax was on the room.
+UPDATE "Bill" SET "roomTax" = "taxAmount" WHERE "roomTax" = 0;

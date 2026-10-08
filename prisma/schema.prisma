@@ -181,6 +181,8 @@ model Bill {
   additionalCharges Float    @default(0)
   taxRate           Float    @default(12)
   taxAmount         Float
+  roomTax           Float    @default(0)
+  extrasTax         Float    @default(0)
   discount          Float    @default(0)
   totalAmount       Float
   nights            Int
