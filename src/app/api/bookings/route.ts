@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     let result = bookings.map((b) => serializeBooking(b, ctx));
     if (view === "unpaid") {
-      result = result.filter((b) => b.status !== "cancelled" && b.status !== "no_show" && b.folio.balance > 0.5);
+      result = result.filter((b) => (b.status === "checked_in" || b.status === "checked_out") && b.folio.balance > 0.5);
     }
     return NextResponse.json(result);
   });

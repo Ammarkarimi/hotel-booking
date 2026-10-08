@@ -339,12 +339,14 @@ export default async function PrintPage({ params }: Params) {
   const b = serializeBooking(booking, ctx);
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen overflow-x-hidden bg-slate-100">
       <PrintButton />
-      <div className="print-page mx-auto my-6 max-w-3xl rounded-lg bg-white p-10 text-slate-900 shadow">
-        {kind === "invoice" && <Invoice b={b} s={ctx.settings} />}
-        {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} />}
-        {kind === "registration" && <Registration b={b} s={ctx.settings} />}
+      <div className="overflow-x-auto px-2 sm:px-4">
+        <div className="print-page mx-auto my-6 min-w-[640px] max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow sm:p-10">
+          {kind === "invoice" && <Invoice b={b} s={ctx.settings} />}
+          {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} />}
+          {kind === "registration" && <Registration b={b} s={ctx.settings} />}
+        </div>
       </div>
     </div>
   );
