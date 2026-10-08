@@ -1,59 +1,56 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { withAuth, badRequest } from "@/lib/api";
+import { withAuth } from "@/lib/api";
+import { logActivity } from "@/lib/activity";
+import { guestData, guestSchema } from "@/lib/guests";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search");
+    const search = searchParams.get("search")?.trim();
+    const limit = Math.min(500, Number(searchParams.get("limit")) || 200);
+
+    let where: Prisma.GuestWhereInput | undefined;
+    if (search) {
+      const words = search.split(/\s+/).filter(Boolean);
+      where = {
+        AND: words.map((w) => ({
+          OR: [
+            { firstName: { contains: w, mode: "insensitive" } },
+            { lastName: { contains: w, mode: "insensitive" } },
+            { phone: { contains: w } },
+            { email: { contains: w, mode: "insensitive" } },
+            { idNumber: { contains: w, mode: "insensitive" } },
+            { company: { contains: w, mode: "insensitive" } },
+          ],
+        })),
+      };
+    }
 
     const guests = await prisma.guest.findMany({
-      where: search
-        ? {
-            OR: [
-              { firstName: { contains: search } },
-              { lastName: { contains: search } },
-              { phone: { contains: search } },
-              { email: { contains: search } },
-            ],
-          }
-        : undefined,
-      orderBy: { createdAt: "desc" },
+      where,
+      orderBy: { updatedAt: "desc" },
+      take: limit,
       include: {
         documents: true,
-        bookings: {
-          orderBy: { createdAt: "desc" },
-          take: 5,
-          include: { room: true },
-        },
+        _count: { select: { bookings: true } },
+        bookings: { orderBy: { checkInDate: "desc" }, take: 1, include: { room: true } },
       },
     });
-
     return NextResponse.json(guests);
   });
 }
 
 export async function POST(request: NextRequest) {
-  return withAuth(async () => {
-    const body = await request.json();
-    const { firstName, lastName, email, phone, nationality, address } = body;
-
-    if (!firstName || !lastName || !phone) {
-      return badRequest("First name, last name, and phone are required");
-    }
-
+  return withAuth(async (user) => {
+    const body = guestSchema.parse(await request.json());
+    const data = guestData(body);
     const guest = await prisma.guest.create({
-      data: {
-        firstName,
-        lastName,
-        email: email || null,
-        phone,
-        nationality: nationality || "Indian",
-        address: address || null,
-      },
+      data: { ...data, firstName: body.firstName, phone: body.phone },
       include: { documents: true },
     });
-
-    return NextResponse.json(guest);
+    await logActivity(user, "Guest added", `${guest.firstName} ${guest.lastName}`.trim());
+    return NextResponse.json(guest, { status: 201 });
   });
 }

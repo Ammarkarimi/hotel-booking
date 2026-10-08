@@ -31,7 +31,12 @@ export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
-  return verifySessionToken(token);
+  const session = await verifySessionToken(token);
+  if (!session) return null;
+  // Removed or disabled staff lose access immediately, and role changes apply.
+  const staff = await prisma.staff.findUnique({ where: { id: session.id } });
+  if (!staff || !staff.active) return null;
+  return { id: staff.id, email: staff.email, name: staff.name, role: staff.role };
 }
 
 export async function requireSession(): Promise<SessionUser> {
@@ -43,8 +48,8 @@ export async function requireSession(): Promise<SessionUser> {
 }
 
 export async function login(email: string, password: string): Promise<SessionUser | null> {
-  const staff = await prisma.staff.findUnique({ where: { email } });
-  if (!staff) return null;
+  const staff = await prisma.staff.findUnique({ where: { email: email.trim().toLowerCase() } });
+  if (!staff || !staff.active) return null;
 
   const valid = await verifyPassword(password, staff.passwordHash);
   if (!valid) return null;
