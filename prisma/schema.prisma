@@ -8,46 +8,102 @@ datasource db {
 }
 
 model Staff {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
   passwordHash String
   name         String
-  role         String   @default("staff") // admin, staff
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  role         String        @default("staff") // admin, staff
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  activities   ActivityLog[]
+}
+
+// Single row (id = "default") holding the hotel's profile and preferences.
+model HotelSettings {
+  id                 String   @id @default("default")
+  hotelName          String   @default("My Hotel")
+  tagline            String?
+  address            String?
+  city               String?
+  phone              String?
+  email              String?
+  gstin              String?
+  currency           String   @default("INR")
+  timezone           String   @default("Asia/Kolkata")
+  taxMode            String   @default("flat") // flat, india_gst
+  taxRate            Float    @default(12) // used when taxMode = flat
+  gstSlabs           String   @default("[{\"upTo\":1000,\"rate\":0},{\"upTo\":7500,\"rate\":5},{\"upTo\":null,\"rate\":18}]")
+  extrasTaxRate      Float    @default(5) // tax on food, laundry and other extras
+  weekendSurcharge   Float    @default(0) // % change on Friday & Saturday nights
+  checkInTime        String   @default("12:00")
+  checkOutTime       String   @default("11:00")
+  invoicePrefix      String   @default("INV")
+  bookingTerms       String?
+  websiteEnabled     Boolean  @default(true)
+  websiteAbout       String?
+  updatedAt          DateTime @updatedAt
+}
+
+// Date ranges where room prices go up or down (festivals, holidays, off-season).
+model SeasonalRate {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date // inclusive
+  roomType  String? // null = all room types
+  percent   Float // +20 = 20% more expensive, -10 = 10% cheaper
+  createdAt DateTime @default(now())
 }
 
 model Room {
-  id              String    @id @default(cuid())
-  roomNumber      String    @unique
-  type            String    // single, double, suite, deluxe, family
-  pricePerNight   Float
-  amenities       String    @default("[]") // JSON array stored as string
-  status          String    @default("available") // available, occupied, maintenance, reserved, housekeeping
-  houseKeeperName String?   // assigned housekeeper for cleaning
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  bookings        Booking[]
+  id                String    @id @default(cuid())
+  roomNumber        String    @unique
+  type              String // single, double, twin, suite, deluxe, family, dormitory
+  floor             String?
+  capacity          Int       @default(2)
+  pricePerNight     Float
+  description       String?
+  amenities         String    @default("[]") // JSON array stored as string
+  status            String    @default("available") // available, occupied, maintenance
+  housekeeping      String    @default("clean") // clean, dirty, cleaning
+  houseKeeperName   String?
+  housekeepingNotes String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  bookings          Booking[]
 }
 
 model Guest {
-  id          String          @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String
-  nationality String          @default("Indian")
-  address     String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
-  documents   GuestDocument[]
-  bookings    Booking[]
+  id            String          @id @default(cuid())
+  firstName     String
+  lastName      String          @default("")
+  email         String?
+  phone         String
+  nationality   String          @default("Indian")
+  address       String?
+  idType        String?
+  idNumber      String?
+  company       String?
+  gstin         String?
+  dateOfBirth   DateTime?       @db.Date
+  passportNo    String?
+  visaNo        String?
+  notes         String?
+  vip           Boolean         @default(false)
+  blacklisted   Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  documents     GuestDocument[]
+  bookings      Booking[]
+
+  @@index([phone])
 }
 
 model GuestDocument {
   id        String   @id @default(cuid())
   guestId   String
-  type      String   // aadhar, pan, passport
+  type      String // aadhar, pan, passport, driving_licence, voter_id, visa, other
   fileName  String
   filePath  String
   mimeType  String?
@@ -56,40 +112,70 @@ model GuestDocument {
 }
 
 model Booking {
-  id              String    @id @default(cuid())
-  guestId         String
-  roomId          String
-  checkInDate     DateTime
-  checkOutDate    DateTime
-  actualCheckIn   DateTime?
-  actualCheckOut  DateTime?
-  status          String    @default("reserved") // reserved, checked_in, checked_out, cancelled
-  adults          Int       @default(1)
-  children        Int       @default(0)
-  notes           String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  guest           Guest     @relation(fields: [guestId], references: [id])
-  room            Room      @relation(fields: [roomId], references: [id])
-  payments        Payment[]
-  bill            Bill?
+  id             String        @id @default(cuid())
+  number         Int           @unique @default(autoincrement())
+  publicToken    String        @unique @default(cuid())
+  guestId        String
+  roomId         String
+  checkInDate    DateTime
+  checkOutDate   DateTime
+  actualCheckIn  DateTime?
+  actualCheckOut DateTime?
+  status         String        @default("reserved") // reserved, checked_in, checked_out, cancelled, no_show
+  source         String        @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
+  ratePerNight   Float         @default(0) // agreed base price per night
+  fixedRate      Boolean       @default(false) // true = ignore weekend / seasonal price changes
+  discount       Float         @default(0)
+  adults         Int           @default(1)
+  children       Int           @default(0)
+  notes          String?
+  cancelReason   String?
+  createdById    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  guest          Guest         @relation(fields: [guestId], references: [id])
+  room           Room          @relation(fields: [roomId], references: [id])
+  payments       Payment[]
+  charges        Charge[]
+  bill           Bill?
+
+  @@index([roomId, checkInDate, checkOutDate])
+  @@index([status])
+}
+
+// Extra items added to a guest's bill (food, laundry, minibar, etc).
+model Charge {
+  id          String   @id @default(cuid())
+  bookingId   String
+  category    String   @default("other") // food, laundry, minibar, transport, extra_bed, damage, other
+  description String
+  quantity    Float    @default(1)
+  unitPrice   Float
+  amount      Float
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
-  id        String   @id @default(cuid())
-  bookingId String
-  amount    Float
-  method    String   // cash, card, upi, bank_transfer, other
-  type      String   @default("advance") // advance, balance, full
-  status    String   @default("completed") // pending, completed, failed
-  notes     String?
-  paidAt    DateTime @default(now())
-  createdAt DateTime @default(now())
-  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  bookingId  String
+  amount     Float
+  method     String // cash, card, upi, bank_transfer, other
+  type       String   @default("advance") // advance, balance, full, refund
+  status     String   @default("completed") // pending, completed, failed
+  reference  String?
+  notes      String?
+  receivedBy String?
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 }
 
+// Final invoice snapshot created when the guest checks out.
 model Bill {
   id                String   @id @default(cuid())
+  invoiceNumber     String?  @unique
   bookingId         String   @unique
   roomCharges       Float
   additionalCharges Float    @default(0)
@@ -100,4 +186,16 @@ model Bill {
   nights            Int
   generatedAt       DateTime @default(now())
   booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  staffId   String?
+  staffName String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+  staff     Staff?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
 }
