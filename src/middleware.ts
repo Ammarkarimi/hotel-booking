@@ -2,16 +2,23 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_NAME, verifySessionToken } from "@/lib/session";
 
-const publicPaths = ["/login", "/api/auth/login"];
+// Pages and APIs anyone can open without signing in (the guest booking website).
+const publicPaths = ["/login", "/api/auth/login", "/book", "/api/public"];
+
+function isPublic(pathname: string) {
+  return publicPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (
-    publicPaths.some((p) => pathname.startsWith(p)) ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon")
-  ) {
+  if (isPublic(pathname) || pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
+    if (pathname === "/login") {
+      const token = request.cookies.get(COOKIE_NAME)?.value;
+      if (token && (await verifySessionToken(token))) {
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    }
     return NextResponse.next();
   }
 
@@ -19,20 +26,16 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifySessionToken(token) : null;
 
   if (!session && pathname.startsWith("/api/")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
   }
 
-  if (!session && !pathname.startsWith("/api/")) {
+  if (!session) {
     return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (session && pathname === "/login") {
-    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
 };
