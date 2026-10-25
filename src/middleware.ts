@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { COOKIE_NAME, PLATFORM_COOKIE_NAME, verifyPlatformToken, verifySessionToken } from "@/lib/session";
 
-// Pages and APIs anyone can open without signing in (the guest booking website).
-const publicPaths = ["/login", "/api/auth/login", "/book", "/api/public"];
+// Pages and APIs anyone can open without signing in (the guest booking website and the
+// public landing page with its video and images).
+const publicPaths = ["/login", "/api/auth/login", "/book", "/api/public", "/welcome"];
 
 // The software provider's panel. It has its own sign-in; hotel accounts never get in.
 const platformPaths = ["/platform", "/api/platform"];
@@ -53,6 +54,8 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!session) {
+    // Visitors to the home page see the landing page; hotel staff who are signed in see Today.
+    if (pathname === "/") return NextResponse.rewrite(new URL("/welcome", request.url));
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

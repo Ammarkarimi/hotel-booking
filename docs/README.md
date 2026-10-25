@@ -16,7 +16,7 @@ how it is hosted, how to fix common problems, and how it is built.
 
 | What | Where |
 |---|---|
-| Live site | <https://hotel-booking-8fzz.vercel.app> |
+| Live site and landing page | <https://hotel-booking-8fzz.vercel.app> (signed-out visitors see the landing page with the video tour) |
 | Your owner panel | <https://hotel-booking-8fzz.vercel.app/platform> |
 | Hotel staff sign-in | <https://hotel-booking-8fzz.vercel.app/login> |
 | A hotel’s booking website | `https://hotel-booking-8fzz.vercel.app/book/<hotel-name>`, e.g. `/book/jd` |

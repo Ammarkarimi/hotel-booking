@@ -29,6 +29,7 @@ src/
 │   │   ├── [hotel]/           # A hotel's public booking website
 │   │   └── confirmation/[token]/
 │   ├── print/[kind]/[id]/     # invoice | confirmation | registration
+│   ├── welcome/               # Public landing page (shown at / to signed-out visitors)
 │   ├── login/
 │   └── api/                   # JSON API (see below)
 ├── components/                # UI kit (ui.tsx), app shell, booking actions, platform-ui
@@ -42,12 +43,14 @@ src/
 │   ├── pricing.ts, dates.ts   # Pricing, GST, date keys (pure)
 │   ├── reports.ts, settings.ts, public.ts, api.ts, …
 │   └── __tests__/             # Unit tests
-└── middleware.ts              # Sends signed-out visitors to the right sign-in page
+└── middleware.ts              # Signed-out visitors: / shows the landing page, other pages go to sign-in
 prisma/
 ├── schema.prisma
 ├── migrations/
 └── seed.ts                    # Starter accounts (+ demo hotel with --demo)
 scripts/vercel-build.mjs       # Build script used by Vercel
+scripts/tour/                  # Records the landing-page video and screenshots
+public/welcome/                # Landing-page video (MP4 + WebM), poster and screenshots
 ```
 
 ## Data model
@@ -210,6 +213,34 @@ Demo sign-ins:
 | `npm run db:migrate:dev` | Create a new migration after editing the schema (development only) |
 | `npm run db:seed` | Starter sign-ins for the first hotel (safe for production) |
 | `npm run db:seed:demo` | Also demo rooms, guests and bookings (never in production) |
+
+## Landing page and video tour
+
+Signed-out visitors to `/` see the landing page (`src/app/welcome/`); the middleware
+rewrites `/` to `/welcome` for them, so the address stays `/`. Signed-in hotel staff
+still get the Today screen at `/`. `/welcome` and everything in `public/welcome/` are
+public.
+
+The page reads `SALES_WHATSAPP` and `SALES_EMAIL` at build time, so redeploy after
+changing them.
+
+The video (`public/welcome/hotel-manager-tour.mp4`, plus a WebM copy for browsers
+without H.264) and the screenshots are recorded from the real app with the demo hotel.
+Re-record them after changing the screens:
+
+```bash
+# an empty local database, then:
+npm run db:setup:dev
+npm run build && npm start                      # in one terminal
+npm i --no-save playwright && npx playwright install chromium
+node scripts/tour/capture-screens.mjs http://localhost:3000   # needs Python + Pillow
+npm run db:seed:demo                            # only if the database was used since seeding
+node scripts/tour/record-tour.mjs http://localhost:3000       # needs ffmpeg
+```
+
+The recording changes the demo data (it books, checks in and checks out guests), so
+start from a freshly seeded database each time. It prints new chapter times: paste
+them into `CHAPTERS` in `src/app/welcome/tour.tsx`.
 
 ## Changing the database schema
 
