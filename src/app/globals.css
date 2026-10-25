@@ -21,6 +21,11 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
 
+/* Display face for the public landing page (set by next/font on the page wrapper) */
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+}
+
 /* Bigger, clearer focus ring for keyboard users */
 :focus-visible {
   outline: 3px solid var(--color-primary-300);

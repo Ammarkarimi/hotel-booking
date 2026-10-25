@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Hotel } from "lucide-react";
 import { Button, Card, CardContent, Field, Input } from "@/components/ui";
@@ -85,6 +86,12 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff. Owners can ask their software provider.</p>
+          <p className="mt-3 text-center text-sm text-slate-500">
+            New to Hotel Manager?{" "}
+            <Link href="/welcome" className="font-semibold text-primary-600 hover:underline">
+              See how it works
+            </Link>
+          </p>
 
           {SHOW_DEMO && (
             <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
