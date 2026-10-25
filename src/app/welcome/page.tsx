@@ -39,12 +39,12 @@ import { PlayTourButton, TourPlayer } from "./tour";
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: { absolute: "Hotel Manager · Simple hotel software for small hotels" },
+  title: { absolute: "Hotel Manager · Hotel software for boutique and premium hotels" },
   description:
-    "Bookings, check-in, GST invoices, housekeeping, reports and your own booking website. Hotel software your front desk can learn in one shift.",
+    "Reservations, arrivals, polished GST invoices, housekeeping, owner reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
   openGraph: {
-    title: "Hotel Manager · Simple hotel software for small hotels",
-    description: "Bookings, check-in, GST invoices, housekeeping, reports and your own booking website, in one simple app.",
+    title: "Hotel Manager · Hotel software for boutique and premium hotels",
+    description: "Effortless front desk software for boutique hotels, resorts and premium stays, with your own commission-free booking website.",
     images: [{ url: "/welcome/og-image.jpg", width: 1280, height: 720 }],
   },
 };
@@ -53,53 +53,53 @@ export const metadata: Metadata = {
 const salesWhatsapp = (process.env.SALES_WHATSAPP || "").replace(/[^\d]/g, "");
 const salesEmail = (process.env.SALES_EMAIL || "").trim();
 const whatsappHref = salesWhatsapp
-  ? `https://wa.me/${salesWhatsapp}?text=${encodeURIComponent("Hello, I'd like to know more about Hotel Manager for my hotel.")}`
+  ? `https://wa.me/${salesWhatsapp}?text=${encodeURIComponent("Hello, I'd like a demo of Hotel Manager for my property.")}`
   : null;
-const emailHref = salesEmail ? `mailto:${salesEmail}?subject=${encodeURIComponent("Hotel Manager for my hotel")}` : null;
+const emailHref = salesEmail ? `mailto:${salesEmail}?subject=${encodeURIComponent("Hotel Manager demo for my property")}` : null;
 
 const FEATURE_GROUPS = [
   {
     title: "Front desk",
     items: [
-      { icon: ClipboardCheck, name: "Today screen", text: "Arrivals, departures, free rooms and today's money, all on one screen." },
-      { icon: CalendarPlus, name: "Bookings in under a minute", text: "Dates, room, guest name and phone. Walk-ins are checked in straight away." },
-      { icon: CalendarDays, name: "Room calendar", text: "Every room for the next two weeks. Tap a free day to book it." },
-      { icon: DoorOpen, name: "One-tap check-in and check-out", text: "Reminders when a room isn't clean or the ID proof is missing." },
-      { icon: Repeat, name: "Extend, move or cancel", text: "Change dates, move rooms, early check-outs, cancellations and no-shows." },
-      { icon: ShieldCheck, name: "No double bookings", text: "Two people can never book the same room for the same night." },
+      { icon: ClipboardCheck, name: "Today screen", text: "Every arrival, departure, ready room and today's takings, on one calm screen." },
+      { icon: CalendarPlus, name: "Reservations in under a minute", text: "Dates, room and guest details. Walk-in guests are welcomed and checked in straight away." },
+      { icon: CalendarDays, name: "Room calendar", text: "Every room, two weeks ahead. Tap an open night to reserve it." },
+      { icon: DoorOpen, name: "One-tap arrivals and departures", text: "A gentle reminder if a room isn't ready or the guest's ID is missing." },
+      { icon: Repeat, name: "Extend, move or cancel", text: "Stay extensions, room moves, early departures, cancellations and no-shows." },
+      { icon: ShieldCheck, name: "Zero double bookings", text: "The same room can never be sold twice for the same night." },
     ],
   },
   {
-    title: "Bills, payments and GST",
+    title: "Billing, payments and GST",
     items: [
-      { icon: Receipt, name: "Bills that add themselves up", text: "Room nights, weekend and festival prices, discounts and taxes." },
-      { icon: UtensilsCrossed, name: "Food, laundry and extras", text: "Add anything the guest orders to their bill, with the right tax." },
-      { icon: Wallet, name: "Advance, part payments and refunds", text: "Cash, UPI, card or bank transfer, with the balance always shown." },
-      { icon: FileText, name: "GST tax invoice", text: "Hotel and guest GSTIN, CGST and SGST, SAC codes and the amount in words." },
-      { icon: IndianRupee, name: "Cash drawer totals", text: "Today's money split by cash, UPI and card at the end of every shift." },
-      { icon: Tags, name: "Your prices, your rules", text: "Automatic GST slabs, weekend prices and special prices for festivals." },
+      { icon: Receipt, name: "Guest bills that total themselves", text: "Room nights, weekend and festive rates, discounts and taxes, always correct." },
+      { icon: UtensilsCrossed, name: "Dining, laundry and extras", text: "Add anything the guest enjoys to their bill, with the right tax." },
+      { icon: Wallet, name: "Advances, part payments and refunds", text: "Cash, UPI, card or bank transfer, with the balance always clear." },
+      { icon: FileText, name: "Polished GST invoices", text: "Your GSTIN and the guest's, CGST and SGST, SAC codes and the amount in words." },
+      { icon: IndianRupee, name: "Shift cash-up", text: "Takings split by cash, UPI and card at the end of every shift." },
+      { icon: Tags, name: "Your rates, your rules", text: "Weekend and festive rates, with GST slabs applied automatically." },
     ],
   },
   {
-    title: "Guests",
+    title: "Guest experience",
     items: [
-      { icon: Users, name: "Guest records", text: "Every stay, night and payment. Returning guests are found by phone number." },
-      { icon: Camera, name: "ID proof from the phone camera", text: "Take a photo of Aadhaar, passport or licence and keep it with the guest." },
-      { icon: Globe, name: "Foreign guests", text: "Registration card with passport and visa details to help with Form C." },
-      { icon: MessageCircle, name: "WhatsApp in one tap", text: "Send booking confirmations and bill details with the message ready." },
-      { icon: Star, name: "VIP and “do not allow”", text: "Flags that warn staff about special or unwanted guests." },
-      { icon: FileDown, name: "Print or save as PDF", text: "Invoices, booking confirmations and registration cards." },
+      { icon: Users, name: "Guest history", text: "Every stay and payment on record. Returning guests are recognised by their phone number." },
+      { icon: Camera, name: "ID capture with the camera", text: "Photograph Aadhaar, passport or licence at the desk and keep it securely with the guest." },
+      { icon: Globe, name: "International guests", text: "Registration cards with passport and visa details, ready for Form C." },
+      { icon: MessageCircle, name: "WhatsApp in one tap", text: "Booking confirmations and bill details, sent with the message already written." },
+      { icon: Star, name: "VIP and “do not allow” flags", text: "Staff know at a glance who deserves extra care, and who should not be admitted." },
+      { icon: FileDown, name: "Print or save as PDF", text: "Invoices, confirmations and registration cards that look as good as your property." },
     ],
   },
   {
-    title: "Running the hotel",
+    title: "Owner control",
     items: [
-      { icon: Sparkles, name: "Housekeeping board", text: "Rooms are marked for cleaning at check-out. Rooms with arrivals come first." },
-      { icon: BarChart3, name: "Owner reports", text: "How full you were, average room price, earnings and who still owes money." },
-      { icon: FileDown, name: "Downloads for Excel", text: "Bookings, payments and GST invoices for your accountant." },
-      { icon: UserCog, name: "Staff sign-ins", text: "Front desk can't see reports, change prices or delete payments." },
-      { icon: History, name: "Activity history", text: "Every booking, payment and change, with who did it and when." },
-      { icon: Globe, name: "Your own booking website", text: "Guests book you directly from their phone. No commission." },
+      { icon: Sparkles, name: "Housekeeping board", text: "Rooms are queued for cleaning at check-out, with today's arrivals prepared first." },
+      { icon: BarChart3, name: "Owner reports", text: "Occupancy, average room rate, revenue and outstanding balances, from anywhere." },
+      { icon: FileDown, name: "Exports for your accountant", text: "Bookings, payments and GST invoices, ready for Excel." },
+      { icon: UserCog, name: "Role-based staff access", text: "Front desk staff can't see reports, change rates or delete payments." },
+      { icon: History, name: "Complete audit trail", text: "Every booking, payment and change, with who made it and when." },
+      { icon: Globe, name: "Your own booking website", text: "Guests book you directly from their phone, with no commission." },
     ],
   },
 ];
@@ -108,111 +108,111 @@ const SPOTLIGHTS = [
   {
     image: "/welcome/today.webp",
     eyebrow: "Today screen",
-    title: "Know what to do the moment you open it",
-    text: "The Today screen lists who is arriving and who is leaving, with big Check in and Check out buttons. It also shows which rooms are free tonight, which need cleaning, and how much money came in today.",
-    points: ["Arrivals and departures with one-tap buttons", "Colour-coded board of every room", "Money received and money still to collect"],
+    title: "Your whole property, the moment you sign in",
+    text: "The Today screen shows who is arriving and departing, with clear Check in and Check out buttons. Alongside, you see which rooms are ready tonight, which are being cleaned and what has been collected today.",
+    points: ["Arrivals and departures, one tap each", "Live colour-coded board of every room", "Takings received and balances still due"],
   },
   {
     image: "/welcome/new-booking.webp",
-    eyebrow: "New booking",
-    title: "Take a booking while the guest is still on the phone",
-    text: "Four simple steps: dates, a free room, the guest's name and phone, then the advance. Every free room shows its total price, so you can quote straight away.",
-    points: ["Quick buttons for 1, 2, 3 or 7 nights", "Returning guests found by phone number", "Confirmation sent on WhatsApp in one tap"],
+    eyebrow: "New reservation",
+    title: "Confirm a reservation before the call ends",
+    text: "Four quick steps: dates, an available room, the guest's details and the advance. Every available room shows its full price, so you can quote with confidence.",
+    points: ["Quick picks for 1, 2, 3 or 7 nights", "Returning guests recognised by phone number", "Confirmation sent on WhatsApp in one tap"],
   },
   {
     image: "/welcome/calendar.webp",
     eyebrow: "Room calendar",
-    title: "See every room at a glance",
-    text: "Each room is a row and each day is a column. Coloured bars show who is booked, who is staying and who has left. Tap any empty box to book that room for that day.",
-    points: ["How many rooms are free each day", "Rooms under repair are blocked", "Rooms that need cleaning are marked"],
+    title: "Every room, every night, at a glance",
+    text: "Each room is a row and each day a column. Coloured bars show upcoming, in-house and departed guests. Tap any open night to reserve that room.",
+    points: ["Availability for every day", "Rooms under maintenance blocked off", "Rooms awaiting housekeeping marked"],
   },
   {
     image: "/welcome/booking.webp",
     eyebrow: "Guest bill",
-    title: "A bill that adds itself up",
-    text: "Room nights, weekend and festival prices, discounts, food and laundry are all added with the right tax. Take payments as they come and always see what is still to pay.",
-    points: ["Extras added from the front desk", "Advance, part payments and refunds", "Extend the stay or move rooms anytime"],
+    title: "A guest bill that's always right",
+    text: "Room nights, weekend and festive rates, discounts, dining and laundry are all added with the correct tax. Take payments as they come, and the balance is always clear.",
+    points: ["Extras added from the front desk", "Advances, part payments and refunds", "Extend the stay or move rooms anytime"],
   },
   {
     image: "/welcome/invoice.webp",
     eyebrow: "GST invoice",
-    title: "GST invoices your accountant will like",
-    text: "A proper tax invoice with your GSTIN and the guest's, SAC codes, CGST and SGST, and the amount in words. GST slabs are picked automatically from the room price.",
+    title: "Invoices worthy of your brand",
+    text: "A proper GST tax invoice with your GSTIN and the guest's, SAC codes, CGST and SGST, and the amount in words. The GST slab is chosen automatically from the room rate.",
     points: ["Print or save as PDF", "Booking confirmation and registration card too", "GST invoice list ready for Excel"],
   },
   {
     image: "/welcome/housekeeping.webp",
     eyebrow: "Housekeeping",
-    title: "Rooms ready on time",
-    text: "When a guest checks out, the room moves to Needs cleaning. Rooms with guests arriving today come first. Cleaners tap Start cleaning and Mark clean from their own phone.",
-    points: ["Assign a cleaner and leave a note", "Arrivals today shown first", "Front desk sees which rooms are ready"],
+    title: "Every room ready before the guest is",
+    text: "When a guest checks out, the room moves to Needs cleaning, with rooms for today's arrivals at the top. Housekeepers tap Start cleaning and Mark clean on their own phone.",
+    points: ["Assign a housekeeper and leave a note", "Today's arrivals prepared first", "Front desk sees the moment a room is ready"],
   },
   {
     image: "/welcome/reports.webp",
     eyebrow: "Owner reports",
-    title: "See how your hotel is really doing",
-    text: "Owners see occupancy, room earnings, average price per night, money received and money owed, from anywhere. Front desk staff don't see these numbers.",
-    points: ["Where bookings came from and how guests paid", "GST summary for any period", "Download everything for Excel"],
+    title: "Your property's performance, wherever you are",
+    text: "Owners see occupancy, room revenue, average rate per night, collections and balances due, from anywhere. Front desk staff never see these figures.",
+    points: ["Booking sources and payment methods", "GST summary for any period", "Export everything to Excel"],
   },
 ];
 
 const STEPS = [
-  { title: "We set up your hotel", text: "You get your own sign-in and your booking website link on WhatsApp." },
-  { title: "Add your rooms and prices", text: "A short checklist on the first screen guides you. It takes about 10 minutes." },
-  { title: "Start taking bookings", text: "Add your staff, share your booking link, and run the front desk from any phone." },
+  { title: "We set up your property", text: "We prepare your account and send your sign-in and booking website link on WhatsApp." },
+  { title: "Add your rooms and rates", text: "A short guided checklist on the first screen. It takes about 10 minutes." },
+  { title: "Welcome your first guests", text: "Invite your team, share your booking link and run the front desk from any device." },
 ];
 
 type Cell = boolean | string;
 const COMPARISON: Array<{ row: string; paper: Cell; typical: Cell; ours: Cell }> = [
-  { row: "Staff can learn it in one shift", paper: true, typical: "Often needs training", ours: true },
-  { row: "Plain words, no hotel jargon", paper: true, typical: false, ours: true },
-  { row: "Stops double bookings", paper: false, typical: true, ours: true },
-  { row: "GST invoice in one tap", paper: false, typical: true, ours: true },
-  { row: "Works fully on a phone", paper: false, typical: "Sometimes", ours: true },
-  { row: "Your own booking website", paper: false, typical: "Often extra cost", ours: "Included" },
-  { row: "See money and occupancy from anywhere", paper: false, typical: true, ours: true },
+  { row: "New staff confident in one shift", paper: true, typical: "Often needs training", ours: true },
+  { row: "Clear, everyday language", paper: true, typical: false, ours: true },
+  { row: "Zero double bookings", paper: false, typical: true, ours: true },
+  { row: "Polished GST invoice in one tap", paper: false, typical: true, ours: true },
+  { row: "Runs fully on a phone or tablet", paper: false, typical: "Sometimes", ours: true },
+  { row: "Your own commission-free booking website", paper: false, typical: "Often extra cost", ours: "Included" },
+  { row: "Revenue and occupancy from anywhere", paper: false, typical: true, ours: true },
 ];
 
 const FAQS = [
   {
-    q: "Do I need a computer?",
-    a: "No. It works in the browser on any phone, tablet or computer. Many hotels run the front desk on a phone and look at reports on a computer.",
+    q: "Do we need special hardware?",
+    a: "No. It runs in the browser on any phone, tablet or computer. Many properties run the front desk on a tablet while owners review the numbers on their phone.",
   },
   {
-    q: "How long does it take my staff to learn?",
-    a: "Most front-desk staff learn the basics in one shift. The screens use plain words like “Guest arrived” and “Did not come”, every menu item has a hint, and a step-by-step help guide is built in.",
+    q: "How quickly can our team learn it?",
+    a: "Most front desk staff are confident within one shift. The screens use clear words like “Guest arrived” and “Did not come”, every menu item has a hint, and a step-by-step guide is built in.",
   },
   {
-    q: "Can my staff misuse it?",
-    a: "Each person gets their own sign-in. Front-desk staff can't see reports, change prices or delete payments, and every booking, payment and change is recorded with their name.",
+    q: "How do we stay in control of staff?",
+    a: "Each team member has their own sign-in. Front desk staff can't see reports, change rates or delete payments, and every booking, payment and change is recorded with their name.",
   },
   {
-    q: "Is my data private?",
-    a: "Each hotel's data is kept completely separate, and guest ID photos can only be opened by your signed-in staff.",
+    q: "How is guest data protected?",
+    a: "Each property's data is kept completely separate, and guest ID photos can only be opened by your signed-in team.",
   },
   {
     q: "Does it handle GST?",
-    a: "Yes. It picks the GST slab from the room price automatically (you can change the slabs), adds tax to food and extras, and prints tax invoices with CGST, SGST and SAC codes.",
+    a: "Yes. It picks the GST slab from the room rate automatically (you can change the slabs), adds tax to dining and extras, and prints tax invoices with CGST, SGST and SAC codes.",
   },
   {
-    q: "What about foreign guests?",
+    q: "What about international guests?",
     a: "Save their passport and visa details and print a guest registration card with the fields you need for Form C.",
   },
   {
     q: "Does it connect to Booking.com, MakeMyTrip or Airbnb?",
-    a: "Not automatically yet. You add those bookings in a few taps and mark where they came from, so reports show which website sends you the most guests.",
+    a: "Not automatically yet. Bookings from those sites are added in a few taps and tagged by source, so your reports show which channels bring you the most guests.",
   },
   {
     q: "Can guests pay online?",
-    a: "Not yet. Guests pay at the hotel by cash, UPI or card, and you record the payment in one tap. Your booking website shows “pay at hotel”.",
+    a: "Not yet. Guests settle at the property by cash, UPI or card, and you record the payment in one tap. Your booking website shows “pay at hotel”.",
   },
   {
-    q: "Do I need internet?",
-    a: "Yes, a normal mobile data or WiFi connection is enough.",
+    q: "Do we need internet?",
+    a: "Yes, any standard mobile data or WiFi connection is enough.",
   },
   {
     q: "What does it cost?",
-    a: "A simple monthly fee per hotel, with no commission on your bookings. Message us for your price.",
+    a: "A monthly fee per property, with no commission on your bookings. Message us for a quote.",
   },
 ];
 
@@ -314,7 +314,7 @@ export default function WelcomePage() {
                 rel="noopener noreferrer"
                 className="hidden rounded-xl bg-primary-600 px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-primary-700 sm:inline-flex"
               >
-                Get it for your hotel
+                Request a demo
               </a>
             )}
           </div>
@@ -327,14 +327,14 @@ export default function WelcomePage() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pb-24 lg:pt-20">
             <div className="min-w-0">
               <p className="mb-4 inline-flex rounded-full bg-white px-3 py-1 text-sm font-semibold text-primary-700 ring-1 ring-primary-200">
-                For small hotels, guest houses and homestays
+                For boutique hotels, resorts and premium stays
               </p>
               <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                Hotel software your front desk can learn in one shift
+                Effortless operations for exceptional stays
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
-                Bookings, check-in and check-out, GST bills, housekeeping and reports in one simple app that works on any phone. Plus your own booking
-                website, with no commission.
+                Reservations, arrivals, guest bills, GST invoices, housekeeping and owner reports in one refined app, on any device. With your own
+                booking website, guests book you directly and you keep the commission.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-base font-bold text-white shadow-lg hover:bg-primary-700">
@@ -347,12 +347,12 @@ export default function WelcomePage() {
                     rel="noopener noreferrer"
                     className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-6 text-base font-bold text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50"
                   >
-                    <MessageCircle className="h-5 w-5 text-emerald-600" /> Talk to us
+                    <MessageCircle className="h-5 w-5 text-emerald-600" /> Request a demo
                   </a>
                 )}
               </div>
               <ul className="mt-8 grid max-w-lg grid-cols-2 gap-x-6 gap-y-2 text-[15px] text-slate-700">
-                {["No double bookings", "GST tax invoices", "Works on any phone", "WhatsApp ready"].map((t) => (
+                {["Zero double bookings", "Polished GST invoices", "Owner view from anywhere", "WhatsApp guest updates"].map((t) => (
                   <li key={t} className="flex items-center gap-2">
                     <Check className="h-5 w-5 shrink-0 text-emerald-600" /> {t}
                   </li>
@@ -374,10 +374,10 @@ export default function WelcomePage() {
         <section id="tour" className="scroll-mt-16 bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-300">Video tour</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">See a full day at a hotel in under 3 minutes</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in under 3 minutes</h2>
             <p className="mt-3 max-w-2xl text-lg text-slate-300">
-              A guest books online, the front desk checks guests in and out, the bill and GST invoice are made, rooms are cleaned and the owner checks
-              the numbers. Tap a chapter to jump to it.
+              A guest books direct, the front desk welcomes them and checks them out, the bill and GST invoice come together, rooms are turned around and
+              the owner reviews the numbers. Tap a chapter to jump to it.
             </p>
             <div className="mt-10">
               <TourPlayer />
@@ -388,9 +388,9 @@ export default function WelcomePage() {
         {/* All features */}
         <section id="features" className="scroll-mt-16 py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">Everything in one app</p>
+            <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">One refined system</p>
             <h2 className="mt-2 max-w-3xl font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-              Everything a small hotel needs, and nothing it doesn&apos;t
+              Everything a premium hotel needs, without the complexity
             </h2>
             <div className="mt-12 grid gap-12">
               {FEATURE_GROUPS.map((group) => (
@@ -448,17 +448,17 @@ export default function WelcomePage() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="min-w-0">
               <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">Your booking website</p>
-              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Guests book you directly, with no commission</h2>
+              <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Direct bookings, without the commission</h2>
               <p className="mt-4 text-lg leading-relaxed text-slate-600">
-                Every hotel gets its own booking page. Share the link on WhatsApp, Instagram, Google Maps and your visiting card. Guests pick their dates,
-                see live prices and book from their phone. The booking appears in your app straight away.
+                Every property gets its own booking page. Share it on Instagram, WhatsApp, Google Maps and your website. Guests choose their dates, see
+                live rates and book from their phone, and the reservation appears in your app instantly.
               </p>
               <ul className="mt-6 grid gap-3">
                 {[
-                  { icon: Smartphone, text: "Made for phones, where most guests book" },
-                  { icon: BedDouble, text: "Live prices and free rooms, with your facilities and policy" },
-                  { icon: UserCheck, text: "Booking number and confirmation page for the guest" },
-                  { icon: MessageCircle, text: "Call and WhatsApp buttons so guests can reach you" },
+                  { icon: Smartphone, text: "Designed for phones, where most guests book" },
+                  { icon: BedDouble, text: "Live rates and availability, with your amenities and policies" },
+                  { icon: UserCheck, text: "Booking reference and confirmation page for the guest" },
+                  { icon: MessageCircle, text: "Call and WhatsApp buttons so guests can reach you directly" },
                 ].map(({ icon: Icon, text }) => (
                   <li key={text} className="flex items-center gap-3 text-[15px] text-slate-700">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-50 text-primary-600">
@@ -478,7 +478,7 @@ export default function WelcomePage() {
         {/* Getting started */}
         <section className="bg-primary-600 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Up and running the same day</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Live at your property the same day</h2>
             <ol className="mt-10 grid gap-6 md:grid-cols-3">
               {STEPS.map((step, i) => (
                 <li key={step.title} className="rounded-2xl bg-white/10 p-6 ring-1 ring-white/20">
@@ -494,8 +494,8 @@ export default function WelcomePage() {
         {/* Comparison */}
         <section className="py-16 sm:py-24">
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Why hotels switch</h2>
-            <p className="mt-3 text-lg text-slate-600">The ease of a paper register, with everything proper hotel software does.</p>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Why premium properties switch</h2>
+            <p className="mt-3 text-lg text-slate-600">The polish your guests expect, with the simplicity your team needs.</p>
             <div className="mt-8 overflow-x-auto rounded-2xl ring-1 ring-slate-200">
               <table className="w-full min-w-[560px] border-collapse text-left">
                 <thead>
@@ -539,7 +539,7 @@ export default function WelcomePage() {
               {[
                 { k: "GST", v: "Slabs, CGST/SGST, SAC codes" },
                 { k: "Form C", v: "Registration card for foreign guests" },
-                { k: "UPI + WhatsApp", v: "How your guests already pay and talk" },
+                { k: "UPI + WhatsApp", v: "How your guests already pay and stay in touch" },
               ].map((x) => (
                 <div key={x.k} className="rounded-2xl bg-slate-50 p-5 ring-1 ring-slate-200">
                   <p className="font-display text-xl font-bold text-primary-700">{x.k}</p>
@@ -553,7 +553,7 @@ export default function WelcomePage() {
         {/* FAQ */}
         <section id="questions" className="scroll-mt-16 bg-slate-50 py-16 sm:py-24">
           <div className="mx-auto max-w-3xl px-4 sm:px-6">
-            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Questions hotel owners ask</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">Questions owners ask</h2>
             <div className="mt-8 grid gap-3">
               {FAQS.map((f) => (
                 <details key={f.q} className="group rounded-2xl bg-white ring-1 ring-slate-200 open:ring-primary-200">
@@ -573,11 +573,11 @@ export default function WelcomePage() {
         {/* Final call to action */}
         <section className="bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-5xl">Ready to run your hotel the easy way?</h2>
+            <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-5xl">Give your front desk the polish your guests expect</h2>
             <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
               {whatsappHref || emailHref
-                ? "Send us a message and we'll set up your hotel, add your rooms with you and send your sign-in the same day."
-                : "Watch the 3-minute tour to see a full day at a hotel, from the first booking to the owner's reports."}
+                ? "Message us for a private demo. We'll set up your property, add your rooms with you and send your sign-in the same day."
+                : "Watch the 3-minute tour to see a full day at a premium property, from the first booking to the owner's reports."}
             </p>
             <div className="mt-8 flex justify-center">
               <ContactButtons dark />
@@ -595,7 +595,7 @@ export default function WelcomePage() {
       <footer className="border-t border-slate-200 bg-white py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="flex items-center gap-2">
-            <Hotel className="h-4 w-4 text-primary-600" /> Hotel Manager · Simple hotel software for small hotels
+            <Hotel className="h-4 w-4 text-primary-600" /> Hotel Manager · Hotel software for boutique and premium hotels
           </p>
           <div className="flex gap-5">
             <a href="#tour" className="hover:text-slate-900">
