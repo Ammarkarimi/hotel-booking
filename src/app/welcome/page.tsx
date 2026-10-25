@@ -39,11 +39,11 @@ import { PlayTourButton, TourPlayer } from "./tour";
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: { absolute: "Hotel Manager · Simple hotel software for small hotels" },
+  title: { absolute: "Hotel Manager · Hotel software for boutique and premium hotels" },
   description:
     "Bookings, check-in, GST invoices, housekeeping, reports and your own booking website. Hotel software your front desk can learn in one shift.",
   openGraph: {
-    title: "Hotel Manager · Simple hotel software for small hotels",
+    title: "Hotel Manager · Hotel software for boutique and premium hotels",
     description: "Bookings, check-in, GST invoices, housekeeping, reports and your own booking website, in one simple app.",
     images: [{ url: "/welcome/og-image.jpg", width: 1280, height: 720 }],
   },
@@ -327,7 +327,7 @@ export default function WelcomePage() {
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pb-24 lg:pt-20">
             <div className="min-w-0">
               <p className="mb-4 inline-flex rounded-full bg-white px-3 py-1 text-sm font-semibold text-primary-700 ring-1 ring-primary-200">
-                For small hotels, guest houses and homestays
+                For boutique hotels, resorts and premium stays
               </p>
               <h1 className="font-display text-4xl font-extrabold leading-[1.05] tracking-tight text-balance sm:text-5xl lg:text-6xl">
                 Hotel software your front desk can learn in one shift
@@ -390,7 +390,7 @@ export default function WelcomePage() {
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">Everything in one app</p>
             <h2 className="mt-2 max-w-3xl font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-              Everything a small hotel needs, and nothing it doesn&apos;t
+              Everything a premium hotel needs, without the complexity
             </h2>
             <div className="mt-12 grid gap-12">
               {FEATURE_GROUPS.map((group) => (
@@ -595,7 +595,7 @@ export default function WelcomePage() {
       <footer className="border-t border-slate-200 bg-white py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="flex items-center gap-2">
-            <Hotel className="h-4 w-4 text-primary-600" /> Hotel Manager · Simple hotel software for small hotels
+            <Hotel className="h-4 w-4 text-primary-600" /> Hotel Manager · Hotel software for boutique and premium hotels
           </p>
           <div className="flex gap-5">
             <a href="#tour" className="hover:text-slate-900">
