@@ -13,6 +13,10 @@ It is designed for people with **no technical knowledge**: plain words instead
 of hotel jargon, big buttons, one obvious next step on every screen, friendly
 confirmations, and it works on a phone.
 
+Visitors who are not signed in see a **landing page** at `/` with every feature and
+a 3-minute video tour recorded from the real app, so hotel owners can see how it
+works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from it.
+
 > **Full reference guide:** [docs/](docs/README.md) covers the owner panel, the hotel
 > software, hosting, troubleshooting and technical details.
 >
@@ -121,6 +125,8 @@ Sign-in emails are unique across all hotels, so hotel staff simply sign in at
 | `PLATFORM_ADMIN_EMAIL` | For `/platform` | The software provider's sign-in email for the owner panel |
 | `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Its password, at least 10 characters. Changing it signs out open owner-panel sessions |
 | `PLATFORM_TIMEZONE` | No | Time zone that decides "this month" for subscriptions (default `Asia/Kolkata`) |
+| `SALES_WHATSAPP` | Recommended | Your WhatsApp number (with country code) for the landing page's contact buttons |
+| `SALES_EMAIL` | No | Your email, shown on the landing page |
 
 ## Deploying (Vercel + Neon)
 

@@ -36,10 +36,16 @@ After changing any of them, **redeploy**: *Deployments* → latest → ⋯ → *
 | `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Your owner-panel password, at least 10 characters |
 | `PLATFORM_TIMEZONE` | No | Decides what “this month” is for subscriptions. Default `Asia/Kolkata` |
 | `NEXT_PUBLIC_DEMO_MODE` | No | `true` shows demo sign-ins on the login page. Only for a demo site |
+| `SALES_WHATSAPP` | No, but recommended | Your WhatsApp number for the landing page buttons, with country code, e.g. `+91 98765 43210` |
+| `SALES_EMAIL` | No | Your email, shown as a button on the landing page |
 | `STORAGE_DRIVER`, `UPLOAD_DIR` | No | Only for hosting outside Vercel with local file storage |
 
 Without both `PLATFORM_ADMIN_*` values, `/platform` stays locked and its sign-in
 page says so.
+
+Without `SALES_WHATSAPP` and `SALES_EMAIL`, the landing page has no contact buttons:
+visitors can only watch the tour and sign in. Add at least the WhatsApp number before
+you share the link with hotels.
 
 ## Change your owner-panel password
 
