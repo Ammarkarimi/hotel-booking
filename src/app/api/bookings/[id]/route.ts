@@ -7,6 +7,8 @@ import { dateFromKey, toDateKey } from "@/lib/dates";
 import {
   assertRoomFree,
   bookingLabel,
+  checkOutBillingDate,
+  checkOutPreview,
   folioFor,
   loadBooking,
   lockRooms,
@@ -20,13 +22,20 @@ import { BOOKING_SOURCES, PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
 
 type Params = { params: Promise<{ id: string }> };
 
-export async function GET(_request: NextRequest, { params }: Params) {
+export async function GET(request: NextRequest, { params }: Params) {
   return withAuth(async () => {
     const { id } = await params;
     const ctx = await getBillingContext();
     const booking = await loadBooking(id);
     const guest = await prisma.guest.findUnique({ where: { id: booking.guestId }, include: { documents: true } });
-    return NextResponse.json({ ...serializeBooking(booking, ctx), guest, settings: ctx.settings });
+    // ?checkout=1 adds the bill as it would be at check-out today, so the screen shows exactly what will be charged.
+    const wantsCheckout = new URL(request.url).searchParams.get("checkout") === "1" && booking.status === "checked_in";
+    return NextResponse.json({
+      ...serializeBooking(booking, ctx),
+      guest,
+      settings: ctx.settings,
+      ...(wantsCheckout && { checkout: checkOutPreview(booking, ctx) }),
+    });
   });
 }
 
@@ -114,7 +123,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 const actionSchema = z.object({
   action: z.enum(["check_in", "check_out", "cancel", "no_show", "undo_check_in"]),
   reason: z.string().optional(),
-  chargeFullStay: z.boolean().optional(),
+  // Bill up to the booked leaving date instead of today (early leaver paying in full, or late check-out in the app).
+  useBookedDates: z.boolean().optional(),
   payment: z
     .object({
       amount: z.coerce.number().min(0),
@@ -176,9 +186,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
         case "check_out": {
           if (booking.status !== "checked_in") fail("Only guests who are staying can be checked out");
-          const plannedOut = toDateKey(booking.checkOutDate);
-          const leavingEarly = today < plannedOut;
-          const checkOut = leavingEarly && body.chargeFullStay ? plannedOut : today;
+          const checkOut = checkOutBillingDate(booking, today, !!body.useBookedDates);
 
           if (body.payment && body.payment.amount > 0) {
             await tx.payment.create({

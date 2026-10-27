@@ -104,6 +104,22 @@ export async function findAvailableRooms(
     });
 }
 
+/**
+ * The leaving date a check-out bills up to: today (the nights actually stayed),
+ * or the booked leaving date when the guest leaves early but pays for every
+ * booked night, or overstayed in the app but really left on time.
+ */
+export function checkOutBillingDate(booking: { checkOutDate: Date }, today: string, useBookedDates: boolean) {
+  return useBookedDates ? toDateKey(booking.checkOutDate) : today;
+}
+
+/** What the bill will be if the guest checks out today, both ways. Shown before check-out. */
+export function checkOutPreview(booking: FullBooking, ctx: BillingContext) {
+  const billTo = (useBookedDates: boolean) =>
+    folioFor({ ...booking, checkOutDate: dateFromKey(checkOutBillingDate(booking, ctx.today, useBookedDates)), bill: null }, ctx);
+  return { today: ctx.today, stayed: billTo(false), booked: billTo(true) };
+}
+
 /** The live bill for a booking. Checked-out bookings use the frozen invoice. */
 export function folioFor(booking: FullBooking, ctx: BillingContext): Folio {
   const nights = priceNights({
