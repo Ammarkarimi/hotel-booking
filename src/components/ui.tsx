@@ -183,6 +183,48 @@ export function CountInput({
   );
 }
 
+/**
+ * Number field for settings such as tax % that can be cleared and retyped
+ * (no stray leading 0) and, with allowNegative, takes a minus sign like -10.
+ * An empty box reports null; leaving the box shows the saved number again.
+ */
+export function NumberInput({
+  value,
+  onChange,
+  allowNegative,
+  className,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> & {
+  value: number | null;
+  onChange: (value: number | null) => void;
+  allowNegative?: boolean;
+}) {
+  // What the person is typing; null shows the current value.
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      {...props}
+      type="text"
+      // Phone number pads often have no minus key, so negative numbers get the full keyboard.
+      inputMode={allowNegative ? "text" : "decimal"}
+      autoComplete="off"
+      className={cn(fieldClass, "min-h-11", className)}
+      value={draft ?? (value === null ? "" : String(value))}
+      onChange={(e) => {
+        const raw = e.target.value.replace(",", ".").replace(allowNegative ? /[^\d.-]/g : /[^\d.]/g, "");
+        setDraft(raw);
+        if (raw === "") return onChange(null);
+        const n = Number(raw);
+        if (Number.isFinite(n)) onChange(n);
+      }}
+      onBlur={(e) => {
+        setDraft(null);
+        props.onBlur?.(e);
+      }}
+    />
+  );
+}
+
 export function Label({ className, children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label className={cn("mb-1.5 block text-sm font-semibold text-slate-700", className)} {...props}>
@@ -212,7 +254,7 @@ export function Field({
   const autoId = useId();
   let control = children;
   let target = htmlFor;
-  if (!target && isValidElement<{ id?: string }>(children) && [Input, Select, Textarea, CountInput].includes(children.type as never)) {
+  if (!target && isValidElement<{ id?: string }>(children) && [Input, Select, Textarea, CountInput, NumberInput].includes(children.type as never)) {
     target = children.props.id ?? autoId;
     if (!children.props.id) control = cloneElement(children, { id: target });
   }

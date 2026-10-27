@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ExternalLink, KeyRound, Plus, Trash2, UserPlus } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Input, Loading, Modal, PageHeader, Select, Tabs, Textarea, Tip, Toggle } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Input, Loading, NumberInput, Modal, PageHeader, Select, Tabs, Textarea, Tip, Toggle } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { ROOM_TYPES, formatDate, formatDateTime, label } from "@/lib/utils";
@@ -103,8 +103,8 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
     reload();
   }
 
-  function setSlab(i: number, key: "upTo" | "rate", value: string) {
-    const slabs = s.gstSlabs.map((sl, j) => (j === i ? { ...sl, [key]: key === "upTo" ? (value === "" ? null : Number(value)) : Number(value) } : sl));
+  function setSlab(i: number, key: "upTo" | "rate", value: number | null) {
+    const slabs = s.gstSlabs.map((sl, j) => (j === i ? { ...sl, [key]: key === "upTo" ? value : (value ?? 0) } : sl));
     set({ gstSlabs: slabs });
   }
 
@@ -131,7 +131,7 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
           </div>
           {s.taxMode === "flat" ? (
             <Field label="Tax rate on rooms (%)" className="max-w-xs">
-              <Input type="number" min={0} max={100} step="0.01" value={s.taxRate} onChange={(e) => set({ taxRate: Number(e.target.value) })} />
+              <NumberInput value={s.taxRate} onChange={(n) => set({ taxRate: n ?? 0 })} />
             </Field>
           ) : (
             <div>
@@ -140,9 +140,9 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
                 {s.gstSlabs.map((sl, i) => (
                   <div key={i} className="flex flex-wrap items-center gap-2 text-sm">
                     <span className="w-24 text-slate-600">{i === s.gstSlabs.length - 1 ? "Above that" : "Up to"}</span>
-                    {i < s.gstSlabs.length - 1 && <Input type="number" min={0} value={sl.upTo ?? ""} onChange={(e) => setSlab(i, "upTo", e.target.value)} className="w-32" />}
+                    {i < s.gstSlabs.length - 1 && <NumberInput value={sl.upTo} onChange={(n) => setSlab(i, "upTo", n)} className="w-32" aria-label={`GST slab ${i + 1} price limit`} />}
                     <span className="text-slate-600">→ GST</span>
-                    <Input type="number" min={0} max={100} step="0.01" value={sl.rate} onChange={(e) => setSlab(i, "rate", e.target.value)} className="w-24" />
+                    <NumberInput value={sl.rate} onChange={(n) => setSlab(i, "rate", n)} className="w-24" aria-label={`GST slab ${i + 1} rate`} />
                     <span>%</span>
                   </div>
                 ))}
@@ -151,7 +151,7 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
             </div>
           )}
           <Field label="Tax on extras like food & laundry (%)" className="max-w-xs">
-            <Input type="number" min={0} max={100} step="0.01" value={s.extrasTaxRate} onChange={(e) => set({ extrasTaxRate: Number(e.target.value) })} />
+            <NumberInput value={s.extrasTaxRate} onChange={(n) => set({ extrasTaxRate: n ?? 0 })} />
           </Field>
         </CardContent>
       </Card>
@@ -160,7 +160,7 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
         <CardHeader title="Weekend price" description="Change room prices on Friday and Saturday nights. Use 0 for no change." />
         <CardContent>
           <Field label="Weekend price change (%)" hint="e.g. 15 makes weekend nights 15% more expensive; -10 makes them 10% cheaper." className="max-w-xs">
-            <Input type="number" min={-90} max={500} value={s.weekendSurcharge} onChange={(e) => set({ weekendSurcharge: Number(e.target.value) })} />
+            <NumberInput allowNegative value={s.weekendSurcharge} onChange={(n) => set({ weekendSurcharge: n ?? 0 })} />
           </Field>
         </CardContent>
       </Card>
