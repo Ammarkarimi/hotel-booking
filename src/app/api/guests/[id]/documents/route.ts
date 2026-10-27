@@ -8,7 +8,8 @@ import { DOCUMENT_TYPES, label } from "@/lib/utils";
 
 type Params = { params: Promise<{ id: string }> };
 
-const MAX_BYTES = 8 * 1024 * 1024;
+// Vercel refuses request bodies over 4.5 MB, so keep files below that. The screen shrinks photos before sending.
+const MAX_BYTES = 4 * 1024 * 1024;
 const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 
 export async function POST(request: NextRequest, { params }: Params) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const type = String(formData.get("type") || "");
     if (!(file instanceof File) || file.size === 0) fail("Please choose a photo or PDF of the document");
     if (!(DOCUMENT_TYPES as readonly string[]).includes(type)) fail("Please choose the document type");
-    if (file.size > MAX_BYTES) fail("The file is too large. Please use a file under 8 MB.");
+    if (file.size > MAX_BYTES) fail("The file is too large. Please use a photo, or a PDF under 4 MB.");
     if (file.type && !ALLOWED_MIME.includes(file.type)) fail("Only photos (JPG, PNG) or PDF files can be uploaded");
 
     const saved = await saveUploadedFile(file, `hotels/${currentHotelId()}/guests/${id}`);

@@ -104,6 +104,8 @@ export interface BookingDTO {
   folio: Folio;
   flags: { arrivingToday: boolean; lateArrival: boolean; leavingToday: boolean; overstay: boolean };
   message?: string;
+  /** Only when asked for with ?checkout=1: the bill if the guest checks out today. */
+  checkout?: { today: string; stayed: Folio; booked: Folio };
 }
 
 export interface SettingsDTO {

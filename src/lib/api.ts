@@ -40,8 +40,15 @@ export function handleError(error: unknown) {
   }
   if (error instanceof ZodError) {
     const issue = error.issues[0];
-    const field = issue?.path.join(".");
-    return badRequest(issue ? (field ? `${field}: ${issue.message}` : issue.message) : "Invalid details");
+    if (!issue) return badRequest("Invalid details");
+    // Our own messages are full sentences; zod's built-in ones need the field name ("check in date") to make sense.
+    const generic = /^(Number|String|Array) must|^Required$|^Expected|^Invalid/.test(issue.message);
+    const field = issue.path
+      .filter((p) => typeof p === "string")
+      .pop()
+      ?.replace(/([a-z])([A-Z])/g, "$1 $2")
+      .toLowerCase();
+    return badRequest(generic && field ? `Please check “${field}”: ${issue.message}` : issue.message);
   }
   if (error instanceof SyntaxError) {
     return badRequest("Invalid request");

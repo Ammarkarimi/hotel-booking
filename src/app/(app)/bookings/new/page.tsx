@@ -128,9 +128,13 @@ function NewBookingWizard() {
     return () => clearTimeout(t);
   }, [guestQuery]);
 
-  const selectedRoom = rooms?.find((r) => r.id === roomId) ?? null;
+  // A walk-in needs the room now, so a room whose guest is leaving today but has not checked out yet cannot be used.
+  const stillInside = (r: AvailableRoom) => walkIn && r.status === "occupied";
+  const selectedRoom = rooms?.find((r) => r.id === roomId && !stillInside(r)) ?? null;
   const roomTypes = useMemo(() => [...new Set((rooms ?? []).map((r) => r.type))], [rooms]);
-  const visibleRooms = (rooms ?? []).filter((r) => typeFilter === "all" || r.type === typeFilter);
+  const visibleRooms = (rooms ?? [])
+    .filter((r) => typeFilter === "all" || r.type === typeFilter)
+    .sort((a, b) => Number(stillInside(a)) - Number(stillInside(b)));
   const guestsCount = adults + children;
 
   const folio = useMemo(() => {
@@ -348,14 +352,20 @@ function NewBookingWizard() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {visibleRooms.map((r) => {
                 const tooSmall = r.capacity < guestsCount;
+                const occupied = stillInside(r);
                 return (
                   <button
                     key={r.id}
                     type="button"
+                    disabled={occupied}
                     onClick={() => setRoomId(r.id)}
                     className={cn(
                       "rounded-2xl border-2 bg-white p-4 text-left transition",
-                      roomId === r.id ? "border-primary-500 ring-4 ring-primary-100" : "border-slate-200 hover:border-primary-300"
+                      occupied
+                        ? "cursor-not-allowed border-slate-200 opacity-60"
+                        : roomId === r.id
+                          ? "border-primary-500 ring-4 ring-primary-100"
+                          : "border-slate-200 hover:border-primary-300"
                     )}
                   >
                     <div className="flex items-start justify-between">
@@ -371,6 +381,7 @@ function NewBookingWizard() {
                       <Users className="h-4 w-4" /> Up to {r.capacity} guest{r.capacity > 1 ? "s" : ""}
                       {tooSmall && <Badge variant="warning" className="ml-1">Small for {guestsCount}</Badge>}
                     </p>
+                    {occupied && <p className="mt-1 text-sm font-semibold text-amber-700">Today&apos;s guest has not checked out yet</p>}
                     {r.amenities.length > 0 && <p className="mt-1 line-clamp-1 text-xs text-slate-500">{r.amenities.join(" · ")}</p>}
                     <div className="mt-3 border-t border-slate-100 pt-3">
                       <p className="text-lg font-bold text-primary-700">{formatCurrency(r.quote.grandTotal)}</p>

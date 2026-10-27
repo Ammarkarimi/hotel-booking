@@ -7,7 +7,7 @@ import { ArrowLeft, Camera, CalendarPlus, FileText, MessageCircle, Pencil, Phone
 import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Loading, Modal, Row, Select, StatCard, StatusBadge, Tip } from "@/components/ui";
 import { GuestFormDialog } from "@/components/guest-form";
 import { useApp } from "@/components/app-provider";
-import { api, whatsappLink } from "@/lib/client";
+import { api, shrinkPhoto, whatsappLink } from "@/lib/client";
 import { DOCUMENT_TYPES, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { BookingDTO, DocumentDTO, GuestDTO } from "@/lib/types";
 
@@ -23,7 +23,10 @@ function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; op
   const [type, setType] = useState(foreign ? "passport" : "aadhar");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
+  const [preparing, setPreparing] = useState(false);
+  // On phones an input with `capture` only opens the camera, so choosing an existing photo or PDF needs its own input.
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
@@ -31,6 +34,13 @@ function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; op
       setType(foreign ? "passport" : "aadhar");
     }
   }, [open, foreign]);
+
+  async function pick(chosen: File | undefined) {
+    if (!chosen) return;
+    setPreparing(true);
+    setFile(await shrinkPhoto(chosen));
+    setPreparing(false);
+  }
 
   async function save() {
     if (!file) return;
@@ -55,13 +65,13 @@ function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; op
       open={open}
       onClose={onClose}
       title="Save ID proof"
-      description="Take a photo with your phone camera or choose a file (photo or PDF, up to 8 MB)."
+      description="Take a photo with your phone camera, or choose a photo or PDF you already have."
       footer={
         <>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={save} loading={saving} disabled={!file}>
+          <Button onClick={save} loading={saving || preparing} disabled={!file}>
             Save document
           </Button>
         </>
@@ -77,12 +87,23 @@ function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; op
             ))}
           </Select>
         </Field>
-        <input ref={input} type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-        <button type="button" onClick={() => input.current?.click()} className="flex w-full flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 px-4 py-8 text-slate-600 hover:border-primary-400 hover:bg-primary-50">
-          <Camera className="h-8 w-8 text-primary-600" />
-          <span className="font-semibold">{file ? file.name : "Tap to take a photo or choose a file"}</span>
-          {file && <span className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(1)} MB · tap to change</span>}
-        </button>
+        <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+        <input ref={fileInput} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
+        <div className="grid grid-cols-2 gap-3">
+          <button type="button" onClick={() => cameraInput.current?.click()} className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 px-3 py-6 text-slate-600 hover:border-primary-400 hover:bg-primary-50">
+            <Camera className="h-8 w-8 text-primary-600" />
+            <span className="font-semibold">Take a photo</span>
+          </button>
+          <button type="button" onClick={() => fileInput.current?.click()} className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 px-3 py-6 text-slate-600 hover:border-primary-400 hover:bg-primary-50">
+            <FileText className="h-8 w-8 text-primary-600" />
+            <span className="font-semibold">Choose a photo or PDF</span>
+          </button>
+        </div>
+        {file && (
+          <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            <b>{file.name}</b> · {(file.size / 1024 / 1024).toFixed(1)} MB. Tap a button above to change it.
+          </p>
+        )}
       </div>
     </Modal>
   );

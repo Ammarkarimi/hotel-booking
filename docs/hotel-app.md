@@ -65,7 +65,10 @@ Open any booking (search at the top of the screen) to:
 At check-out the bill is frozen as the final invoice, numbered
 `<prefix>-<booking number>`, for example `INV-1014`. Later price changes never
 alter it. When leaving early, the hotel can charge only the nights stayed or the
-full booking.
+full booking. When a guest is checked out after their leaving date, the extra
+nights are added, unless staff choose to charge only up to the booked date (for a
+guest who really left on time). The check-out screen always shows the exact final
+bill before anyone presses the button.
 
 ### Room calendar
 
@@ -81,8 +84,9 @@ staying or already left who still owe money), **Past & cancelled**, and **All**.
 
 Guest profiles show every stay, nights, total paid and money owed. Each profile can hold:
 
-- ID photo uploads straight from the phone camera (Aadhaar, PAN, passport, visa,
-  driving licence, voter ID)
+- ID photo uploads straight from the phone camera, or an existing photo or PDF
+  (Aadhaar, PAN, passport, visa, driving licence, voter ID). Photos are shrunk
+  on the phone before sending, so they upload quickly; PDFs must be under 4 MB.
 - passport and visa numbers for foreign guests
 - company name and GSTIN for business invoices
 - **VIP** and **do not allow** flags

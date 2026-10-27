@@ -5,6 +5,7 @@ import { AlertTriangle, IndianRupee } from "lucide-react";
 import { Button, Field, Input, Modal, Row, Select, Tip, Toggle } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
+import { diffDays } from "@/lib/dates";
 import { formatCurrency, formatDate, label, PAYMENT_METHODS } from "@/lib/utils";
 import type { BookingDTO } from "@/lib/types";
 
@@ -143,46 +144,35 @@ export function CheckOutDialog({
   onClose: () => void;
   onDone: (b: BookingDTO) => void;
 }) {
-  const { toast, settings } = useApp();
+  const { toast } = useApp();
   const [fresh, setFresh] = useState<BookingDTO | null>(null);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("upi");
-  const [chargeFullStay, setChargeFullStay] = useState(false);
+  const [useBookedDates, setUseBookedDates] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  const leavingEarly = !!booking && settings.today < booking.checkOutDate;
 
   useEffect(() => {
     if (!open || !booking) return;
     setFresh(null);
-    setChargeFullStay(false);
+    setUseBookedDates(false);
     setMethod("upi");
-    api<BookingDTO>(`/api/bookings/${booking.id}`)
-      .then((b) => {
-        setFresh(b);
-      })
+    api<BookingDTO>(`/api/bookings/${booking.id}?checkout=1`)
+      .then(setFresh)
       .catch((e) => toast((e as Error).message, "error"));
   }, [open, booking, toast]);
 
-  // Estimate the bill for the actual leaving date.
-  const f = fresh?.folio;
-  let estimate = f?.grandTotal ?? 0;
-  let nights = f?.nightCount ?? 0;
-  let roomWithTax = f ? f.roomAfterDiscount + f.roomTax : 0;
-  if (f && fresh && leavingEarly && !chargeFullStay) {
-    const actualNights = Math.max(1, Math.round((Date.parse(settings.today) - Date.parse(fresh.checkInDate)) / 86400000));
-    const roomPart = f.nights.slice(0, actualNights).reduce((s, n) => s + n.rate, 0);
-    const discount = Math.min(f.discount, roomPart);
-    const roomTax = ((roomPart - discount) * f.roomTaxRate) / 100;
-    roomWithTax = Math.round((roomPart - discount + roomTax) * 100) / 100;
-    estimate = Math.round((roomWithTax + f.extrasTotal + f.extrasTax) * 100) / 100;
-    nights = actualNights;
-  }
-  const balance = f ? Math.round((estimate - f.netPaid) * 100) / 100 : 0;
+  // The server works out the bill both ways, so this screen shows exactly what will be charged.
+  const preview = fresh?.checkout;
+  const f = preview ? (useBookedDates ? preview.booked : preview.stayed) : null;
+  const bookedOut = fresh?.checkOutDate ?? booking?.checkOutDate ?? "";
+  const leavingEarly = !!preview && preview.today < bookedOut;
+  const stayedLonger = !!preview && preview.today > bookedOut;
+  const extraNights = preview ? preview.stayed.nightCount - preview.booked.nightCount : 0;
+  const balance = f?.balance ?? 0;
 
   useEffect(() => {
-    if (fresh) setAmount(balance > 0 ? String(balance) : "");
-  }, [fresh, balance]);
+    if (f) setAmount(balance > 0 ? String(balance) : "");
+  }, [f, balance]);
 
   if (!booking) return null;
   const pay = Number(amount) || 0;
@@ -195,7 +185,7 @@ export function CheckOutDialog({
       const updated = await api<BookingDTO>(`/api/bookings/${booking.id}`, {
         body: {
           action: "check_out",
-          chargeFullStay,
+          useBookedDates,
           ...(pay > 0 && { payment: { amount: pay, method } }),
         },
       });
@@ -220,34 +210,48 @@ export function CheckOutDialog({
           <Button variant="outline" onClick={onClose}>
             Not now
           </Button>
-          <Button variant="primary" onClick={confirm} loading={saving} disabled={!fresh}>
+          <Button variant="primary" onClick={confirm} loading={saving} disabled={!f}>
             {pay > 0 ? `Take ${formatCurrency(pay)} & check out` : "Check out"}
           </Button>
         </>
       }
     >
-      {!fresh || !f ? (
+      {!f ? (
         <p className="py-6 text-center text-slate-500">Preparing the bill...</p>
       ) : (
         <div className="space-y-4">
           {leavingEarly && (
             <div className="space-y-2">
               <Tip tone="warning">
-                The guest was booked until <b>{formatDate(booking.checkOutDate)}</b> but is leaving today.
+                The guest was booked until <b>{formatDate(bookedOut)}</b> but is leaving today.
               </Tip>
               <Toggle
-                checked={chargeFullStay}
-                onChange={setChargeFullStay}
+                checked={useBookedDates}
+                onChange={setUseBookedDates}
                 label="Charge for all booked nights"
                 description="Leave this off to charge only for the nights actually stayed."
               />
             </div>
           )}
+          {stayedLonger && (
+            <div className="space-y-2">
+              <Tip tone="warning">
+                The guest was booked until <b>{formatDate(bookedOut)}</b> and was not checked out, so {extraNights} extra night{extraNights === 1 ? " is" : "s are"} added to
+                the bill.
+              </Tip>
+              <Toggle
+                checked={useBookedDates}
+                onChange={setUseBookedDates}
+                label={`Charge only until ${formatDate(bookedOut)}`}
+                description="Turn this on if the guest really left on time and was only checked out late in the app."
+              />
+            </div>
+          )}
           <div className="rounded-xl bg-slate-50 p-3">
-            <Row label={`Room (${nights} night${nights === 1 ? "" : "s"}, incl. tax)`}>{formatCurrency(roomWithTax)}</Row>
+            <Row label={`Room (${f.nightCount} night${f.nightCount === 1 ? "" : "s"}, incl. tax)`}>{formatCurrency(f.roomAfterDiscount + f.roomTax)}</Row>
             {f.extrasTotal > 0 && <Row label="Extras (food, laundry...)">{formatCurrency(f.extrasTotal + f.extrasTax)}</Row>}
             <Row label="Total bill (incl. tax)" strong>
-              {formatCurrency(estimate)}
+              {formatCurrency(f.grandTotal)}
             </Row>
             <Row label="Already paid">{formatCurrency(f.netPaid)}</Row>
             <Row label={balance >= 0 ? "Still to pay" : "Paid extra (refund due)"} strong>
@@ -284,7 +288,7 @@ export function CheckOutDialog({
 
 /** Hook bundling all booking actions with friendly confirmations. */
 export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
-  const { toast, confirm } = useApp();
+  const { toast, confirm, settings } = useApp();
   const [paymentFor, setPaymentFor] = useState<MinimalBooking | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<MinimalBooking | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -306,6 +310,12 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
     const warnings: string[] = [];
     if (b.room.housekeeping && b.room.housekeeping !== "clean") warnings.push(`Room ${b.room.roomNumber} is marked “${label(b.room.housekeeping)}”.`);
     if (b.guest?.documents && b.guest.documents.length === 0) warnings.push("No ID proof uploaded yet — remember to collect it.");
+    const earlyNights = diffDays(settings.today, b.checkInDate);
+    if (earlyNights > 0) {
+      warnings.push(
+        `This booking starts on ${formatDate(b.checkInDate)}. Checking in today adds ${earlyNights} extra night${earlyNights > 1 ? "s" : ""} to the bill.`
+      );
+    }
     const ok = await confirm({
       title: `Check in ${b.guestName}?`,
       message: (
