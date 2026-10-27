@@ -22,7 +22,7 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
 import { PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
@@ -119,8 +119,8 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
     roomId: booking.room.id,
     ratePerNight: String(booking.ratePerNight),
     discount: String(booking.discount || ""),
-    adults: String(booking.adults),
-    children: String(booking.children),
+    adults: booking.adults,
+    children: booking.children,
     source: booking.source,
     notes: booking.notes || "",
   });
@@ -136,8 +136,8 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
       roomId: booking.room.id,
       ratePerNight: String(booking.ratePerNight),
       discount: String(booking.discount || ""),
-      adults: String(booking.adults),
-      children: String(booking.children),
+      adults: booking.adults,
+      children: booking.children,
       source: booking.source,
       notes: booking.notes || "",
     });
@@ -162,8 +162,8 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         checkOutDate: form.checkOutDate,
         roomId: form.roomId,
         discount: Number(form.discount) || 0,
-        adults: Number(form.adults),
-        children: Number(form.children),
+        adults: form.adults,
+        children: form.children,
         source: form.source,
         notes: form.notes,
       };
@@ -218,16 +218,16 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         {!roomFree && <Tip tone="danger">This room is not free for the new dates. Please choose another room.</Tip>}
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Price per night" hint={booking.fixedRate ? "Special price (no weekend/season changes)" : "Normal price"}>
-            <Input type="number" min={0} value={form.ratePerNight} onChange={(e) => setForm({ ...form, ratePerNight: e.target.value })} />
+            <Input type="number" min={0} inputMode="decimal" required value={form.ratePerNight} onChange={(e) => setForm({ ...form, ratePerNight: e.target.value })} />
           </Field>
           <Field label="Discount (amount)">
-            <Input type="number" min={0} value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} placeholder="0" />
+            <Input type="number" min={0} inputMode="decimal" value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} placeholder="0" />
           </Field>
           <Field label="Adults">
-            <Input type="number" min={1} value={form.adults} onChange={(e) => setForm({ ...form, adults: e.target.value })} />
+            <CountInput min={1} max={20} value={form.adults} onChange={(adults) => setForm({ ...form, adults })} aria-label="adults" />
           </Field>
           <Field label="Children">
-            <Input type="number" min={0} value={form.children} onChange={(e) => setForm({ ...form, children: e.target.value })} />
+            <CountInput min={0} max={20} value={form.children} onChange={(children) => setForm({ ...form, children })} aria-label="children" />
           </Field>
         </div>
         <Field label="Booking came from">
