@@ -85,7 +85,8 @@ export function csvResponse(filename: string, rows: Array<Array<string | number 
     const s = v === null || v === undefined ? "" : String(v);
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const body = rows.map((r) => r.map(escape).join(",")).join("\n");
+  // The byte-order mark tells Excel the file is UTF-8, so ₹ and non-English names show correctly.
+  const body = "\uFEFF" + rows.map((r) => r.map(escape).join(",")).join("\n");
   return new NextResponse(body, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

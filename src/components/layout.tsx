@@ -14,6 +14,7 @@ import {
   Home,
   LogOut,
   Menu,
+  Receipt,
   Search,
   Settings,
   Sparkles,
@@ -36,6 +37,7 @@ const NAV = [
   { href: "/guests", label: "Guests", icon: Users, hint: "Guest records & IDs" },
   { href: "/housekeeping", label: "Housekeeping", icon: Sparkles, hint: "Room cleaning" },
   { href: "/payments", label: "Payments", icon: Wallet, hint: "Money received" },
+  { href: "/expenses", label: "Expenses", icon: Receipt, hint: "Money spent" },
   { href: "/rooms", label: "Rooms", icon: BedDouble, hint: "Your rooms & prices" },
   { href: "/reports", label: "Reports", icon: BarChart3, hint: "Business summary", admin: true },
   { href: "/settings", label: "Settings", icon: Settings, hint: "Hotel details & staff", admin: true },
@@ -238,7 +240,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200 lg:block">
+      <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200 lg:block">
         <Sidebar />
       </aside>
 
@@ -258,7 +260,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="lg:pl-72">
+      <div className="lg:pl-72 print:pl-0">
         <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
           <button
             onClick={() => setMenuOpen(true)}

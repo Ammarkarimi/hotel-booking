@@ -35,6 +35,7 @@ model Hotel {
   payments             Payment[]
   bills                Bill[]
   activities           ActivityLog[]
+  expenses             Expense[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -270,6 +271,26 @@ model Bill {
   hotel             Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, invoiceNumber])
+}
+
+// Money the hotel spends: salaries, electricity, supplies, repairs and so on.
+// Subtracted from earnings in Reports to show profit.
+model Expense {
+  id          String   @id @default(cuid())
+  hotelId     String
+  date        DateTime @db.Date // the day the money was spent
+  category    String   @default("other") // salaries, utilities, supplies, kitchen, laundry, repairs, rent, internet_phone, commission, marketing, taxes_fees, other
+  title       String
+  description String?
+  amount      Float
+  method      String   @default("cash") // cash, upi, card, bank_transfer, other
+  addedById   String?
+  addedBy     String? // name of the person who wrote it down
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, date])
 }
 
 model ActivityLog {

@@ -63,8 +63,30 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
   },
   {
     q: "How do I count cash at the end of my shift?",
-    steps: ["Open “Payments” and choose “Today”. The Cash box shows the cash you should have."],
+    steps: [
+      "Open “Payments” and choose “Today”.",
+      "The “Cash drawer” box shows cash received from guests, minus cash paid for expenses. The last line is the cash you should have.",
+    ],
     link: { href: "/payments", text: "Open payments" },
+  },
+  {
+    q: "I paid for something for the hotel. Where do I write it down?",
+    steps: [
+      "Open “Expenses” and press “Add expense”.",
+      "Type the amount and what it was for (e.g. “20 bedsheets”), choose the kind of cost and how you paid, then press “Save expense”.",
+      "You can fix your own entry on the same day by tapping it. The owner sees every expense in Reports.",
+    ],
+    link: { href: "/expenses", text: "Open expenses" },
+  },
+  {
+    q: "For owners: how is my hotel doing?",
+    steps: [
+      "Open “Reports” and choose Day, Week, Month or Year. Use the arrows to go back or forward, or “Choose dates”.",
+      "Profit is your room and extras earnings minus your expenses (before GST).",
+      "“Earnings per available room” (RevPAR) divides room earnings by all your rooms, sold or empty. “Cost per available room” does the same with expenses.",
+      "Download any part for Excel, or press “Print / save PDF”.",
+    ],
+    link: { href: "/reports", text: "Open reports" },
   },
   {
     q: "For owners: setting up the hotel",

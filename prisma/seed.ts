@@ -245,6 +245,34 @@ async function seedDemo() {
   await prisma.room.update({ where: { id: rooms["203"].id }, data: { housekeeping: "dirty" } });
   await prisma.room.update({ where: { id: rooms["101"].id }, data: { housekeeping: "cleaning", houseKeeperName: "Lakshmi" } });
 
+  // A month of typical costs so Reports can show profit.
+  const DEMO_EXPENSES = [
+    { day: -18, category: "utilities", title: "Electricity bill", amount: 18500, method: "upi" },
+    { day: -15, category: "salaries", title: "Staff salaries (4 people)", amount: 52000, method: "bank_transfer" },
+    { day: -12, category: "supplies", title: "Toiletries and 20 bedsheets", amount: 9600, method: "cash", description: "Shree Traders, bill 4471" },
+    { day: -9, category: "kitchen", title: "Breakfast groceries", amount: 6400, method: "cash" },
+    { day: -7, category: "commission", title: "Booking.com commission", amount: 4320, method: "bank_transfer" },
+    { day: -5, category: "repairs", title: "AC repair, Room 102", amount: 3500, method: "upi" },
+    { day: -3, category: "internet_phone", title: "Broadband bill", amount: 1499, method: "upi" },
+    { day: -2, category: "laundry", title: "Linen laundry", amount: 2200, method: "cash" },
+    { day: 0, category: "kitchen", title: "Milk, bread and eggs", amount: 840, method: "cash" },
+  ];
+  for (const e of DEMO_EXPENSES) {
+    await prisma.expense.create({
+      data: {
+        hotelId,
+        date: dateFromKey(addDays(today, e.day)),
+        category: e.category,
+        title: e.title,
+        description: e.description ?? null,
+        amount: e.amount,
+        method: e.method,
+        addedById: owner.id,
+        addedBy: owner.name,
+      },
+    });
+  }
+
   await prisma.activityLog.create({ data: { hotelId, staffId: owner.id, staffName: owner.name, action: "Demo data loaded", details: `${DEMO_PLANS.length} bookings` } });
   console.log(`Demo data created: ${DEMO_GUESTS.length} guests, ${DEMO_PLANS.length} bookings.`);
 }

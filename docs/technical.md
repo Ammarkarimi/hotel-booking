@@ -20,7 +20,7 @@ For whoever works on the code.
 src/
 ├── app/
 │   ├── (app)/                 # Hotel screens (signed in): Today, calendar, bookings, guests,
-│   │                          #   rooms, housekeeping, payments, reports, settings, account, help
+│   │                          #   rooms, housekeeping, payments, expenses, reports, settings, account, help
 │   ├── platform/
 │   │   ├── login/             # Owner-panel sign-in
 │   │   └── (panel)/           # Owner panel: hotels list, add hotel, hotel detail
@@ -32,7 +32,7 @@ src/
 │   ├── welcome/               # Public landing page (shown at / to signed-out visitors)
 │   ├── login/
 │   └── api/                   # JSON API (see below)
-├── components/                # UI kit (ui.tsx), app shell, booking actions, platform-ui
+├── components/                # UI kit (ui.tsx), app shell, booking actions, period picker, platform-ui
 ├── lib/
 │   ├── db.ts                  # Prisma clients and hotel scoping (read this first)
 │   ├── auth.ts, session.ts    # Hotel sign-in and sessions; platform tokens
@@ -41,7 +41,10 @@ src/
 │   ├── subscription.ts        # Monthly subscription maths (pure)
 │   ├── bookings.ts            # Availability, locks, folio, booking numbers
 │   ├── pricing.ts, dates.ts   # Pricing, GST, date keys (pure)
-│   ├── reports.ts, settings.ts, public.ts, api.ts, …
+│   ├── reports.ts             # Report numbers; hotelMetrics() holds the occupancy, ADR, RevPAR and per-room maths (pure)
+│   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
+│   ├── expenses.ts            # Expense validation and who may change what
+│   ├── settings.ts, public.ts, api.ts, …
 │   └── __tests__/             # Unit tests
 └── middleware.ts              # Signed-out visitors: / shows the landing page, other pages go to sign-in
 prisma/
@@ -69,6 +72,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
 | `ActivityLog` | Hotel | Who did what |
+| `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
 
 ## How hotels are kept apart
 
@@ -160,7 +164,9 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/settings` | GET, PUT ⓐ |
 | `/api/settings/seasonal-rates` | POST ⓐ, DELETE ⓐ |
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
-| `/api/reports`, `/api/reports/export?type=bookings\|payments\|invoices\|daily` | ⓐ GET |
+| `/api/expenses`, `/api/expenses/[id]` | GET (front desk: own entries; `?summary=cash` for everyone), POST / PATCH, DELETE (owner, or the person who added it on the same day) |
+| `/api/reports?from=&to=&groupBy=day\|week\|month` | ⓐ GET |
+| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes` | ⓐ GET |
 | `/api/activity` | ⓐ GET |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)

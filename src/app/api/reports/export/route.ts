@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { withAdmin, csvResponse, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, diffDays, isDateKey } from "@/lib/dates";
+import { defaultGroupBy, type GroupBy } from "@/lib/periods";
 import { buildReport } from "@/lib/reports";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
 import { label } from "@/lib/utils";
@@ -35,7 +36,9 @@ export async function GET(request: NextRequest) {
       ]);
     }
 
-    const report = await buildReport(ctx, from, to);
+    const asked = searchParams.get("groupBy") as GroupBy | null;
+    const groupBy = asked && ["day", "week", "month"].includes(asked) ? asked : type === "daily" ? "day" : defaultGroupBy(from, to);
+    const report = await buildReport(ctx, from, to, groupBy);
     if (type === "payments") {
       return csvResponse(`payments_${suffix}`, [
         ["Date", "Booking #", "Guest", "Room", "Type", "Method", "Amount", "Reference", "Received by"],
@@ -54,10 +57,36 @@ export async function GET(request: NextRequest) {
         ]),
       ]);
     }
-    if (type === "daily") {
-      return csvResponse(`daily_${suffix}`, [
-        ["Date", "Rooms sold", "Occupancy %", "Room revenue", "Money collected"],
-        ...report.series.map((d) => [d.date, d.roomsSold, d.occupancy, d.roomRevenue, d.collected]),
+    if (type === "summary" || type === "daily") {
+      // Earnings are before GST. RevPAR and cost per room divide by every room in use, sold or not.
+      const t = report.totals;
+      return csvResponse(`summary_by_${groupBy}_${suffix}`, [
+        [
+          groupBy === "day" ? "Date" : groupBy === "week" ? "Week starting" : "Month", "Rooms available", "Rooms sold", "Occupancy %",
+          "Average price per room sold (ADR)", "Earnings per available room (RevPAR)", "Room earnings", "Extras earnings", "Total earnings",
+          "Expenses", "Profit", "Cost per available room", "Profit per available room", "Money received", "Arrivals", "Departures",
+        ],
+        ...report.groups.map((g) => [
+          g.from, g.roomsAvailable, g.roomsSold, g.occupancy, g.adr, g.revpar, g.roomRevenue, g.extrasRevenue, g.revenue,
+          g.expenses, g.profit, g.costPerAvailableRoom, g.profitPerAvailableRoom, g.collected, g.arrivals, g.departures,
+        ]),
+        [
+          "Total", t.availableRoomNights, t.roomNightsSold, t.occupancy, t.adr, t.revpar, t.roomRevenue, t.extrasRevenue, t.revenue,
+          t.expenses, t.profit, t.costPerAvailableRoom, t.profitPerAvailableRoom, t.collected, report.guests.arrivals, report.guests.departures,
+        ],
+      ]);
+    }
+    if (type === "expenses") {
+      return csvResponse(`expenses_${suffix}`, [
+        ["Date", "Kind of cost", "What for", "Notes", "Paid by", "Amount", "Added by"],
+        ...report.expenses.map((e) => [e.date, label(e.category), e.title, e.description, label(e.method), e.amount, e.addedBy]),
+        ["", "", "", "", "Total", report.totals.expenses, ""],
+      ]);
+    }
+    if (type === "roomtypes") {
+      return csvResponse(`room_types_${suffix}`, [
+        ["Room type", "Rooms", "Nights sold", "Occupancy %", "Average price (ADR)", "Earnings per available room (RevPAR)", "Room earnings"],
+        ...report.byRoomType.map((r) => [label(r.type), r.rooms, r.nights, r.occupancy, r.adr, r.revpar, r.revenue]),
       ]);
     }
     fail("Unknown report type");
