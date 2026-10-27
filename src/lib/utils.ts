@@ -84,6 +84,21 @@ export const BOOKING_SOURCES = [
   "other",
 ] as const;
 export const CHARGE_CATEGORIES = ["food", "laundry", "minibar", "transport", "extra_bed", "damage", "other"] as const;
+// What a hotel spends money on. Keys are stored on each expense; labels are below.
+export const EXPENSE_CATEGORIES = [
+  "salaries",
+  "utilities",
+  "supplies",
+  "kitchen",
+  "laundry",
+  "repairs",
+  "rent",
+  "internet_phone",
+  "commission",
+  "marketing",
+  "taxes_fees",
+  "other",
+] as const;
 export const AMENITY_SUGGESTIONS = ["WiFi", "AC", "TV", "Hot Water", "Mini Bar", "Balcony", "Room Service", "Kettle", "Safe", "Bathtub", "Sea View", "Extra Bed"];
 
 // Plain-language labels so people who are new to hotel software understand them.
@@ -138,6 +153,17 @@ export const LABELS: Record<string, string> = {
   extra_bed: "Extra bed",
   damage: "Damage",
   other: "Other",
+  // expenses (laundry and other are above)
+  salaries: "Staff salaries",
+  utilities: "Electricity & water",
+  supplies: "Room & cleaning supplies",
+  kitchen: "Food & kitchen",
+  repairs: "Repairs & maintenance",
+  rent: "Rent",
+  internet_phone: "Internet & phone",
+  commission: "Booking site commission",
+  marketing: "Advertising",
+  taxes_fees: "Taxes & licences",
   // payment state
   unpaid: "Not paid",
   partial: "Part paid",

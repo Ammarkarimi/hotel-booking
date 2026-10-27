@@ -162,6 +162,7 @@ export async function deleteHotelData(hotelId: string) {
     await tx.room.deleteMany({ where });
     await tx.seasonalRate.deleteMany({ where });
     await tx.activityLog.deleteMany({ where });
+    await tx.expense.deleteMany({ where });
     await tx.staff.deleteMany({ where });
     await tx.hotelSettings.deleteMany({ where });
     await tx.subscriptionPayment.deleteMany({ where });
