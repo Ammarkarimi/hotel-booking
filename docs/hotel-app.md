@@ -9,6 +9,7 @@ under **Help & guide**.
 | | Owner / manager | Front desk |
 |---|:-:|:-:|
 | Bookings, check-in/out, payments, extras, guests, ID photos, calendar, housekeeping | ✅ | ✅ |
+| Write down expenses | ✅ all | ✅ their own, last 7 days |
 | Reports and CSV downloads | ✅ | — |
 | Settings (hotel details, prices & tax, online booking, staff, activity history) | ✅ | — |
 | Add, edit or delete rooms | ✅ | — |
@@ -101,20 +102,55 @@ Rooms with guests arriving today are shown first. A room can also be set to
 ### Payments
 
 Every payment and refund for today, yesterday, this week, this month or any
-dates, with totals per method. Choose **Today** to see how much cash should be in
-the drawer at the end of a shift.
+dates, with totals per method. The **Cash drawer** box shows cash received minus
+cash paid for expenses: the cash that should be in the drawer at the end of a shift.
+
+### Expenses
+
+Every cost the hotel pays: amount, what it was for, kind of cost, date, how it
+was paid (cash, UPI, card, bank transfer) and optional notes such as a bill
+number. Kinds of cost: staff salaries, electricity & water, room & cleaning
+supplies, food & kitchen, laundry, repairs & maintenance, rent, internet &
+phone, booking site commission, advertising, taxes & licences, and other.
+
+- **Owner / manager:** sees and changes every expense, for any day, week, month,
+  year or dates, with totals by kind of cost and a download for Excel.
+- **Front desk:** can write down costs from the last 7 days (e.g. supplies bought
+  with drawer cash) and fix their own entries on the same day. They see only
+  their own entries, so salaries stay private.
 
 ### Reports (owner)
 
-For any date range:
+Choose **Day**, **Week** (Monday to Sunday), **Month** or **Year** and step back
+or forward with the arrows, or choose any dates. The current week, month or year
+is shown up to today; the owner can include the rest of it to see bookings
+already made. Longer periods can be shown by day, week or month. All amounts are
+before GST.
 
-- occupancy, room earnings, average room rate (ADR), and earnings per available
-  room (RevPAR)
-- money received and money still owed
-- daily charts, and breakdowns by booking source, payment method and room type
-- extras, and a GST summary
+- **Profit:** room earnings + extras − expenses, and the profit margin
+- **Per-room numbers**, all using the rooms in use (rooms under repair are left
+  out):
+  - **How full (occupancy):** rooms sold ÷ rooms available
+  - **Average price per room sold (ADR):** room earnings ÷ rooms sold
+  - **Earnings per available room (RevPAR):** room earnings ÷ every room, sold
+    or empty. With 25 rooms and 10 sold at ₹5,000, ADR is ₹5,000 but RevPAR is
+    ₹50,000 ÷ 25 = ₹2,000
+  - **All earnings per available room (TRevPAR):** rooms + extras ÷ every room
+  - **Cost per available room** and **cost per room sold:** expenses ÷ every
+    room, and ÷ rooms sold
+  - **Profit per available room (GOPPAR):** profit ÷ every room
+- a chart of earnings against expenses, an occupancy chart, and a table for each
+  day, week or month with a total row
+- each room type's nights sold, occupancy, ADR, RevPAR and earnings, and
+  earnings by booking source
+- expenses by kind, money in and out (received by method, expenses paid, cash
+  left), guests arriving and leaving, people, average stay, new bookings,
+  cancellations and no-shows
+- extras sold, a GST summary, and who still owes money
 
-**CSV downloads for Excel:** bookings, payments, invoices and a daily summary.
+**Print / save PDF** prints the report without the menu. **CSV downloads for
+Excel:** the summary (by day, week or month, with a total row), expenses,
+bookings, payments, GST invoices and room types.
 
 ### Settings (owner)
 
