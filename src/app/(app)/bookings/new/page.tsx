@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, MessageCircle, Printer, Search, UserPlus, Users } from "lucide-react";
-import { Badge, Button, Card, CardContent, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { MethodPicker } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
@@ -296,10 +296,10 @@ function NewBookingWizard() {
             </div>
             <div className="grid grid-cols-2 gap-4 sm:max-w-sm">
               <Field label="Adults">
-                <Input type="number" min={1} max={20} value={adults} onChange={(e) => setAdults(Math.max(1, Number(e.target.value) || 1))} />
+                <CountInput min={1} max={20} value={adults} onChange={setAdults} aria-label="adults" />
               </Field>
               <Field label="Children">
-                <Input type="number" min={0} max={20} value={children} onChange={(e) => setChildren(Math.max(0, Number(e.target.value) || 0))} />
+                <CountInput min={0} max={20} value={children} onChange={setChildren} aria-label="children" />
               </Field>
             </div>
             {nights >= 1 ? (

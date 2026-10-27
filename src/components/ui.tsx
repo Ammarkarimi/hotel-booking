@@ -1,7 +1,7 @@
 "use client";
 
 import { cn, label } from "@/lib/utils";
-import { Loader2, X } from "lucide-react";
+import { Loader2, Minus, Plus, X } from "lucide-react";
 import {
   ButtonHTMLAttributes,
   cloneElement,
@@ -13,6 +13,7 @@ import {
   SelectHTMLAttributes,
   TextareaHTMLAttributes,
   useEffect,
+  useState,
 } from "react";
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -119,6 +120,69 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
 );
 Textarea.displayName = "Textarea";
 
+/**
+ * Whole-number field with − and + buttons, for counts like adults and children.
+ * The box can be cleared while typing (so "1" can be replaced with "3"); an
+ * empty or out-of-range entry snaps back to the nearest allowed number on blur.
+ */
+export function CountInput({
+  value,
+  onChange,
+  min = 0,
+  max = 99,
+  id,
+  className,
+  "aria-label": ariaLabel,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  id?: string;
+  className?: string;
+  "aria-label"?: string;
+}) {
+  // What the person is typing; null shows the current value.
+  const [draft, setDraft] = useState<string | null>(null);
+  const clamp = (n: number) => Math.min(max, Math.max(min, n));
+  const step = (delta: number) => {
+    setDraft(null);
+    onChange(clamp(value + delta));
+  };
+  const buttonClass =
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-40";
+
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <button type="button" className={buttonClass} onClick={() => step(-1)} disabled={value <= min} aria-label={`Fewer ${ariaLabel ?? ""}`.trim()}>
+        <Minus className="h-4 w-4" />
+      </button>
+      <input
+        id={id}
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        autoComplete="off"
+        aria-label={ariaLabel}
+        className={cn(fieldClass, "min-h-11 min-w-0 px-2 text-center font-semibold")}
+        value={draft ?? String(value)}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => {
+          const digits = e.target.value.replace(/\D/g, "").slice(0, 3);
+          if (digits === "") return setDraft("");
+          const n = Number(digits);
+          setDraft(n > max ? String(max) : String(n));
+          if (clamp(n) !== value) onChange(clamp(n));
+        }}
+        onBlur={() => setDraft(null)}
+      />
+      <button type="button" className={buttonClass} onClick={() => step(1)} disabled={value >= max} aria-label={`More ${ariaLabel ?? ""}`.trim()}>
+        <Plus className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export function Label({ className, children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
     <label className={cn("mb-1.5 block text-sm font-semibold text-slate-700", className)} {...props}>
@@ -148,7 +212,7 @@ export function Field({
   const autoId = useId();
   let control = children;
   let target = htmlFor;
-  if (!target && isValidElement<{ id?: string }>(children) && [Input, Select, Textarea].includes(children.type as never)) {
+  if (!target && isValidElement<{ id?: string }>(children) && [Input, Select, Textarea, CountInput].includes(children.type as never)) {
     target = children.props.id ?? autoId;
     if (!children.props.id) control = cloneElement(children, { id: target });
   }

@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, BedDouble, CalendarDays, Check, Clock, MapPin, MessageCircle, Phone, Users } from "lucide-react";
-import { Button, Card, CardContent, Field, Input, Loading, Textarea, Tip } from "@/components/ui";
+import { Button, Card, CardContent, CountInput, Field, Input, Loading, Textarea, Tip } from "@/components/ui";
 import { addDays, diffDays } from "@/lib/dates";
 import { cn, formatCurrency, formatDate, label } from "@/lib/utils";
 import { whatsappLink } from "@/lib/client";
@@ -189,10 +189,10 @@ export default function PublicBookingPage() {
                   />
                 </Field>
                 <Field label="Adults">
-                  <Input type="number" min={1} max={20} value={adults} onChange={(e) => setAdults(Math.max(1, Number(e.target.value) || 1))} />
+                  <CountInput min={1} max={20} value={adults} onChange={setAdults} aria-label="adults" />
                 </Field>
                 <Field label="Children">
-                  <Input type="number" min={0} max={20} value={children} onChange={(e) => setChildren(Math.max(0, Number(e.target.value) || 0))} />
+                  <CountInput min={0} max={20} value={children} onChange={setChildren} aria-label="children" />
                 </Field>
                 <Button type="submit" size="lg" loading={searching} disabled={nights < 1}>
                   <CalendarDays className="h-5 w-5" /> Check prices
