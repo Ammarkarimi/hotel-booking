@@ -7,17 +7,18 @@ import { cn } from "@/lib/utils";
 // Chapter start times (seconds) in public/welcome/hotel-manager-tour.mp4.
 export const CHAPTERS = [
   { t: 0, title: "Guests book on your own website" },
-  { t: 27.5, title: "Your whole day on one screen" },
-  { t: 38.7, title: "A walk-in guest in under a minute" },
+  { t: 27.3, title: "Your whole day on one screen" },
+  { t: 38.6, title: "A walk-in guest in under a minute" },
   { t: 67.2, title: "See every room at a glance" },
   { t: 75.1, title: "Check in with one tap" },
   { t: 84.4, title: "Add food, laundry and extras" },
-  { t: 102.2, title: "Check out and take payment" },
-  { t: 114.6, title: "A GST invoice in one tap" },
-  { t: 123.5, title: "Housekeeping from any phone" },
-  { t: 134.2, title: "Count the cash drawer in seconds" },
-  { t: 140.8, title: "Reports for the owner" },
-  { t: 150.1, title: "Your prices, GST and staff" },
+  { t: 102.3, title: "Check out and take payment" },
+  { t: 114.8, title: "A GST invoice in one tap" },
+  { t: 123.7, title: "Housekeeping from any phone" },
+  { t: 134.4, title: "Count the cash drawer in seconds" },
+  { t: 142, title: "Write down every expense" },
+  { t: 159.3, title: "Your profit, day by day" },
+  { t: 184.3, title: "Your prices, GST and staff" },
 ];
 
 const PLAY_EVENT = "welcome:play-tour";
@@ -104,7 +105,7 @@ export function TourPlayer() {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-white">
                 <Play className="h-5 w-5 translate-x-0.5" fill="currentColor" />
               </span>
-              Play the tour · 2:41
+              Play the tour · 3:15
             </span>
           </button>
         )}

@@ -46,7 +46,8 @@ await shot("new-booking", "/bookings/new", {
   },
 });
 await shot("housekeeping", "/housekeeping");
-await shot("reports", "/reports", { before: async (p) => { await p.getByText("Rooms sold each night").waitFor(); await p.waitForTimeout(800); } });
+await shot("reports", "/reports", { before: async (p) => { await p.getByText(/^Profit · /).first().waitFor(); await p.waitForTimeout(800); } });
+await shot("expenses", "/expenses", { before: async (p) => { await p.getByText("By kind of cost").waitFor(); await p.waitForTimeout(800); } });
 await shot("invoice", `/print/invoice/${invoiceBooking.id}`, { before: async (p) => p.evaluate(() => window.scrollTo(0, 40)) });
 await ctx.close();
 
@@ -67,7 +68,7 @@ execFileSync("python3", ["-c", `
 import sys
 from PIL import Image
 src, dst = sys.argv[1], sys.argv[2]
-for name in ["today", "calendar", "booking", "new-booking", "housekeeping", "reports", "invoice"]:
+for name in ["today", "calendar", "booking", "new-booking", "housekeeping", "reports", "expenses", "invoice"]:
     im = Image.open(f"{src}/{name}.png").convert("RGB")
     im.resize((1600, round(im.height * 1600 / im.width)), Image.LANCZOS).save(f"{dst}/{name}.webp", "WEBP", quality=82, method=6)
 Image.open(f"{src}/guest-site.png").convert("RGB").save(f"{dst}/guest-site.webp", "WEBP", quality=82, method=6)

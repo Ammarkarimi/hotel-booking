@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Bricolage_Grotesque } from "next/font/google";
 import {
+  Banknote,
   BarChart3,
   BedDouble,
   CalendarDays,
@@ -41,7 +42,7 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700",
 export const metadata: Metadata = {
   title: { absolute: "Hotel Manager · Hotel software for boutique and premium hotels" },
   description:
-    "Reservations, arrivals, polished GST invoices, housekeeping, owner reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
+    "Reservations, arrivals, polished GST invoices, housekeeping, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
   openGraph: {
     title: "Hotel Manager · Hotel software for boutique and premium hotels",
     description: "Effortless front desk software for boutique hotels, resorts and premium stays, with your own commission-free booking website.",
@@ -95,8 +96,8 @@ const FEATURE_GROUPS = [
     title: "Owner control",
     items: [
       { icon: Sparkles, name: "Housekeeping board", text: "Rooms are queued for cleaning at check-out, with today's arrivals prepared first." },
-      { icon: BarChart3, name: "Owner reports", text: "Occupancy, average room rate, revenue and outstanding balances, from anywhere." },
-      { icon: FileDown, name: "Exports for your accountant", text: "Bookings, payments and GST invoices, ready for Excel." },
+      { icon: BarChart3, name: "Profit reports", text: "Profit, occupancy, ADR and RevPAR for any day, week, month or year, ready for Excel." },
+      { icon: Banknote, name: "Expense tracker", text: "Salaries, electricity, supplies and repairs, written down as you pay them." },
       { icon: UserCog, name: "Role-based staff access", text: "Front desk staff can't see reports, change rates or delete payments." },
       { icon: History, name: "Complete audit trail", text: "Every booking, payment and change, with who made it and when." },
       { icon: Globe, name: "Your own booking website", text: "Guests book you directly from their phone, with no commission." },
@@ -148,11 +149,18 @@ const SPOTLIGHTS = [
     points: ["Assign a housekeeper and leave a note", "Today's arrivals prepared first", "Front desk sees the moment a room is ready"],
   },
   {
+    image: "/welcome/expenses.webp",
+    eyebrow: "Expenses",
+    title: "Every rupee you spend, in one place",
+    text: "Salaries, electricity, supplies, repairs and commission, written down in seconds. Front desk can add petty cash; the owner sees every cost, by kind.",
+    points: ["Twelve kinds of cost, with notes and bill numbers", "Cash spent is taken off the cash drawer count", "Salaries stay private to the owner"],
+  },
+  {
     image: "/welcome/reports.webp",
-    eyebrow: "Owner reports",
-    title: "Your property's performance, wherever you are",
-    text: "Owners see occupancy, room revenue, average rate per night, collections and balances due, from anywhere. Front desk staff never see these figures.",
-    points: ["Booking sources and payment methods", "GST summary for any period", "Export everything to Excel"],
+    eyebrow: "Profit reports",
+    title: "Know your profit, and what every room earns",
+    text: "Pick a day, week, month or year and see earnings minus expenses, how full you were, the average price per room sold, and what each available room earns and costs you (RevPAR). Front desk staff never see these figures.",
+    points: ["Profit after every expense", "RevPAR and cost per available room", "Print, save as PDF or download for Excel"],
   },
 ];
 
@@ -171,6 +179,7 @@ const COMPARISON: Array<{ row: string; paper: Cell; typical: Cell; ours: Cell }>
   { row: "Runs fully on a phone or tablet", paper: false, typical: "Sometimes", ours: true },
   { row: "Your own commission-free booking website", paper: false, typical: "Often extra cost", ours: "Included" },
   { row: "Revenue and occupancy from anywhere", paper: false, typical: true, ours: true },
+  { row: "Profit after expenses, per room", paper: false, typical: "Often extra cost", ours: "Included" },
 ];
 
 const FAQS = [
@@ -193,6 +202,10 @@ const FAQS = [
   {
     q: "Does it handle GST?",
     a: "Yes. It picks the GST slab from the room rate automatically (you can change the slabs), adds tax to dining and extras, and prints tax invoices with CGST, SGST and SAC codes.",
+  },
+  {
+    q: "Can I see my profit?",
+    a: "Yes. Write down expenses as you pay them, and Reports show earnings minus expenses for any day, week, month or year, along with occupancy, the average price per room sold, and what each available room earns and costs you (RevPAR).",
   },
   {
     q: "What about international guests?",
@@ -352,7 +365,7 @@ export default function WelcomePage() {
                 )}
               </div>
               <ul className="mt-8 grid max-w-lg grid-cols-2 gap-x-6 gap-y-2 text-[15px] text-slate-700">
-                {["Zero double bookings", "Polished GST invoices", "Owner view from anywhere", "WhatsApp guest updates"].map((t) => (
+                {["Zero double bookings", "Polished GST invoices", "Profit & RevPAR reports", "WhatsApp guest updates"].map((t) => (
                   <li key={t} className="flex items-center gap-2">
                     <Check className="h-5 w-5 shrink-0 text-emerald-600" /> {t}
                   </li>
@@ -374,10 +387,10 @@ export default function WelcomePage() {
         <section id="tour" className="scroll-mt-16 bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-300">Video tour</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in under 3 minutes</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in about 3 minutes</h2>
             <p className="mt-3 max-w-2xl text-lg text-slate-300">
-              A guest books direct, the front desk welcomes them and checks them out, the bill and GST invoice come together, rooms are turned around and
-              the owner reviews the numbers. Tap a chapter to jump to it.
+              A guest books direct, the front desk welcomes them and checks them out, the bill and GST invoice come together, rooms are turned around,
+              expenses are written down and the owner sees the profit. Tap a chapter to jump to it.
             </p>
             <div className="mt-10">
               <TourPlayer />

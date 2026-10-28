@@ -141,7 +141,7 @@ const addDays = (key, n) => {
 
 // ---------------- Intro + 1. Guest books online ----------------
 await page.goto(base + "/book/sunrise-residency", { waitUntil: "networkidle" });
-await page.evaluate(() => window.__demo.card("A 3-minute tour", "Hotel Manager", "Simple hotel software for small hotels, guest houses and homestays."));
+await page.evaluate(() => window.__demo.card("A 3-minute tour", "Hotel Manager", "Effortless operations for boutique hotels, resorts and premium stays."));
 await wait(3200);
 await page.evaluate(() => window.__demo.card(null));
 await wait(700);
@@ -240,7 +240,7 @@ await click(page.getByRole("link", { name: /^Today/ }), 1500);
 await click(page.getByRole("button", { name: "Check out" }).first(), 1200);
 await page.getByText("Total bill (incl. tax)").waitFor();
 await wait(1400);
-await click(page.getByRole("dialog").getByRole("button", { name: "UPI / QR", exact: true }), 700);
+await click(page.getByRole("dialog").getByRole("button", { name: "Cash", exact: true }), 700);
 await click(page.getByRole("button", { name: /& check out/ }), 700);
 await page.getByText(/Guest checked out/).first().waitFor();
 await wait(1800);
@@ -268,23 +268,46 @@ await click(cleaningCard.getByRole("button", { name: "Mark clean" }), 1800);
 
 // ---------------- 10. Payments ----------------
 await page.goto(base + "/payments", { waitUntil: "networkidle" });
-await caption(10, "Count the cash drawer in seconds", "Today's money by cash, UPI and card, with every payment and who received it.");
+await caption(10, "Count the cash drawer in seconds", "Today's money by cash, UPI and card, minus cash spent on expenses: exactly what should be in the drawer.");
 await point(page.getByText("Total received"), 1200);
-await point(page.getByText("Cash", { exact: true }).first(), 1200);
-await point(page.getByText("UPI / QR", { exact: true }).first(), 1600);
+await point(page.getByText("Cash", { exact: true }).first(), 1000);
+await point(page.getByText("Cash paid for expenses"), 1200);
+await point(page.getByText("Cash that should be in the drawer"), 1800);
 
-// ---------------- 11. Reports ----------------
+// ---------------- 11. Expenses ----------------
+await page.goto(base + "/expenses", { waitUntil: "networkidle" });
+await caption(11, "Write down every expense", "Salaries, electricity, supplies, repairs. Front desk can add petty cash too; the owner sees everything.");
+await click(page.getByRole("button", { name: "Add expense" }).first(), 900);
+await type(page.getByLabel("Amount"), "1800");
+await type(page.getByLabel("What was it for?"), "Fresh flowers for the lobby");
+await click(page.getByRole("dialog").getByRole("button", { name: "Room & cleaning supplies", exact: true }), 500);
+await click(page.getByRole("dialog").getByRole("button", { name: "UPI / QR", exact: true }), 500);
+await click(page.getByRole("button", { name: "Save expense" }), 900);
+await page.getByText("Fresh flowers for the lobby").first().waitFor();
+await wait(700);
+await point(page.getByText("Total spent"), 1200);
+await point(page.getByText("By kind of cost"), 1800);
+
+// ---------------- 12. Reports ----------------
 await page.goto(base + "/reports", { waitUntil: "networkidle" });
-await page.getByText("Rooms sold each night").waitFor();
-await caption(11, "Reports for the owner", "How full the hotel was, what you earned, who still owes money, and your GST summary.");
-await point(page.getByText("How full (occupancy)"), 1400);
-await scrollTo(520, 1800);
-await scrollTo(1100, 1800);
-await scrollTo(1700, 2000);
+await page.getByText(/^Profit · /).first().waitFor();
+await caption(12, "Your profit, day by day", "Earnings minus expenses for any day, week, month or year, with earnings and costs per room.");
+await point(page.locator("main").getByText("Total earnings").first(), 1000);
+await point(page.locator("main").getByText(/^Expenses$/).first(), 1000);
+await point(page.getByText(/^(Profit|Loss)$/).first(), 1600);
+await scrollTo(560, 1400);
+await point(page.getByText("Earnings per available room", { exact: true }).first(), 1400);
+await point(page.getByText("Cost per available room", { exact: true }).first(), 1400);
+await click(page.getByText("What do these numbers mean?"), 2600);
+await scrollTo(1350, 1800);
+await click(page.getByRole("button", { name: "Week", exact: true }).first(), 1600);
+await click(page.getByRole("button", { name: "Previous week" }), 1600);
+await click(page.getByRole("button", { name: "Month", exact: true }).first(), 1400);
+await scrollTo(1900, 2000);
 
-// ---------------- 12. Settings ----------------
+// ---------------- 13. Settings ----------------
 await page.goto(base + "/settings?tab=prices", { waitUntil: "networkidle" });
-await caption(12, "Your prices, GST and staff", "Weekend and festival prices, automatic GST slabs, and a separate sign-in for every staff member.");
+await caption(13, "Your prices, GST and staff", "Weekend and festival prices, automatic GST slabs, and a separate sign-in for every staff member.");
 await point(page.getByText("Indian GST slabs (automatic)"), 1400);
 await scrollTo(520, 1600);
 await click(page.getByRole("button", { name: "Staff", exact: true }), 1400);
@@ -294,7 +317,7 @@ await wait(1400);
 // ---------------- End card ----------------
 await page.evaluate(() => window.__demo.caption(null));
 chapters.push({ n: "end", title: "End", at: Date.now() / 1000 });
-await page.evaluate(() => window.__demo.card("Hotel Manager", "Easy enough for any front desk", "Bookings, check-in, GST bills, housekeeping and reports, from a phone or computer."));
+await page.evaluate(() => window.__demo.card("Hotel Manager", "Effortless operations for exceptional stays", "Reservations, check-in, GST invoices, housekeeping, expenses and profit reports, on any device."));
 await wait(4000);
 
 await cdp.send("Page.stopScreencast");
