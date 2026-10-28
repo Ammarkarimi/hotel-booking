@@ -1,6 +1,7 @@
 import { prisma } from "./db";
 import { addDays, dateFromKey, diffDays, eachNight, todayKey, toDateKey } from "./dates";
 import { bookingInclude, folioFor, serializeBooking } from "./bookings";
+import { isOtaSource, payoutSummary } from "./payouts";
 import { groupKey, groupLabel, type GroupBy } from "./periods";
 import { round2 } from "./pricing";
 import type { BillingContext } from "./settings";
@@ -46,6 +47,7 @@ interface DayRow {
   roomRevenue: number;
   extrasRevenue: number;
   expenses: number;
+  commission: number; // booking-site commission and fees, counted on the guest's leaving day
   collected: number;
   arrivals: number;
   departures: number;
@@ -58,7 +60,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   // Timestamps are widened by a day each side, then sorted into the hotel's local days.
   const widened = { gte: dateFromKey(addDays(from, -1)), lt: dateFromKey(addDays(endExclusive, 1)) };
 
-  const [rooms, stays, cancelled, payments, charges, bills, expenses, made] = await Promise.all([
+  const [rooms, stays, cancelled, payments, charges, bills, expenses, made, payoutsPaid] = await Promise.all([
     prisma.room.findMany(),
     prisma.booking.findMany({
       where: {
@@ -91,6 +93,11 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       orderBy: [{ date: "asc" }, { createdAt: "asc" }],
     }),
     prisma.booking.findMany({ where: { createdAt: widened }, select: { createdAt: true, status: true } }),
+    // Money booking sites sent to the bank in this period.
+    prisma.booking.findMany({
+      where: { payoutReceivedOn: { gte: dateFromKey(from), lt: dateFromKey(endExclusive) }, payoutAmount: { not: null } },
+      select: { payoutAmount: true },
+    }),
   ]);
 
   const tz = ctx.settings.timezone;
@@ -108,8 +115,40 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   for (const r of sellable) roomsByType[r.type] = (roomsByType[r.type] || 0) + 1;
 
   const daily = new Map<string, DayRow>(
-    days.map((d) => [d, { date: d, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, collected: 0, arrivals: 0, departures: 0 }])
+    days.map((d) => [d, { date: d, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 }])
   );
+  // Booking-site stays that end in the period, to compare with the site's payment statement.
+  const payoutRows: Array<ReturnType<typeof payoutRow>> = [];
+  const payoutRow = (b: (typeof stays)[number], folio: ReturnType<typeof folioFor>) => {
+    const p = payoutSummary(folio.grandTotal, b);
+    return {
+      bookingId: b.id,
+      number: b.number,
+      source: b.source,
+      otaReference: b.otaReference,
+      guestName: `${b.guest.firstName} ${b.guest.lastName}`.trim(),
+      room: b.room.roomNumber,
+      checkIn: toDateKey(b.checkInDate),
+      checkOut: toDateKey(b.checkOutDate),
+      nights: folio.nightCount,
+      status: b.status,
+      taxable: round2(folio.roomAfterDiscount + folio.extrasTotal),
+      gst: folio.taxTotal,
+      gross: folio.grandTotal,
+      entered: !!p,
+      commission: p?.commission ?? 0,
+      commissionGst: p?.commissionGst ?? 0,
+      tcs: p?.tcs ?? 0,
+      tds: p?.tds ?? 0,
+      other: p?.other ?? 0,
+      fees: p?.fees ?? 0,
+      taxHeld: p?.taxHeld ?? 0,
+      net: p?.net ?? null,
+      received: !!p?.received,
+      receivedOn: b.payoutReceivedOn ? toDateKey(b.payoutReceivedOn) : null,
+      bankRef: b.payoutBankRef,
+    };
+  };
   const bySource: Record<string, { bookings: number; nights: number; revenue: number }> = {};
   const byRoomType: Record<string, { nights: number; revenue: number }> = {};
   let arrivals = 0;
@@ -127,9 +166,16 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       arrivalNights += eachNight(b.checkInDate, b.checkOutDate).length;
     }
     const departureDay = daily.get(checkOut);
-    if (departureDay) departureDay.departures += 1;
-
     const folio = folioFor(b, ctx);
+    if (departureDay) {
+      departureDay.departures += 1;
+      if (isOtaSource(b.source) || b.payoutAmount !== null) {
+        const row = payoutRow(b, folio);
+        payoutRows.push(row);
+        departureDay.commission += row.fees;
+      }
+    }
+
     const nights = eachNight(b.checkInDate, b.checkOutDate);
     const perNight = nights.length ? folio.roomAfterDiscount / nights.length : 0;
     let nightsInRange = 0;
@@ -194,12 +240,13 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   const groupMap = new Map<string, DayRow & { days: number }>();
   for (const d of dayRows) {
     const key = groupKey(d.date, groupBy);
-    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, collected: 0, arrivals: 0, departures: 0 };
+    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 };
     g.days += 1;
     g.roomsSold += d.roomsSold;
     g.roomRevenue += d.roomRevenue;
     g.extrasRevenue += d.extrasRevenue;
     g.expenses += d.expenses;
+    g.commission += d.commission;
     g.collected += d.collected;
     g.arrivals += d.arrivals;
     g.departures += d.departures;
@@ -216,10 +263,12 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     roomRevenue: round2(g.roomRevenue),
     extrasRevenue: round2(g.extrasRevenue),
     expenses: round2(g.expenses),
+    commission: round2(g.commission),
+    costs: round2(g.expenses + g.commission),
     collected: round2(g.collected),
     arrivals: g.arrivals,
     departures: g.departures,
-    ...hotelMetrics({ roomsAvailable: usableRooms * g.days, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, expenses: g.expenses }),
+    ...hotelMetrics({ roomsAvailable: usableRooms * g.days, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, expenses: g.expenses + g.commission }),
   }));
 
   const roomNightsSold = dayRows.reduce((s, d) => s + d.roomsSold, 0);
@@ -227,6 +276,29 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   const extrasRevenue = round2(dayRows.reduce((s, d) => s + d.extrasRevenue, 0));
   const expensesTotal = round2(expenses.reduce((s, e) => s + e.amount, 0));
   const available = usableRooms * dayCount;
+
+  // Booking-site payouts, per site and in total.
+  const sumOf = (rows: typeof payoutRows, k: "gross" | "fees" | "taxHeld" | "net") => round2(rows.reduce((s, r) => s + (r[k] ?? 0), 0));
+  const bySite = [...new Set(payoutRows.map((r) => r.source))]
+    .map((site) => {
+      const rows = payoutRows.filter((r) => r.source === site);
+      const entered = rows.filter((r) => r.entered);
+      return {
+        site,
+        bookings: rows.length,
+        entered: entered.length,
+        gross: sumOf(rows, "gross"),
+        fees: sumOf(entered, "fees"),
+        taxHeld: sumOf(entered, "taxHeld"),
+        net: sumOf(entered, "net"),
+        received: sumOf(entered.filter((r) => r.received), "net"),
+        waiting: sumOf(entered.filter((r) => !r.received), "net"),
+      };
+    })
+    .sort((a, b) => b.gross - a.gross);
+  const otaFees = sumOf(payoutRows, "fees");
+  const payoutsReceived = round2(payoutsPaid.reduce((s, b) => s + (b.payoutAmount ?? 0), 0));
+  const prepaidOnSites = round2(byMethod.ota || 0);
 
   // Money still owed on stays that have started.
   const owedBookings = await prisma.booking.findMany({
@@ -258,11 +330,18 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       roomRevenue,
       extrasRevenue,
       expenses: expensesTotal,
-      ...hotelMetrics({ roomsAvailable: available, roomsSold: roomNightsSold, roomRevenue, extrasRevenue, expenses: expensesTotal }),
+      otaFees,
+      costs: round2(expensesTotal + otaFees),
+      // Costs include booking-site commission, so profit and cost per room are the real figures.
+      ...hotelMetrics({ roomsAvailable: available, roomsSold: roomNightsSold, roomRevenue, extrasRevenue, expenses: expensesTotal + otaFees }),
       collected: round2(collected),
       refunds: round2(refunds),
+      collectedAtHotel: round2(collected - prepaidOnSites),
+      prepaidOnSites,
+      payoutsReceived,
       moneyOut: expensesTotal,
-      netCash: round2(collected - expensesTotal),
+      // Money that actually reached the hotel: paid at the hotel plus what booking sites sent, minus expenses.
+      netCash: round2(collected - prepaidOnSites + payoutsReceived - expensesTotal),
       cashInDrawer: round2(cashIn - cashOut),
       outstanding: round2(outstanding.reduce((s, o) => s + o.balance, 0)),
     },
@@ -276,7 +355,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       noShows: noShowCount,
       cancellationRate: arrivals + cancelledCount + noShowCount ? Math.round(((cancelledCount + noShowCount) / (arrivals + cancelledCount + noShowCount)) * 1000) / 10 : 0,
     },
-    daily: dayRows.map((d) => ({ ...d, roomRevenue: round2(d.roomRevenue), extrasRevenue: round2(d.extrasRevenue), expenses: round2(d.expenses), collected: round2(d.collected) })),
+    daily: dayRows.map((d) => ({ ...d, roomRevenue: round2(d.roomRevenue), extrasRevenue: round2(d.extrasRevenue), expenses: round2(d.expenses), commission: round2(d.commission), collected: round2(d.collected) })),
     groups,
     bySource: Object.fromEntries(Object.entries(bySource).map(([k, v]) => [k, { ...v, revenue: round2(v.revenue) }])),
     byRoomType: Object.entries(roomsByType)
@@ -317,6 +396,20 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     })),
     expenses: expenses.map((e) => ({ date: toDateKey(e.date), category: e.category, title: e.title, description: e.description, amount: e.amount, method: e.method, addedBy: e.addedBy })),
     outstanding,
+    payouts: {
+      rows: payoutRows.sort((a, b) => a.checkOut.localeCompare(b.checkOut) || a.number - b.number),
+      bySite,
+      totals: {
+        bookings: payoutRows.length,
+        entered: payoutRows.filter((r) => r.entered).length,
+        gross: sumOf(payoutRows, "gross"),
+        fees: otaFees,
+        taxHeld: sumOf(payoutRows, "taxHeld"),
+        net: sumOf(payoutRows.filter((r) => r.entered), "net"),
+        received: sumOf(payoutRows.filter((r) => r.received), "net"),
+        waiting: sumOf(payoutRows.filter((r) => r.entered && !r.received), "net"),
+      },
+    },
   };
 }
 
