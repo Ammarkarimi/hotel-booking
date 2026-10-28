@@ -240,7 +240,7 @@ await click(page.getByRole("link", { name: /^Today/ }), 1500);
 await click(page.getByRole("button", { name: "Check out" }).first(), 1200);
 await page.getByText("Total bill (incl. tax)").waitFor();
 await wait(1400);
-await click(page.getByRole("dialog").getByRole("button", { name: "UPI / QR", exact: true }), 700);
+await click(page.getByRole("dialog").getByRole("button", { name: "Cash", exact: true }), 700);
 await click(page.getByRole("button", { name: /& check out/ }), 700);
 await page.getByText(/Guest checked out/).first().waitFor();
 await wait(1800);
@@ -270,7 +270,7 @@ await click(cleaningCard.getByRole("button", { name: "Mark clean" }), 1800);
 await page.goto(base + "/payments", { waitUntil: "networkidle" });
 await caption(10, "Count the cash drawer in seconds", "Today's money by cash, UPI and card, minus cash spent on expenses: exactly what should be in the drawer.");
 await point(page.getByText("Total received"), 1200);
-await point(page.getByText("UPI / QR", { exact: true }).first(), 1000);
+await point(page.getByText("Cash", { exact: true }).first(), 1000);
 await point(page.getByText("Cash paid for expenses"), 1200);
 await point(page.getByText("Cash that should be in the drawer"), 1800);
 
