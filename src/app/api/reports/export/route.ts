@@ -64,15 +64,15 @@ export async function GET(request: NextRequest) {
         [
           groupBy === "day" ? "Date" : groupBy === "week" ? "Week starting" : "Month", "Rooms available", "Rooms sold", "Occupancy %",
           "Average price per room sold (ADR)", "Earnings per available room (RevPAR)", "Room earnings", "Extras earnings", "Total earnings",
-          "Expenses", "Profit", "Cost per available room", "Profit per available room", "Money received", "Arrivals", "Departures",
+          "Expenses", "Booking site commission", "Profit", "Cost per available room", "Profit per available room", "Money received", "Arrivals", "Departures",
         ],
         ...report.groups.map((g) => [
           g.from, g.roomsAvailable, g.roomsSold, g.occupancy, g.adr, g.revpar, g.roomRevenue, g.extrasRevenue, g.revenue,
-          g.expenses, g.profit, g.costPerAvailableRoom, g.profitPerAvailableRoom, g.collected, g.arrivals, g.departures,
+          g.expenses, g.commission, g.profit, g.costPerAvailableRoom, g.profitPerAvailableRoom, g.collected, g.arrivals, g.departures,
         ]),
         [
           "Total", t.availableRoomNights, t.roomNightsSold, t.occupancy, t.adr, t.revpar, t.roomRevenue, t.extrasRevenue, t.revenue,
-          t.expenses, t.profit, t.costPerAvailableRoom, t.profitPerAvailableRoom, t.collected, report.guests.arrivals, report.guests.departures,
+          t.expenses, t.otaFees, t.profit, t.costPerAvailableRoom, t.profitPerAvailableRoom, t.collected, report.guests.arrivals, report.guests.departures,
         ],
       ]);
     }
@@ -81,6 +81,27 @@ export async function GET(request: NextRequest) {
         ["Date", "Kind of cost", "What for", "Notes", "Paid by", "Amount", "Added by"],
         ...report.expenses.map((e) => [e.date, label(e.category), e.title, e.description, label(e.method), e.amount, e.addedBy]),
         ["", "", "", "", "Total", report.totals.expenses, ""],
+      ]);
+    }
+    if (type === "payouts") {
+      // One row per booking-site stay leaving in the period, to tick off against the site's own statement.
+      const r = report.payouts;
+      return csvResponse(`booking_site_payouts_${suffix}`, [
+        [
+          "Booking site", "Their booking ID", "Our booking #", "Guest", "Room", "Arrival", "Leaving", "Nights", "Status",
+          "Taxable value", "GST", "Bill total (gross)", "Commission", "GST on commission", "TCS", "TDS", "Other deductions",
+          "Site pays us (net)", "Payout", "Received on", "Bank reference",
+        ],
+        ...r.rows.map((p) => [
+          label(p.source), p.otaReference, p.number, p.guestName, p.room, p.checkIn, p.checkOut, p.nights, label(p.status),
+          p.taxable, p.gst, p.gross,
+          p.entered ? p.commission : "", p.entered ? p.commissionGst : "", p.entered ? p.tcs : "", p.entered ? p.tds : "", p.entered ? p.other : "",
+          p.net ?? "", p.entered ? (p.received ? "Received" : "Waiting") : "Not entered", p.receivedOn, p.bankRef,
+        ]),
+        [
+          "Total", "", "", "", "", "", "", "", "", "", "", r.totals.gross, "", "", "", "", "",
+          r.totals.net, `Received ${r.totals.received}, waiting ${r.totals.waiting}`, "", "",
+        ],
       ]);
     }
     if (type === "roomtypes") {

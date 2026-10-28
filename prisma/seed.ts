@@ -114,17 +114,19 @@ type Plan = {
   charges?: Array<[string, string, number, number]>;
   discount?: number;
   notes?: string;
+  otaRef?: string; // prepaid on a booking site, which pays the hotel after commission and tax
+  payoutReceived?: boolean;
 };
 
 const DEMO_PLANS: Plan[] = [
   // Past stays (history for reports)
-  { guest: 2, room: "401", from: -26, nights: 3, status: "checked_out", source: "booking_com", settle: "card", charges: [["food", "Dinner", 2, 650]] },
+  { guest: 2, room: "401", from: -26, nights: 3, status: "checked_out", source: "booking_com", settle: "ota", otaRef: "4417290318", payoutReceived: true, charges: [["food", "Dinner", 2, 650]] },
   { guest: 0, room: "201", from: -21, nights: 2, status: "checked_out", source: "corporate", settle: "bank_transfer" },
   { guest: 3, room: "103", from: -18, nights: 4, status: "checked_out", source: "makemytrip", advance: [3000, "upi"], settle: "upi", charges: [["laundry", "Laundry", 1, 350]] },
   { guest: 6, room: "301", from: -15, nights: 2, status: "checked_out", source: "walk_in", settle: "cash", discount: 500 },
   { guest: 7, room: "204", from: -12, nights: 3, status: "checked_out", source: "website", advance: [5000, "upi"], settle: "upi", charges: [["food", "Breakfast", 6, 250]] },
   { guest: 8, room: "202", from: -10, nights: 1, status: "no_show", source: "phone" },
-  { guest: 4, room: "302", from: -9, nights: 3, status: "checked_out", source: "goibibo", settle: "card" },
+  { guest: 4, room: "302", from: -9, nights: 3, status: "checked_out", source: "goibibo", settle: "ota", otaRef: "NH7095512836", payoutReceived: false },
   { guest: 9, room: "101", from: -7, nights: 2, status: "checked_out", source: "walk_in", settle: "cash" },
   { guest: 1, room: "301", from: -5, nights: 2, status: "checked_out", source: "phone", advance: [4000, "upi"], settle: "upi", charges: [["minibar", "Minibar", 1, 480]] },
   { guest: 5, room: "203", from: -4, nights: 3, status: "checked_out", source: "airbnb", advance: [6000, "card"] }, // still owes money
@@ -184,6 +186,7 @@ async function seedDemo() {
         adults: Math.min(2, room.capacity),
         notes: p.notes ?? null,
         createdById: owner.id,
+        otaReference: p.otaRef ?? null,
         createdAt: at(addDays(checkIn, -3), 10),
         actualCheckIn: p.status === "checked_in" || p.status === "checked_out" ? at(checkIn, 13) : null,
         actualCheckOut: p.status === "checked_out" ? at(checkOut, 10) : null,
@@ -231,6 +234,26 @@ async function seedDemo() {
       if (p.settle && folio.balance > 0) {
         await prisma.payment.create({
           data: { hotelId, bookingId: booking.id, amount: folio.balance, method: p.settle, type: "balance", receivedBy: owner.name, paidAt: at(checkOut, 10) },
+        });
+      }
+      if (p.otaRef) {
+        // Typical site deductions: 15% commission, 18% GST on it, 0.5% TCS and 0.1% TDS.
+        const commission = Math.round(folio.grandTotal * 0.15 * 100) / 100;
+        const commissionGst = Math.round(commission * 0.18 * 100) / 100;
+        const tcs = Math.round(folio.grandTotal * 0.005 * 100) / 100;
+        const tds = Math.round(folio.grandTotal * 0.001 * 100) / 100;
+        const received = addDays(checkOut, 7);
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: {
+            payoutCommission: commission,
+            payoutCommissionGst: commissionGst,
+            payoutTcs: tcs,
+            payoutTds: tds,
+            payoutAmount: Math.round((folio.grandTotal - commission - commissionGst - tcs - tds) * 100) / 100,
+            payoutReceivedOn: p.payoutReceived && received <= today ? dateFromKey(received) : null,
+            payoutBankRef: p.payoutReceived && received <= today ? "UTR HDFC000918273" : null,
+          },
         });
       }
     }

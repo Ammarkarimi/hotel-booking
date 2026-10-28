@@ -7,7 +7,7 @@ import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
 import { bookingLabel, folioFor, loadBooking, serializeBooking } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
-import { PAYMENT_METHODS, label } from "@/lib/utils";
+import { GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 const paymentSchema = z.object({
   bookingId: z.string().min(1),
   amount: z.coerce.number().positive("Amount must be more than zero"),
-  method: z.enum(PAYMENT_METHODS),
+  method: z.enum(GUEST_PAYMENT_METHODS),
   type: z.enum(["advance", "balance", "full", "refund"]).optional(),
   reference: z.string().trim().optional(),
   notes: z.string().trim().optional(),

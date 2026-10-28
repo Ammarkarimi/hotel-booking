@@ -1,0 +1,10 @@
+-- AlterTable
+ALTER TABLE "Booking" ADD COLUMN     "otaReference" TEXT,
+ADD COLUMN     "payoutAmount" DOUBLE PRECISION,
+ADD COLUMN     "payoutBankRef" TEXT,
+ADD COLUMN     "payoutCommission" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "payoutCommissionGst" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "payoutReceivedOn" DATE,
+ADD COLUMN     "payoutTcs" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "payoutTds" DOUBLE PRECISION NOT NULL DEFAULT 0;
+

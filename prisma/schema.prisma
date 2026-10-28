@@ -180,34 +180,44 @@ model GuestDocument {
 }
 
 model Booking {
-  id             String    @id @default(cuid())
-  hotelId        String
-  number         Int // counts up per hotel, starting at 1001
-  publicToken    String    @unique @default(cuid())
-  guestId        String
-  roomId         String
-  checkInDate    DateTime
-  checkOutDate   DateTime
-  actualCheckIn  DateTime?
-  actualCheckOut DateTime?
-  status         String    @default("reserved") // reserved, checked_in, checked_out, cancelled, no_show
-  source         String    @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
-  ratePerNight   Float     @default(0) // agreed base price per night
-  fixedRate      Boolean   @default(false) // true = ignore weekend / seasonal price changes
-  discount       Float     @default(0)
-  adults         Int       @default(1)
-  children       Int       @default(0)
-  notes          String?
-  cancelReason   String?
-  createdById    String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  guest          Guest     @relation(fields: [guestId], references: [id])
-  room           Room      @relation(fields: [roomId], references: [id])
-  payments       Payment[]
-  charges        Charge[]
-  bill           Bill?
-  hotel          Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  hotelId             String
+  number              Int // counts up per hotel, starting at 1001
+  publicToken         String    @unique @default(cuid())
+  guestId             String
+  roomId              String
+  checkInDate         DateTime
+  checkOutDate        DateTime
+  actualCheckIn       DateTime?
+  actualCheckOut      DateTime?
+  status              String    @default("reserved") // reserved, checked_in, checked_out, cancelled, no_show
+  source              String    @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
+  ratePerNight        Float     @default(0) // agreed base price per night
+  fixedRate           Boolean   @default(false) // true = ignore weekend / seasonal price changes
+  discount            Float     @default(0)
+  adults              Int       @default(1)
+  children            Int       @default(0)
+  notes               String?
+  cancelReason        String?
+  createdById         String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  // Bookings from booking sites (MakeMyTrip, Goibibo, Booking.com…): the bill stays on the
+  // gross amount; these record what the site deducts and actually pays the hotel.
+  otaReference        String? // the booking site's own booking ID, to match its statements
+  payoutAmount        Float? // what the site pays the hotel after deductions; null = not entered
+  payoutCommission    Float     @default(0)
+  payoutCommissionGst Float     @default(0)
+  payoutTcs           Float     @default(0)
+  payoutTds           Float     @default(0)
+  payoutReceivedOn    DateTime? @db.Date // when the money reached the bank; null = still waiting
+  payoutBankRef       String? // UTR or bank reference of the site's transfer
+  guest               Guest     @relation(fields: [guestId], references: [id])
+  room                Room      @relation(fields: [roomId], references: [id])
+  payments            Payment[]
+  charges             Charge[]
+  bill                Bill?
+  hotel               Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, number])
   @@index([roomId, checkInDate, checkOutDate])

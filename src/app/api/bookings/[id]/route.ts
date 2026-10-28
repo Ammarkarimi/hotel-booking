@@ -18,7 +18,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
-import { BOOKING_SOURCES, PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
+import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -50,6 +50,7 @@ const editSchema = z.object({
   children: z.coerce.number().int().min(0).max(50).optional(),
   source: z.enum(BOOKING_SOURCES).optional(),
   notes: z.string().optional(),
+  otaReference: z.string().trim().max(60).optional(),
 });
 
 export async function PATCH(request: NextRequest, { params }: Params) {
@@ -103,6 +104,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(body.children !== undefined && { children: body.children }),
           ...(body.source && { source: body.source }),
           ...(body.notes !== undefined && { notes: body.notes || null }),
+          ...(body.otaReference !== undefined && { otaReference: body.otaReference || null }),
         },
       });
 
@@ -128,7 +130,7 @@ const actionSchema = z.object({
   payment: z
     .object({
       amount: z.coerce.number().min(0),
-      method: z.enum(PAYMENT_METHODS).default("cash"),
+      method: z.enum(GUEST_PAYMENT_METHODS).default("cash"),
       reference: z.string().optional(),
     })
     .optional(),

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, EmptyState, Input, Loading, PageHeader, 
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { addDays, todayKey } from "@/lib/dates";
-import { cn, formatCurrency, formatDateTime, label, PAYMENT_METHODS } from "@/lib/utils";
+import { cn, formatCurrency, formatDateTime, GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
 
 interface PaymentRow {
   id: string;
@@ -102,7 +102,7 @@ export default function PaymentsPage() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-3">
         <StatCard title="Total received" value={formatCurrency(total)} subtitle={refunds ? `after ${formatCurrency(refunds)} refunds` : `${inRange.length} payment(s)`} icon={<Wallet className="h-5 w-5" />} />
-        {PAYMENT_METHODS.map((m) => (
+        {GUEST_PAYMENT_METHODS.map((m) => (
           <StatCard key={m} title={label(m)} value={formatCurrency(byMethod[m] || 0)} tone="slate" />
         ))}
       </div>

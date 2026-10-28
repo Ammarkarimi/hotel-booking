@@ -17,7 +17,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
-import { BOOKING_SOURCES, PAYMENT_METHODS } from "@/lib/utils";
+import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -87,11 +87,12 @@ const createSchema = z.object({
   ratePerNight: z.coerce.number().min(0).optional(),
   discount: z.coerce.number().min(0).default(0),
   notes: z.string().trim().optional(),
+  otaReference: z.string().trim().max(60).optional(),
   checkInNow: z.boolean().optional(),
   advance: z
     .object({
       amount: z.coerce.number().min(0),
-      method: z.enum(PAYMENT_METHODS).default("cash"),
+      method: z.enum(GUEST_PAYMENT_METHODS).default("cash"),
       reference: z.string().optional(),
     })
     .optional(),
@@ -161,6 +162,7 @@ export async function POST(request: NextRequest) {
           fixedRate: body.ratePerNight !== undefined && body.ratePerNight !== room.pricePerNight,
           discount: body.discount,
           notes: body.notes || null,
+          otaReference: body.otaReference || null,
           createdById: user.id,
           status: body.checkInNow ? "checked_in" : "reserved",
           actualCheckIn: body.checkInNow ? new Date() : null,

@@ -121,6 +121,7 @@ export default function ReportsPage() {
                   {money(t.revenue)}
                 </Row>
                 <Row label={<Link href="/expenses" className="text-primary-700 hover:underline">Expenses</Link>}>− {money(t.expenses)}</Row>
+                {t.otaFees > 0 && <Row label="Booking site commission & fees">− {money(t.otaFees)}</Row>}
                 <div className={cn("mt-2 flex items-center justify-between rounded-xl px-4 py-3 text-lg font-bold", t.profit >= 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
                   <span>{t.profit >= 0 ? "Profit" : "Loss"}</span>
                   <span>{money(Math.abs(t.profit))}</span>
@@ -159,8 +160,8 @@ export default function ReportsPage() {
               <StatCard title="Average price per room sold" value={money(t.adr)} subtitle="ADR: room earnings ÷ rooms sold" icon={<IndianRupee className="h-5 w-5" />} tone="slate" />
               <StatCard title="Earnings per available room" value={money(t.revpar)} subtitle={`RevPAR: room earnings ÷ all ${data.rooms} rooms, sold or not`} icon={<TrendingUp className="h-5 w-5" />} />
               <StatCard title="All earnings per available room" value={money(t.trevpar)} subtitle="TRevPAR: rooms + extras ÷ all rooms" icon={<BedDouble className="h-5 w-5" />} tone="slate" />
-              <StatCard title="Cost per available room" value={money(t.costPerAvailableRoom)} subtitle={`Expenses ÷ all ${data.rooms} rooms, each night`} icon={<Receipt className="h-5 w-5" />} tone="amber" />
-              <StatCard title="Cost per room sold" value={money(t.costPerOccupiedRoom)} subtitle="Expenses ÷ rooms sold" icon={<Receipt className="h-5 w-5" />} tone="amber" />
+              <StatCard title="Cost per available room" value={money(t.costPerAvailableRoom)} subtitle={`Costs ÷ all ${data.rooms} rooms, each night`} icon={<Receipt className="h-5 w-5" />} tone="amber" />
+              <StatCard title="Cost per room sold" value={money(t.costPerOccupiedRoom)} subtitle="Costs ÷ rooms sold" icon={<Receipt className="h-5 w-5" />} tone="amber" />
               <StatCard
                 title="Profit per available room"
                 value={money(t.profitPerAvailableRoom)}
@@ -185,7 +186,7 @@ export default function ReportsPage() {
                   shows how well the whole hotel earns. Empty rooms pull it down.
                 </p>
                 <p>
-                  <b>Cost per available room</b> is what each room costs you to run per night: {money(t.expenses)} ÷ {t.availableRoomNights} = <b>{money(t.costPerAvailableRoom)}</b>. If
+                  <b>Cost per available room</b> is what each room costs you to run per night: your costs (expenses plus booking-site commission) {money(t.costs)} ÷ {t.availableRoomNights} = <b>{money(t.costPerAvailableRoom)}</b>. If
                   it is higher than the earnings per available room, the hotel is losing money.
                 </p>
               </div>
@@ -207,7 +208,7 @@ export default function ReportsPage() {
                         <Tooltip cursor={{ fill: "#f1f5f9" }} formatter={(v, name) => [money(Number(v)), name]} />
                         <Legend wrapperStyle={{ fontSize: 12 }} />
                         <Bar dataKey="revenue" name="Earnings" fill={CHART_BLUE} radius={[4, 4, 0, 0]} maxBarSize={24} />
-                        <Bar dataKey="expenses" name="Expenses" fill={CHART_AMBER} radius={[4, 4, 0, 0]} maxBarSize={24} />
+                        <Bar dataKey="costs" name="Costs" fill={CHART_AMBER} radius={[4, 4, 0, 0]} maxBarSize={24} />
                       </BarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -245,7 +246,7 @@ export default function ReportsPage() {
                       <th className="px-3 py-2 text-right">ADR</th>
                       <th className="px-3 py-2 text-right">RevPAR</th>
                       <th className="px-3 py-2 text-right">Earnings</th>
-                      <th className="px-3 py-2 text-right">Expenses</th>
+                      <th className="px-3 py-2 text-right">Costs</th>
                       <th className="px-3 py-2 text-right">Profit</th>
                       <th className="px-3 py-2 text-right">Cost / room</th>
                       <th className="px-3 py-2 text-right">Received</th>
@@ -262,7 +263,7 @@ export default function ReportsPage() {
                         <td className="px-3 py-2 text-right">{money(g.adr)}</td>
                         <td className="px-3 py-2 text-right">{money(g.revpar)}</td>
                         <td className="px-3 py-2 text-right">{money(g.revenue)}</td>
-                        <td className="px-3 py-2 text-right">{money(g.expenses)}</td>
+                        <td className="px-3 py-2 text-right">{money(g.costs)}</td>
                         <td className={cn("px-3 py-2 text-right font-semibold", g.profit < 0 && "text-red-600")}>{money(g.profit)}</td>
                         <td className="px-3 py-2 text-right">{money(g.costPerAvailableRoom)}</td>
                         <td className="px-3 py-2 text-right">{money(g.collected)}</td>
@@ -277,7 +278,7 @@ export default function ReportsPage() {
                       <td className="px-3 py-2 text-right">{money(t.adr)}</td>
                       <td className="px-3 py-2 text-right">{money(t.revpar)}</td>
                       <td className="px-3 py-2 text-right">{money(t.revenue)}</td>
-                      <td className="px-3 py-2 text-right">{money(t.expenses)}</td>
+                      <td className="px-3 py-2 text-right">{money(t.costs)}</td>
                       <td className={cn("px-3 py-2 text-right", t.profit < 0 && "text-red-600")}>{money(t.profit)}</td>
                       <td className="px-3 py-2 text-right">{money(t.costPerAvailableRoom)}</td>
                       <td className="px-3 py-2 text-right">{money(t.collected)}</td>
@@ -337,6 +338,109 @@ export default function ReportsPage() {
             </Card>
           </div>
 
+          {/* Booking-site payouts */}
+          {data.payouts.totals.bookings > 0 && (
+            <Card className="overflow-x-auto">
+              <CardHeader
+                title="Booking site payouts"
+                description="Stays from booking sites that end in this period. Your bill stays on the full (gross) amount; this is what the sites actually pay you."
+              />
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold text-slate-500">Bills (gross)</p>
+                    <p className="text-xl font-bold">{money(data.payouts.totals.gross)}</p>
+                    <p className="text-xs text-slate-500">{data.payouts.totals.bookings} stay{data.payouts.totals.bookings === 1 ? "" : "s"}</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold text-slate-500">Commission & fees</p>
+                    <p className="text-xl font-bold text-amber-700">− {money(data.payouts.totals.fees)}</p>
+                    <p className="text-xs text-slate-500">counted in your costs</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold text-slate-500">TCS + TDS kept by sites</p>
+                    <p className="text-xl font-bold">{money(data.payouts.totals.taxHeld)}</p>
+                    <p className="text-xs text-slate-500">you can claim this back</p>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 p-3">
+                    <p className="text-xs font-semibold text-slate-500">Sites pay you</p>
+                    <p className="text-xl font-bold text-emerald-700">{money(data.payouts.totals.net)}</p>
+                    <p className="text-xs text-slate-500">
+                      {money(data.payouts.totals.received)} received · {money(data.payouts.totals.waiting)} waiting
+                    </p>
+                  </div>
+                </div>
+                {data.payouts.totals.entered < data.payouts.totals.bookings && (
+                  <Tip tone="warning">
+                    {data.payouts.totals.bookings - data.payouts.totals.entered} stay{data.payouts.totals.bookings - data.payouts.totals.entered === 1 ? " has" : "s have"} no payout entered yet. Open the
+                    booking and fill in “Booking site payout” from the site&apos;s statement.
+                  </Tip>
+                )}
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2">Site</th>
+                      <th className="px-3 py-2 text-right">Stays</th>
+                      <th className="px-3 py-2 text-right">Gross</th>
+                      <th className="px-3 py-2 text-right">Commission</th>
+                      <th className="px-3 py-2 text-right">TCS + TDS</th>
+                      <th className="px-3 py-2 text-right">Pays you</th>
+                      <th className="px-3 py-2 text-right">Waiting</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {data.payouts.bySite.map((r) => (
+                      <tr key={r.site}>
+                        <td className="px-3 py-2 font-medium">{label(r.site)}</td>
+                        <td className="px-3 py-2 text-right">
+                          {r.bookings}
+                          {r.entered < r.bookings && <span className="text-xs text-amber-700"> ({r.bookings - r.entered} not entered)</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right">{money(r.gross)}</td>
+                        <td className="px-3 py-2 text-right">{money(r.fees)}</td>
+                        <td className="px-3 py-2 text-right">{money(r.taxHeld)}</td>
+                        <td className="px-3 py-2 text-right font-semibold">{money(r.net)}</td>
+                        <td className={cn("px-3 py-2 text-right", r.waiting > 0 && "text-amber-700")}>{money(r.waiting)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <details className="no-print rounded-xl border border-slate-200">
+                  <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-primary-700">Show each stay ({data.payouts.rows.length})</summary>
+                  <ul className="divide-y divide-slate-100">
+                    {data.payouts.rows.map((r) => (
+                      <li key={r.bookingId}>
+                        <Link href={`/bookings/${r.bookingId}`} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-slate-50">
+                          <span className="min-w-0">
+                            <span className="block font-semibold">
+                              #{r.number} · {r.guestName} · {label(r.source)}
+                              {r.otaReference && <span className="font-normal text-slate-500"> · {r.otaReference}</span>}
+                            </span>
+                            <span className="block text-xs text-slate-500">
+                              Leaving {formatDate(r.checkOut)} · gross {formatCurrency(r.gross)}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            {r.net === null ? (
+                              <span className="text-xs font-semibold text-amber-700">Not entered</span>
+                            ) : (
+                              <>
+                                <span className="block font-semibold">{formatCurrency(r.net)}</span>
+                                <span className={cn("block text-xs", r.received ? "text-emerald-700" : "text-amber-700")}>
+                                  {r.received ? `Received ${formatDate(r.receivedOn!)}` : "Waiting"}
+                                </span>
+                              </>
+                            )}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Expenses and money in / out */}
           <div className="grid gap-6 lg:grid-cols-3">
             <Card>
@@ -355,19 +459,25 @@ export default function ReportsPage() {
             <Card>
               <CardHeader title="Money in and out" description="Actual payments and spending" />
               <CardContent>
-                {Object.entries(data.byMethod).map(([m, v]) => (
-                  <Row key={m} label={`Received by ${label(m)}`}>
-                    {money(v)}
-                  </Row>
-                ))}
+                {Object.entries(data.byMethod)
+                  .filter(([m]) => m !== "ota")
+                  .map(([m, v]) => (
+                    <Row key={m} label={`Received by ${label(m)}`}>
+                      {money(v)}
+                    </Row>
+                  ))}
+                {(t.payoutsReceived > 0 || t.prepaidOnSites > 0) && <Row label="Paid into your bank by booking sites">{money(t.payoutsReceived)}</Row>}
                 <Row label="Total received" strong>
-                  {money(t.collected)}
+                  {money(t.collectedAtHotel + t.payoutsReceived)}
                 </Row>
                 <Row label="Expenses paid">− {money(t.moneyOut)}</Row>
                 <Row label="Money left" strong>
                   <span className={t.netCash < 0 ? "text-red-600" : ""}>{money(t.netCash)}</span>
                 </Row>
                 <p className="mt-2 text-xs text-slate-500">Cash only: {money(t.cashInDrawer)} (cash received minus cash expenses).</p>
+                {t.prepaidOnSites > 0 && (
+                  <p className="mt-1 text-xs text-slate-500">Guests also prepaid {money(t.prepaidOnSites)} on booking sites. That money reaches you through the sites&apos; payouts.</p>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -429,6 +539,9 @@ export default function ReportsPage() {
               </Button>
               <Button variant="outline" onClick={() => download("roomtypes")}>
                 <Download className="h-4 w-4" /> Room types
+              </Button>
+              <Button variant="outline" onClick={() => download("payouts")}>
+                <Download className="h-4 w-4" /> Booking site payouts
               </Button>
             </CardContent>
           </Card>

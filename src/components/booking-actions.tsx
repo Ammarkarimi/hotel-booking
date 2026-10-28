@@ -6,7 +6,7 @@ import { Button, Field, Input, Modal, Row, Select, Tip, Toggle } from "@/compone
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { diffDays } from "@/lib/dates";
-import { formatCurrency, formatDate, label, PAYMENT_METHODS } from "@/lib/utils";
+import { formatCurrency, formatDate, GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
 import type { BookingDTO } from "@/lib/types";
 
 type MinimalBooking = Pick<BookingDTO, "id" | "number" | "guestName" | "status" | "checkInDate" | "checkOutDate" | "folio"> & {
@@ -14,10 +14,18 @@ type MinimalBooking = Pick<BookingDTO, "id" | "number" | "guestName" | "status" 
   guest?: { documents?: unknown[] };
 };
 
-export function MethodPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function MethodPicker({
+  value,
+  onChange,
+  methods = GUEST_PAYMENT_METHODS,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  methods?: readonly string[];
+}) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-      {PAYMENT_METHODS.map((m) => (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {methods.map((m) => (
         <button
           key={m}
           type="button"
