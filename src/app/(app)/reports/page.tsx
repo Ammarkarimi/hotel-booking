@@ -154,7 +154,10 @@ export default function ReportsPage() {
 
           {/* Per-room numbers */}
           <div>
-            <h2 className="mb-3 text-lg font-bold">Rooms · {data.rooms} room{data.rooms === 1 ? "" : "s"} in use</h2>
+            <h2 className="mb-3 text-lg font-bold">
+              Rooms · {data.rooms} room{data.rooms === 1 ? "" : "s"}
+              {data.roomsUnderRepair > 0 && <span className="text-base font-semibold text-slate-500"> · {data.roomsUnderRepair} under repair, not counted from today</span>}
+            </h2>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatCard title="How full (occupancy)" value={`${t.occupancy}%`} subtitle={`${t.roomNightsSold} of ${t.availableRoomNights} room-nights sold`} icon={<Percent className="h-5 w-5" />} tone="sky" />
               <StatCard title="Average price per room sold" value={money(t.adr)} subtitle="ADR: room earnings ÷ rooms sold" icon={<IndianRupee className="h-5 w-5" />} tone="slate" />
@@ -175,7 +178,8 @@ export default function ReportsPage() {
               <summary className="cursor-pointer font-semibold text-primary-700">What do these numbers mean?</summary>
               <div className="mt-3 space-y-2">
                 <p>
-                  You have <b>{data.rooms} rooms</b>. Over {data.days} night{data.days === 1 ? "" : "s"} you could sell <b>{t.availableRoomNights}</b> room-nights and you sold{" "}
+                  You have <b>{data.rooms} rooms</b>
+                  {data.roomsUnderRepair > 0 && ` (${data.roomsUnderRepair} under repair, so not for sale from today)`}. Over {data.days} night{data.days === 1 ? "" : "s"} you could sell <b>{t.availableRoomNights}</b> room-nights and you sold{" "}
                   <b>{t.roomNightsSold}</b>, earning <b>{money(t.roomRevenue)}</b> from rooms.
                 </p>
                 <p>

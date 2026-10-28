@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { hotelMetrics } from "../reports";
+import { hotelMetrics, roomsForSale } from "../reports";
 
 test("per-available-room numbers divide by every room, not only the rooms sold", () => {
   // 25 rooms, 10 sold at ₹5,000 for one night, ₹20,000 of costs that day.
@@ -33,4 +33,18 @@ test("nothing sold or no rooms gives zeros, not errors", () => {
   assert.equal(m.costPerOccupiedRoom, 0);
   assert.equal(m.profit, -500);
   assert.equal(m.margin, 0);
+});
+
+test("a room under repair now is not for sale from today, but counts on earlier nights", () => {
+  const rooms = [
+    { roomNumber: "101", status: "available" },
+    { roomNumber: "102", status: "maintenance" },
+    { roomNumber: "103", status: "occupied" },
+  ];
+  const today = "2026-10-28";
+  assert.equal(roomsForSale(rooms, "2026-09-15", today).length, 3); // it may have been sold back then
+  assert.equal(roomsForSale(rooms, today, today).length, 2);
+  assert.equal(roomsForSale(rooms, "2026-11-02", today).length, 2);
+  // If every room is under repair, still count them all rather than divide by zero.
+  assert.equal(roomsForSale([{ status: "maintenance" }], today, today).length, 1);
 });

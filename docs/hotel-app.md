@@ -136,8 +136,9 @@ before GST.
 - **Profit:** room earnings + extras − expenses − booking-site commission and
   fees, and the profit margin. TCS and TDS kept by sites are not costs (they can
   be claimed back) and are shown separately
-- **Per-room numbers**, all using the rooms in use (rooms under repair are left
-  out):
+- **Per-room numbers**, all using the rooms for sale each night. A room under
+  repair is left out from today onwards; past nights count every room, because
+  the room may have been sold then:
   - **How full (occupancy):** rooms sold ÷ rooms available
   - **Average price per room sold (ADR):** room earnings ÷ rooms sold
   - **Earnings per available room (RevPAR):** room earnings ÷ every room, sold
