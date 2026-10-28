@@ -89,6 +89,16 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/reports", text: "Open reports" },
   },
   {
+    q: "For owners: MakeMyTrip, Goibibo or Booking.com paid us less than the bill",
+    steps: [
+      "That's normal: the bill and GST invoice stay on the full amount, and the site takes off its commission, GST on it, TCS and TDS.",
+      "If the guest paid on the site, take the payment as “Booking site (prepaid)” so their bill shows paid.",
+      "On the booking, open “Booking site payout” and type the deductions from the site's statement (or just the amount it pays you). Tick “The money has reached our bank” when it arrives.",
+      "Reports → “Booking site payouts” shows gross, deductions, what the sites pay, and what is still waiting. Download it for Excel to match against the site's own sheet.",
+    ],
+    link: { href: "/reports", text: "Open reports" },
+  },
+  {
     q: "For owners: setting up the hotel",
     steps: [
       "Settings → Hotel details: name, address, phone, GSTIN, check-in and check-out time.",

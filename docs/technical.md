@@ -74,6 +74,12 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `ActivityLog` | Hotel | Who did what |
 | `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
 
+`Booking` also holds booking-site payout fields: `otaReference`, `payoutAmount`
+(null until entered), `payoutCommission`, `payoutCommissionGst`, `payoutTcs`,
+`payoutTds`, `payoutReceivedOn` and `payoutBankRef`. The maths is in
+`src/lib/payouts.ts`; the bill always stays on the gross amount. Payment method
+`ota` means the guest prepaid on the booking site.
+
 ## How hotels are kept apart
 
 This is the most important design rule. It lives in `src/lib/db.ts`.
@@ -166,7 +172,8 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
 | `/api/expenses`, `/api/expenses/[id]` | GET (front desk: own entries; `?summary=cash` for everyone), POST / PATCH, DELETE (owner, or the person who added it on the same day) |
 | `/api/reports?from=&to=&groupBy=day\|week\|month` | ⓐ GET |
-| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes` | ⓐ GET |
+| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes\|payouts` | ⓐ GET |
+| `/api/bookings/[id]/payout` | ⓐ PUT: booking site ID, commission, GST on commission, TCS, TDS, net payout, received date and UTR |
 | `/api/activity` | ⓐ GET |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)

@@ -59,7 +59,13 @@ Open any booking (search at the top of the screen) to:
   **Undo check-in**
 - **Change** the stay: extend by a night, change dates, or move to another free room
 - **Add item** to the bill: food, laundry, minibar, taxi, extra bed or damage
-- take payments (cash, UPI, card, bank transfer) and **Refund**
+- take payments (cash, UPI, card, bank transfer, or **Booking site (prepaid)** for
+  a guest who paid on MakeMyTrip, Goibibo, Booking.com and so on) and **Refund**
+- for booking-site stays, the owner fills in **Booking site payout**: the site's
+  booking ID, its commission, GST on commission, TCS and TDS, and the amount it
+  pays (worked out from the deductions, or typed in), then ticks when the money
+  reaches the bank, with the UTR. The bill and GST invoice stay on the gross
+  amount; the payout is for the owner's accounts only
 - print the **tax invoice**, the **proforma bill** (during the stay), the
   **booking confirmation** and the **guest registration card**
 
@@ -127,7 +133,9 @@ is shown up to today; the owner can include the rest of it to see bookings
 already made. Longer periods can be shown by day, week or month. All amounts are
 before GST.
 
-- **Profit:** room earnings + extras − expenses, and the profit margin
+- **Profit:** room earnings + extras − expenses − booking-site commission and
+  fees, and the profit margin. TCS and TDS kept by sites are not costs (they can
+  be claimed back) and are shown separately
 - **Per-room numbers**, all using the rooms in use (rooms under repair are left
   out):
   - **How full (occupancy):** rooms sold ÷ rooms available
@@ -136,8 +144,8 @@ before GST.
     or empty. With 25 rooms and 10 sold at ₹5,000, ADR is ₹5,000 but RevPAR is
     ₹50,000 ÷ 25 = ₹2,000
   - **All earnings per available room (TRevPAR):** rooms + extras ÷ every room
-  - **Cost per available room** and **cost per room sold:** expenses ÷ every
-    room, and ÷ rooms sold
+  - **Cost per available room** and **cost per room sold:** costs (expenses +
+    booking-site commission) ÷ every room, and ÷ rooms sold
   - **Profit per available room (GOPPAR):** profit ÷ every room
 - a chart of earnings against expenses, an occupancy chart, and a table for each
   day, week or month with a total row
@@ -147,10 +155,17 @@ before GST.
   left), guests arriving and leaving, people, average stay, new bookings,
   cancellations and no-shows
 - extras sold, a GST summary, and who still owes money
+- **Booking site payouts** for stays ending in the period, by site and per stay:
+  bills (gross), commission and fees, TCS + TDS, what the sites pay you, and how
+  much has been received or is still waiting. Stays with no payout entered yet
+  are flagged. **Money in and out** counts what the sites actually paid into the
+  bank, not the gross the guest paid them
 
 **Print / save PDF** prints the report without the menu. **CSV downloads for
 Excel:** the summary (by day, week or month, with a total row), expenses,
-bookings, payments, GST invoices and room types.
+bookings, payments, GST invoices, room types, and **booking site payouts** (one
+row per stay with the site's booking ID, gross bill, each deduction, net, and
+received date and UTR, to tick off against the site's own statement).
 
 ### Settings (owner)
 
