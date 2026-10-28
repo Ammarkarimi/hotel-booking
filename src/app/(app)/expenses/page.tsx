@@ -11,7 +11,7 @@ import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { addDays } from "@/lib/dates";
 import { groupLabel } from "@/lib/periods";
-import { cn, EXPENSE_CATEGORIES, formatCurrency, label } from "@/lib/utils";
+import { cn, EXPENSE_CATEGORIES, formatCurrency, label, PAYMENT_METHODS } from "@/lib/utils";
 
 interface ExpenseRow {
   id: string;
@@ -111,11 +111,16 @@ function ExpenseDialog({ open, editing, onClose, onSaved }: { open: boolean; edi
             ))}
           </div>
         </div>
+        {form.category === "commission" && (
+          <p className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            Commission entered on a booking under “Booking site payout” is already counted in Reports. Add it here only if it was not entered on the booking.
+          </p>
+        )}
         <Field label="Date" hint={isAdmin ? undefined : "Front desk can add costs from the last 7 days."}>
           <Input type="date" required value={form.date} max={settings.today} min={isAdmin ? undefined : addDays(settings.today, -7)} onChange={(e) => setForm({ ...form, date: e.target.value })} />
         </Field>
         <Field label="Paid by">
-          <MethodPicker value={form.method} onChange={(method) => setForm({ ...form, method })} />
+          <MethodPicker methods={PAYMENT_METHODS} value={form.method} onChange={(method) => setForm({ ...form, method })} />
         </Field>
         <Field label="Notes" optional hint="Bill number, shop name, who was paid...">
           <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} />

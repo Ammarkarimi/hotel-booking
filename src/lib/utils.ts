@@ -68,6 +68,8 @@ export const ROOM_STATUSES = ["available", "occupied", "maintenance"] as const;
 export const HOUSEKEEPING_STATUSES = ["clean", "dirty", "cleaning"] as const;
 export const DOCUMENT_TYPES = ["aadhar", "pan", "passport", "visa", "driving_licence", "voter_id", "other"] as const;
 export const PAYMENT_METHODS = ["cash", "upi", "card", "bank_transfer", "other"] as const;
+// Guests can also pay in advance on a booking site, which then pays the hotel after its deductions.
+export const GUEST_PAYMENT_METHODS = [...PAYMENT_METHODS, "ota"] as const;
 export const BOOKING_STATUSES = ["reserved", "checked_in", "checked_out", "cancelled", "no_show"] as const;
 export const BOOKING_SOURCES = [
   "walk_in",
@@ -83,6 +85,8 @@ export const BOOKING_SOURCES = [
   "corporate",
   "other",
 ] as const;
+// Sources where a booking site or agent collects from the guest and pays the hotel after commission and tax.
+export const OTA_SOURCES = ["booking_com", "makemytrip", "goibibo", "agoda", "airbnb", "expedia", "travel_agent"] as const;
 export const CHARGE_CATEGORIES = ["food", "laundry", "minibar", "transport", "extra_bed", "damage", "other"] as const;
 // What a hotel spends money on. Keys are stored on each expense; labels are below.
 export const EXPENSE_CATEGORIES = [
@@ -122,6 +126,7 @@ export const LABELS: Record<string, string> = {
   upi: "UPI / QR",
   card: "Card",
   bank_transfer: "Bank transfer",
+  ota: "Booking site (prepaid)",
   advance: "Advance",
   balance: "Balance",
   full: "Full payment",

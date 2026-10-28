@@ -1,5 +1,6 @@
 // Shapes of the JSON our API returns, used by the screens.
 import type { Folio } from "./pricing";
+import type { PayoutSummary } from "./payouts";
 
 export interface GuestDTO {
   id: string;
@@ -102,6 +103,16 @@ export interface BookingDTO {
     totalAmount: number;
   } | null;
   folio: Folio;
+  otaReference: string | null;
+  payoutAmount: number | null;
+  payoutCommission: number;
+  payoutCommissionGst: number;
+  payoutTcs: number;
+  payoutTds: number;
+  payoutReceivedOn: string | null;
+  payoutBankRef: string | null;
+  /** What the booking site pays after its deductions; null until entered. */
+  payout: PayoutSummary | null;
   flags: { arrivingToday: boolean; lateArrival: boolean; leavingToday: boolean; overstay: boolean };
   message?: string;
   /** Only when asked for with ?checkout=1: the bill if the guest checks out today. */

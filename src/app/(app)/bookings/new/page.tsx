@@ -9,6 +9,7 @@ import { MethodPicker } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
+import { isOtaSource } from "@/lib/payouts";
 import { computeFolio, priceNights } from "@/lib/pricing";
 import { BOOKING_SOURCES, cn, formatCurrency, formatDate, label } from "@/lib/utils";
 import type { BookingDTO, GuestDTO, RoomDTO, SettingsDTO } from "@/lib/types";
@@ -73,6 +74,7 @@ function NewBookingWizard() {
   const [advance, setAdvance] = useState("");
   const [method, setMethod] = useState("upi");
   const [notes, setNotes] = useState("");
+  const [otaReference, setOtaReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<BookingDTO | null>(null);
 
@@ -180,6 +182,7 @@ function NewBookingWizard() {
           discount: Number(discount) || 0,
           ...(customRate !== "" && { ratePerNight: Number(customRate) }),
           notes,
+          ...(isOtaSource(source) && otaReference.trim() && { otaReference: otaReference.trim() }),
           checkInNow: walkIn,
           ...(guest
             ? { guestId: guest.id }
@@ -524,7 +527,20 @@ function NewBookingWizard() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Advance payment received now" optional hint="Leave empty if the guest will pay later.">
+              {isOtaSource(source) && (
+                <Field label={`${label(source)} booking ID`} optional hint="Their own booking number, to match their payment statement later.">
+                  <Input value={otaReference} onChange={(e) => setOtaReference(e.target.value)} maxLength={60} />
+                </Field>
+              )}
+              <Field
+                label="Advance payment received now"
+                optional
+                hint={
+                  isOtaSource(source)
+                    ? "If the guest already paid on the booking site, enter the full amount and choose “Booking site (prepaid)”."
+                    : "Leave empty if the guest will pay later."
+                }
+              >
                 <Input type="number" min={0} inputMode="decimal" placeholder="0" value={advance} onChange={(e) => setAdvance(e.target.value)} className="text-lg font-semibold" />
               </Field>
               {Number(advance) > 0 && (

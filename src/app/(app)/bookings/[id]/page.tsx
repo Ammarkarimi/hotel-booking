@@ -27,6 +27,7 @@ import { PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
+import { isOtaSource, netAfterDeductions } from "@/lib/payouts";
 import { paymentState } from "@/lib/pricing";
 import { BOOKING_SOURCES, CHARGE_CATEGORIES, cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { BookingDetailDTO, RoomDTO } from "@/lib/types";
@@ -123,6 +124,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
     children: booking.children,
     source: booking.source,
     notes: booking.notes || "",
+    otaReference: booking.otaReference || "",
   });
   const [rooms, setRooms] = useState<RoomDTO[] | null>(null);
   const [saving, setSaving] = useState(false);
@@ -140,6 +142,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
       children: booking.children,
       source: booking.source,
       notes: booking.notes || "",
+      otaReference: booking.otaReference || "",
     });
   }, [open, booking]);
 
@@ -166,6 +169,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         children: form.children,
         source: form.source,
         notes: form.notes,
+        otaReference: form.otaReference,
       };
       if (!started) body.checkInDate = form.checkInDate;
       if (Number(form.ratePerNight) !== booking.ratePerNight) body.ratePerNight = Number(form.ratePerNight);
@@ -239,6 +243,11 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
             ))}
           </Select>
         </Field>
+        {(isOtaSource(form.source) || form.otaReference) && (
+          <Field label={`${label(form.source)} booking ID`} optional hint="Their booking number, to match their payment statement.">
+            <Input value={form.otaReference} maxLength={60} onChange={(e) => setForm({ ...form, otaReference: e.target.value })} />
+          </Field>
+        )}
         <Field label="Notes" optional>
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
         </Field>
@@ -255,6 +264,199 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
   );
 }
 
+
+/** What the booking site deducts and pays the hotel. The bill and invoice stay on the gross amount. */
+function PayoutDialog({ booking, open, onClose, onDone }: { booking: BookingDetailDTO; open: boolean; onClose: () => void; onDone: () => void }) {
+  const { toast, settings } = useApp();
+  const gross = booking.folio.grandTotal;
+  const blank = (n: number) => (n ? String(n) : "");
+  const initial = () => ({
+    otaReference: booking.otaReference ?? "",
+    commission: blank(booking.payoutCommission),
+    commissionGst: blank(booking.payoutCommissionGst),
+    tcs: blank(booking.payoutTcs),
+    tds: blank(booking.payoutTds),
+    net: booking.payoutAmount === null ? "" : String(booking.payoutAmount),
+    received: !!booking.payoutReceivedOn,
+    receivedOn: booking.payoutReceivedOn ?? settings.today,
+    bankRef: booking.payoutBankRef ?? "",
+  });
+  const [form, setForm] = useState(initial);
+  // Until the owner types the amount, it follows the deductions.
+  const [netTyped, setNetTyped] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setForm(initial());
+    setNetTyped(booking.payoutAmount !== null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, booking]);
+
+  const deductions = { commission: Number(form.commission) || 0, commissionGst: Number(form.commissionGst) || 0, tcs: Number(form.tcs) || 0, tds: Number(form.tds) || 0 };
+  const suggested = netAfterDeductions(gross, deductions);
+  const anyDeduction = Object.values(deductions).some((v) => v > 0);
+  const net = netTyped ? form.net : anyDeduction ? String(suggested) : form.net;
+  const update = (patch: Partial<typeof form>) => setForm((f) => ({ ...f, ...patch }));
+
+  async function save(clear = false) {
+    setSaving(true);
+    try {
+      await api(`/api/bookings/${booking.id}/payout`, {
+        method: "PUT",
+        body: clear
+          ? { otaReference: form.otaReference, payoutAmount: null }
+          : {
+              otaReference: form.otaReference,
+              payoutAmount: net === "" ? null : Number(net),
+              payoutCommission: deductions.commission,
+              payoutCommissionGst: deductions.commissionGst,
+              payoutTcs: deductions.tcs,
+              payoutTds: deductions.tds,
+              payoutReceivedOn: form.received ? form.receivedOn : null,
+              payoutBankRef: form.received ? form.bankRef : "",
+            },
+      });
+      toast(clear ? "Payout cleared" : "Payout saved");
+      onDone();
+      onClose();
+    } catch (e) {
+      toast((e as Error).message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const money = (key: "commission" | "commissionGst" | "tcs" | "tds", text: string, hint?: string) => (
+    <Field label={text} optional hint={hint}>
+      <Input type="number" min={0} step="0.01" inputMode="decimal" placeholder="0" value={form[key]} onChange={(e) => update({ [key]: e.target.value })} />
+    </Field>
+  );
+
+  return (
+    <Modal open={open} onClose={onClose} title="Booking site payout" description={`The bill stays at ${formatCurrency(gross)}. Write down what ${label(booking.source)} takes off and pays you.`} size="lg">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          save();
+        }}
+        className="space-y-4"
+      >
+        <Field label={`${label(booking.source)} booking ID`} optional hint="Their booking number, to match their payment statement.">
+          <Input value={form.otaReference} maxLength={60} onChange={(e) => update({ otaReference: e.target.value })} />
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {money("commission", "Commission")}
+          <Field label="GST on commission" optional hint={deductions.commission ? undefined : "Usually 18% of the commission."}>
+            <div className="flex gap-2">
+              <Input type="number" min={0} step="0.01" inputMode="decimal" placeholder="0" value={form.commissionGst} onChange={(e) => update({ commissionGst: e.target.value })} />
+              {deductions.commission > 0 && (
+                <Button size="sm" variant="outline" className="shrink-0" onClick={() => update({ commissionGst: String(Math.round(deductions.commission * 18) / 100) })}>
+                  18%
+                </Button>
+              )}
+            </div>
+          </Field>
+          {money("tcs", "TCS", "Tax collected at source by the site")}
+          {money("tds", "TDS", "Tax deducted at source by the site")}
+        </div>
+        <Field label="Amount the site pays you" hint={anyDeduction && !netTyped ? "Worked out from the deductions. You can change it." : "Leave empty if you don't know it yet."}>
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            inputMode="decimal"
+            value={net}
+            onChange={(e) => {
+              setNetTyped(true);
+              update({ net: e.target.value });
+            }}
+            className="text-lg font-semibold"
+          />
+        </Field>
+        {net !== "" && (
+          <div className="rounded-xl bg-slate-50 p-3 text-[15px]">
+            <Row label="Bill (gross)">{formatCurrency(gross)}</Row>
+            <Row label="Taken off by the site">− {formatCurrency(Math.round((gross - Number(net)) * 100) / 100)}</Row>
+            <Row label="Site pays you" strong>
+              {formatCurrency(Number(net))}
+            </Row>
+          </div>
+        )}
+        <label className="flex items-center gap-3 text-[15px] font-semibold">
+          <input type="checkbox" className="h-5 w-5 accent-primary-600" checked={form.received} onChange={(e) => update({ received: e.target.checked })} />
+          The money has reached our bank
+        </label>
+        {form.received && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Date received">
+              <Input type="date" required max={settings.today} value={form.receivedOn} onChange={(e) => update({ receivedOn: e.target.value })} />
+            </Field>
+            <Field label="Bank reference (UTR)" optional>
+              <Input value={form.bankRef} maxLength={60} onChange={(e) => update({ bankRef: e.target.value })} />
+            </Field>
+          </div>
+        )}
+        <div className="flex flex-wrap justify-between gap-2 pt-2">
+          {booking.payoutAmount !== null ? (
+            <Button variant="ghost" className="text-red-600" onClick={() => save(true)}>
+              Clear payout
+            </Button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={saving}>
+              Save payout
+            </Button>
+          </div>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+function PayoutCard({ booking, onEdit }: { booking: BookingDetailDTO; onEdit: () => void }) {
+  const p = booking.payout;
+  return (
+    <Card>
+      <CardHeader
+        title="Booking site payout"
+        description={`What ${label(booking.source)} pays you after its deductions. The bill stays on the full amount.`}
+        action={
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            {p ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />} {p ? "Change" : "Enter"}
+          </Button>
+        }
+      />
+      <CardContent className="text-[15px]">
+        {booking.otaReference && <Row label="Their booking ID">{booking.otaReference}</Row>}
+        {!p ? (
+          <p className="py-2 text-sm text-slate-500">Not entered yet. Add it from the site&apos;s payment statement to see your real earnings.</p>
+        ) : (
+          <>
+            <Row label="Bill (gross)">{formatCurrency(p.gross)}</Row>
+            {p.commission > 0 && <Row label="Commission">− {formatCurrency(p.commission)}</Row>}
+            {p.commissionGst > 0 && <Row label="GST on commission">− {formatCurrency(p.commissionGst)}</Row>}
+            {p.tcs > 0 && <Row label="TCS">− {formatCurrency(p.tcs)}</Row>}
+            {p.tds > 0 && <Row label="TDS">− {formatCurrency(p.tds)}</Row>}
+            {Math.abs(p.other) > 0.5 && <Row label="Other deductions">− {formatCurrency(p.other)}</Row>}
+            <Row label="Site pays you" strong>
+              {formatCurrency(p.net)}
+            </Row>
+            <p className={cn("mt-2 rounded-lg px-3 py-2 text-sm font-semibold", p.received ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900")}>
+              {p.received ? `Received ${formatDate(booking.payoutReceivedOn!)}${booking.payoutBankRef ? ` · ${booking.payoutBankRef}` : ""}` : "Waiting for the site to pay"}
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -264,6 +466,7 @@ export default function BookingDetailPage() {
   const [chargeOpen, setChargeOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
+  const [payoutOpen, setPayoutOpen] = useState(false);
   const [showNights, setShowNights] = useState(false);
 
   const load = useCallback(() => {
@@ -548,6 +751,7 @@ export default function BookingDetailPage() {
                 {b.children > 0 && `, ${b.children} child${b.children > 1 ? "ren" : ""}`}
               </Row>
               <Row label="Came from">{label(b.source)}</Row>
+              {b.otaReference && <Row label="Their booking ID">{b.otaReference}</Row>}
               {b.actualCheckIn && <Row label="Checked in">{formatDateTime(b.actualCheckIn)}</Row>}
               {b.actualCheckOut && <Row label="Checked out">{formatDateTime(b.actualCheckOut)}</Row>}
               <Row label="Booked on">{formatDateTime(b.createdAt)}</Row>
@@ -576,6 +780,10 @@ export default function BookingDetailPage() {
               </a>
             </CardContent>
           </Card>
+
+          {isAdmin && (isOtaSource(b.source) || b.payoutAmount !== null || b.payments.some((p) => p.method === "ota")) && b.status !== "cancelled" && (
+            <PayoutCard booking={b} onEdit={() => setPayoutOpen(true)} />
+          )}
 
           {(b.status === "reserved" || b.status === "checked_in" || isAdmin) && (
             <Card>
@@ -611,6 +819,7 @@ export default function BookingDetailPage() {
 
       <AddChargeDialog booking={b} open={chargeOpen} onClose={() => setChargeOpen(false)} onDone={load} />
       <EditBookingDialog booking={b} open={editOpen} onClose={() => setEditOpen(false)} onDone={load} />
+      {isAdmin && <PayoutDialog booking={b} open={payoutOpen} onClose={() => setPayoutOpen(false)} onDone={load} />}
       <PaymentDialog booking={b} open={refundOpen} refund onClose={() => setRefundOpen(false)} onDone={() => load()} />
       {actions.dialogs}
     </div>
