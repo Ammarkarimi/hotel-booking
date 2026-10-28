@@ -9,7 +9,7 @@ import type { BillingContext } from "./settings";
 const SOLD_STATUSES = ["reserved", "checked_in", "checked_out"];
 
 export interface MetricsInput {
-  roomsAvailable: number; // room-nights the hotel could sell (rooms in use × nights)
+  roomsAvailable: number; // room-nights the hotel could sell (rooms for sale each night, added up)
   roomsSold: number; // room-nights with a guest
   roomRevenue: number; // before tax, after discounts
   extrasRevenue: number; // food, laundry and other items, before tax
@@ -41,8 +41,20 @@ export function hotelMetrics(m: MetricsInput) {
   };
 }
 
+/**
+ * The rooms the hotel could sell on a day. A room under repair can't be sold, but there is no record
+ * of when the repair started, so it is left out from today onwards only. On earlier nights, when it
+ * may well have been sold, every room counts.
+ */
+export function roomsForSale<T extends { status: string }>(rooms: T[], day: string, today: string): T[] {
+  if (day < today) return rooms;
+  const usable = rooms.filter((r) => r.status !== "maintenance");
+  return usable.length ? usable : rooms;
+}
+
 interface DayRow {
   date: string;
+  roomsAvailable: number;
   roomsSold: number;
   roomRevenue: number;
   extrasRevenue: number;
@@ -107,15 +119,19 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     return k >= from && k <= to;
   };
 
-  // Rooms under repair cannot be sold, so they do not count as available.
-  const usable = rooms.filter((r) => r.status !== "maintenance");
-  const sellable = usable.length ? usable : rooms;
-  const usableRooms = sellable.length;
+  // Room-nights for sale, in total and per room type.
   const roomsByType: Record<string, number> = {};
-  for (const r of sellable) roomsByType[r.type] = (roomsByType[r.type] || 0) + 1;
+  for (const r of rooms) roomsByType[r.type] = (roomsByType[r.type] || 0) + 1;
+  const typeNights: Record<string, number> = {};
+  const forSaleOn = new Map(days.map((d) => [d, roomsForSale(rooms, d, ctx.today)]));
+  for (const list of forSaleOn.values()) for (const r of list) typeNights[r.type] = (typeNights[r.type] || 0) + 1;
+  const underRepair = to >= ctx.today ? rooms.length - roomsForSale(rooms, ctx.today, ctx.today).length : 0;
 
   const daily = new Map<string, DayRow>(
-    days.map((d) => [d, { date: d, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 }])
+    days.map((d) => [
+      d,
+      { date: d, roomsAvailable: forSaleOn.get(d)!.length, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 },
+    ])
   );
   // Booking-site stays that end in the period, to compare with the site's payment statement.
   const payoutRows: Array<ReturnType<typeof payoutRow>> = [];
@@ -240,8 +256,9 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   const groupMap = new Map<string, DayRow & { days: number }>();
   for (const d of dayRows) {
     const key = groupKey(d.date, groupBy);
-    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 };
+    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsAvailable: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 };
     g.days += 1;
+    g.roomsAvailable += d.roomsAvailable;
     g.roomsSold += d.roomsSold;
     g.roomRevenue += d.roomRevenue;
     g.extrasRevenue += d.extrasRevenue;
@@ -258,7 +275,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     // A week or month cut off by the chosen dates shows only the days inside them.
     from: g.date < from ? from : g.date,
     days: g.days,
-    roomsAvailable: usableRooms * g.days,
+    roomsAvailable: g.roomsAvailable,
     roomsSold: g.roomsSold,
     roomRevenue: round2(g.roomRevenue),
     extrasRevenue: round2(g.extrasRevenue),
@@ -268,14 +285,14 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     collected: round2(g.collected),
     arrivals: g.arrivals,
     departures: g.departures,
-    ...hotelMetrics({ roomsAvailable: usableRooms * g.days, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, expenses: g.expenses + g.commission }),
+    ...hotelMetrics({ roomsAvailable: g.roomsAvailable, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, expenses: g.expenses + g.commission }),
   }));
 
   const roomNightsSold = dayRows.reduce((s, d) => s + d.roomsSold, 0);
   const roomRevenue = round2(dayRows.reduce((s, d) => s + d.roomRevenue, 0));
   const extrasRevenue = round2(dayRows.reduce((s, d) => s + d.extrasRevenue, 0));
   const expensesTotal = round2(expenses.reduce((s, e) => s + e.amount, 0));
-  const available = usableRooms * dayCount;
+  const available = dayRows.reduce((s, d) => s + d.roomsAvailable, 0);
 
   // Booking-site payouts, per site and in total.
   const sumOf = (rows: typeof payoutRows, k: "gross" | "fees" | "taxHeld" | "net") => round2(rows.reduce((s, r) => s + (r[k] ?? 0), 0));
@@ -323,7 +340,8 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     to,
     days: dayCount,
     groupBy,
-    rooms: usableRooms,
+    rooms: rooms.length,
+    roomsUnderRepair: underRepair,
     totals: {
       availableRoomNights: available,
       roomNightsSold,
@@ -361,7 +379,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     byRoomType: Object.entries(roomsByType)
       .map(([type, count]) => {
         const sold = byRoomType[type] ?? { nights: 0, revenue: 0 };
-        const m = hotelMetrics({ roomsAvailable: count * dayCount, roomsSold: sold.nights, roomRevenue: sold.revenue, extrasRevenue: 0, expenses: 0 });
+        const m = hotelMetrics({ roomsAvailable: typeNights[type] || 0, roomsSold: sold.nights, roomRevenue: sold.revenue, extrasRevenue: 0, expenses: 0 });
         return { type, rooms: count, nights: sold.nights, revenue: round2(sold.revenue), occupancy: m.occupancy, adr: m.adr, revpar: m.revpar };
       })
       .sort((a, b) => b.revenue - a.revenue),
