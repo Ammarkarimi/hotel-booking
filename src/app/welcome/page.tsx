@@ -387,7 +387,7 @@ export default function WelcomePage() {
         <section id="tour" className="scroll-mt-16 bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-300">Video tour</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in under 3 minutes</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in about 3 minutes</h2>
             <p className="mt-3 max-w-2xl text-lg text-slate-300">
               A guest books direct, the front desk welcomes them and checks them out, the bill and GST invoice come together, rooms are turned around,
               expenses are written down and the owner sees the profit. Tap a chapter to jump to it.
