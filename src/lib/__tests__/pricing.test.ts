@@ -107,3 +107,19 @@ test("payment state", () => {
   assert.equal(paymentState(1000, 1200), "overpaid");
   assert.equal(paymentState(0, 0), "paid");
 });
+
+test("a GST rate chosen for one booking replaces the default; extras keep theirs", () => {
+  const nights = priceNights({ baseRate: 4000, checkIn: "2026-03-02", checkOut: "2026-03-04", roomType: "deluxe", rules: noRules });
+  const base = { nights, discount: 0, charges: [{ amount: 1000 }], payments: [], tax: gst };
+  const normal = computeFolio(base);
+  assert.equal(normal.roomTaxRate, 5); // ₹4,000 a night is in the 5% slab
+  assert.equal(normal.defaultRoomTaxRate, 5);
+  const custom = computeFolio({ ...base, gstRate: 12 });
+  assert.equal(custom.roomTaxRate, 12);
+  assert.equal(custom.defaultRoomTaxRate, 5);
+  assert.equal(custom.roomTax, 960);
+  assert.equal(custom.extrasTax, 50);
+  assert.equal(custom.grandTotal, 8000 + 960 + 1000 + 50);
+  assert.equal(computeFolio({ ...base, gstRate: 0 }).roomTax, 0); // 0% is a real choice, not "use the default"
+  assert.equal(computeFolio({ ...base, gstRate: null }).roomTaxRate, 5);
+});

@@ -23,7 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
-import { PaymentDialog, useBookingActions } from "@/components/booking-actions";
+import { GstPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -120,6 +120,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
     roomId: booking.room.id,
     ratePerNight: String(booking.ratePerNight),
     discount: String(booking.discount || ""),
+    gstRate: booking.gstRate,
     adults: booking.adults,
     children: booking.children,
     source: booking.source,
@@ -138,6 +139,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
       roomId: booking.room.id,
       ratePerNight: String(booking.ratePerNight),
       discount: String(booking.discount || ""),
+      gstRate: booking.gstRate,
       adults: booking.adults,
       children: booking.children,
       source: booking.source,
@@ -173,6 +175,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
       };
       if (!started) body.checkInDate = form.checkInDate;
       if (Number(form.ratePerNight) !== booking.ratePerNight) body.ratePerNight = Number(form.ratePerNight);
+      if (form.gstRate !== booking.gstRate) body.gstRate = form.gstRate;
       await api(`/api/bookings/${booking.id}`, { method: "PATCH", body });
       toast("Booking updated");
       onDone();
@@ -226,6 +229,9 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
           </Field>
           <Field label="Discount (amount)">
             <Input type="number" min={0} inputMode="decimal" value={form.discount} onChange={(e) => setForm({ ...form, discount: e.target.value })} placeholder="0" />
+          </Field>
+          <Field label="GST on the room" hint="The default comes from Settings." className="sm:col-span-2">
+            <GstPicker value={form.gstRate} defaultRate={booking.folio.defaultRoomTaxRate} onChange={(gstRate) => setForm({ ...form, gstRate })} />
           </Field>
           <Field label="Adults">
             <CountInput min={1} max={20} value={form.adults} onChange={(adults) => setForm({ ...form, adults })} aria-label="adults" />
@@ -489,7 +495,7 @@ export default function BookingDetailPage() {
   const shareText = [
     `Dear ${b.guestName},`,
     `Your booking at ${s.hotelName}: #${b.number}`,
-    `Room ${b.room.roomNumber} (${label(b.room.type)})`,
+    `Room: ${label(b.room.type)} room`,
     `${formatDate(b.checkInDate)} → ${formatDate(b.checkOutDate)} (${f.nightCount} night${f.nightCount > 1 ? "s" : ""})`,
     `Total: ${formatCurrency(f.grandTotal)} · Paid: ${formatCurrency(f.netPaid)} · Balance: ${formatCurrency(Math.max(0, f.balance))}`,
     s.phone ? `Call us: ${s.phone}` : "",
@@ -628,7 +634,7 @@ export default function BookingDetailPage() {
                   </span>
                 </div>
               ))}
-              <Row label={`Tax on room (${f.roomTaxRate}%)`}>{formatCurrency(f.roomTax)}</Row>
+              <Row label={`GST on room (${f.roomTaxRate}%${b.gstRate !== null && f.roomTaxRate !== f.defaultRoomTaxRate ? ", set for this booking" : ""})`}>{formatCurrency(f.roomTax)}</Row>
               {f.extrasTotal > 0 && <Row label={`Tax on extras (${f.extrasTaxRate}%)`}>{formatCurrency(f.extrasTax)}</Row>}
               <div className="my-2 border-t border-slate-200" />
               <Row label="Total" strong>

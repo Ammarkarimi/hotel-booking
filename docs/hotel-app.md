@@ -39,12 +39,15 @@ Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
 1. **Dates.** Quick buttons for “1 night”, “2 nights” and so on.
 2. **Room.** Only free rooms are shown, each with its total price.
 3. **Guest.** Search a returning guest by name or phone, or type a new one.
-4. **Price & payment.** Agreed price, discount, where the booking came from
-   (walk-in, phone, website, Booking.com, MakeMyTrip, Goibibo, Agoda, Airbnb…),
-   and any advance payment.
+4. **Price & payment.** Agreed price, discount, **GST on the room** (the default
+   from Settings is selected; tap 0%, 5%, 12%, 18% or “Other” for this booking
+   only), where the booking came from (walk-in, phone, website, Booking.com,
+   MakeMyTrip, Goibibo, Agoda, Airbnb…), and any advance payment.
 
-Afterwards, **Send on WhatsApp** sends the guest a confirmation. **Walk-in guest**
-uses the same steps and checks the guest in immediately.
+Afterwards, **Send on WhatsApp** sends the guest a confirmation. It names the
+kind of room (for example “Deluxe room”), not the room number, so the hotel can
+still move the guest before arrival. The printed confirmation does the same.
+**Walk-in guest** uses the same steps and checks the guest in immediately.
 
 **No double bookings:** the room is locked while a booking is saved, so two
 people can never book the same room for the same night.
@@ -57,7 +60,9 @@ Open any booking (search at the top of the screen) to:
   extras, taxes, payments and balance
 - **Check in**, **Check out**, **Cancel**, **Guest did not come** (no-show) and
   **Undo check-in**
-- **Change** the stay: extend by a night, change dates, or move to another free room
+- **Change** the stay: extend by a night, change dates, move to another free room,
+  or change the price, discount or GST on the room. The check-out screen also
+  lets you change the GST before the final invoice is made
 - **Add item** to the bill: food, laundry, minibar, taxi, extra bed or damage
 - take payments (cash, UPI, card, bank transfer, or **Booking site (prepaid)** for
   a guest who paid on MakeMyTrip, Goibibo, Booking.com and so on) and **Refund**
@@ -173,7 +178,7 @@ received date and UTR, to tick off against the site's own statement).
 | Tab | What’s there |
 |---|---|
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
-| Prices & tax | Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat tax rate; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
+| Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
 | Staff | Add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |

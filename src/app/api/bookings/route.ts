@@ -86,6 +86,8 @@ const createSchema = z.object({
   source: z.enum(BOOKING_SOURCES).default("walk_in"),
   ratePerNight: z.coerce.number().min(0).optional(),
   discount: z.coerce.number().min(0).default(0),
+  // GST % on the room for this booking; left out or null = the default from Settings.
+  gstRate: z.coerce.number().min(0, "GST cannot be less than 0%").max(40, "Please check the GST %").nullable().optional(),
   notes: z.string().trim().optional(),
   otaReference: z.string().trim().max(60).optional(),
   checkInNow: z.boolean().optional(),
@@ -161,6 +163,7 @@ export async function POST(request: NextRequest) {
           ratePerNight: body.ratePerNight ?? room.pricePerNight,
           fixedRate: body.ratePerNight !== undefined && body.ratePerNight !== room.pricePerNight,
           discount: body.discount,
+          gstRate: body.gstRate ?? null,
           notes: body.notes || null,
           otaReference: body.otaReference || null,
           createdById: user.id,

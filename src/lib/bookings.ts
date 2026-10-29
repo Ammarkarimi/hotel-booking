@@ -137,6 +137,7 @@ export function folioFor(booking: FullBooking, ctx: BillingContext): Folio {
     charges: booking.charges,
     payments: booking.payments,
     tax: ctx.tax,
+    gstRate: booking.gstRate,
   });
   const bill = booking.bill;
   if (!bill) return live;

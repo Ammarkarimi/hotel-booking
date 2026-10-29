@@ -29,12 +29,17 @@ export async function GET(request: NextRequest, { params }: Params) {
     const booking = await loadBooking(id);
     const guest = await prisma.guest.findUnique({ where: { id: booking.guestId }, include: { documents: true } });
     // ?checkout=1 adds the bill as it would be at check-out today, so the screen shows exactly what will be charged.
-    const wantsCheckout = new URL(request.url).searchParams.get("checkout") === "1" && booking.status === "checked_in";
+    const query = new URL(request.url).searchParams;
+    const wantsCheckout = query.get("checkout") === "1" && booking.status === "checked_in";
+    // &gstRate=12 (or =default) previews the bill with another GST % before it is chosen at check-out.
+    const gst = query.get("gstRate");
+    const gstRate = gst === null ? booking.gstRate : gst === "default" ? null : Number(gst);
+    if (gstRate !== null && !(gstRate >= 0 && gstRate <= 40)) fail("Please check the GST %");
     return NextResponse.json({
       ...serializeBooking(booking, ctx),
       guest,
       settings: ctx.settings,
-      ...(wantsCheckout && { checkout: checkOutPreview(booking, ctx) }),
+      ...(wantsCheckout && { checkout: checkOutPreview({ ...booking, gstRate }, ctx) }),
     });
   });
 }
@@ -46,6 +51,7 @@ const editSchema = z.object({
   ratePerNight: z.coerce.number().min(0).optional(),
   fixedRate: z.boolean().optional(),
   discount: z.coerce.number().min(0).optional(),
+  gstRate: z.coerce.number().min(0, "GST cannot be less than 0%").max(40, "Please check the GST %").nullable().optional(),
   adults: z.coerce.number().int().min(1).max(50).optional(),
   children: z.coerce.number().int().min(0).max(50).optional(),
   source: z.enum(BOOKING_SOURCES).optional(),
@@ -100,6 +106,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(ratePerNight !== undefined && { ratePerNight }),
           ...(fixedRate !== undefined && { fixedRate }),
           ...(body.discount !== undefined && { discount: body.discount }),
+          ...(body.gstRate !== undefined && { gstRate: body.gstRate }),
           ...(body.adults !== undefined && { adults: body.adults }),
           ...(body.children !== undefined && { children: body.children }),
           ...(body.source && { source: body.source }),
@@ -127,6 +134,8 @@ const actionSchema = z.object({
   reason: z.string().optional(),
   // Bill up to the booked leaving date instead of today (early leaver paying in full, or late check-out in the app).
   useBookedDates: z.boolean().optional(),
+  // GST % on the room chosen at check-out; null = the default from Settings.
+  gstRate: z.coerce.number().min(0, "GST cannot be less than 0%").max(40, "Please check the GST %").nullable().optional(),
   payment: z
     .object({
       amount: z.coerce.number().min(0),
@@ -206,7 +215,12 @@ export async function POST(request: NextRequest, { params }: Params) {
 
           await tx.booking.update({
             where: { id },
-            data: { status: "checked_out", actualCheckOut: new Date(), checkOutDate: dateFromKey(checkOut) },
+            data: {
+              status: "checked_out",
+              actualCheckOut: new Date(),
+              checkOutDate: dateFromKey(checkOut),
+              ...(body.gstRate !== undefined && { gstRate: body.gstRate }),
+            },
           });
           const fresh = await loadBooking(id, tx);
           const folio = folioFor({ ...fresh, bill: null }, ctx);

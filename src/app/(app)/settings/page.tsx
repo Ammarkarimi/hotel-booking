@@ -111,12 +111,12 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader title="Tax" description="How tax is added to room bills." />
+        <CardHeader title="Tax" description="The default GST on room bills. Staff can choose another rate for one booking when they enter its price or check the guest out." />
         <CardContent className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
               { v: "india_gst", t: "Indian GST slabs (automatic)", d: "Tax rate depends on the room price per night." },
-              { v: "flat", t: "One fixed tax rate", d: "Same % on every room bill." },
+              { v: "flat", t: "One fixed tax rate", d: "Same default % on every room bill." },
             ].map((o) => (
               <button
                 key={o.v}
@@ -130,7 +130,7 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
             ))}
           </div>
           {s.taxMode === "flat" ? (
-            <Field label="Tax rate on rooms (%)" className="max-w-xs">
+            <Field label="Default GST on rooms (%)" className="max-w-xs">
               <NumberInput value={s.taxRate} onChange={(n) => set({ taxRate: n ?? 0 })} />
             </Field>
           ) : (

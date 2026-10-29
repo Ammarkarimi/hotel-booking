@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AlertTriangle, IndianRupee } from "lucide-react";
-import { Button, Field, Input, Modal, Row, Select, Tip, Toggle } from "@/components/ui";
+import { Button, Field, Input, Modal, NumberInput, Row, Select, Tip, Toggle } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { diffDays } from "@/lib/dates";
@@ -157,17 +157,29 @@ export function CheckOutDialog({
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("upi");
   const [useBookedDates, setUseBookedDates] = useState(false);
+  // GST % chosen here; null until changed, so the booking's own rate is used.
+  const [gst, setGst] = useState<{ value: number | null } | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open || !booking) return;
     setFresh(null);
+    setGst(null);
     setUseBookedDates(false);
     setMethod("upi");
-    api<BookingDTO>(`/api/bookings/${booking.id}?checkout=1`)
-      .then(setFresh)
+  }, [open, booking]);
+
+  useEffect(() => {
+    if (!open || !booking) return;
+    let current = true;
+    const rate = gst ? `&gstRate=${gst.value ?? "default"}` : "";
+    api<BookingDTO>(`/api/bookings/${booking.id}?checkout=1${rate}`)
+      .then((b) => current && setFresh(b))
       .catch((e) => toast((e as Error).message, "error"));
-  }, [open, booking, toast]);
+    return () => {
+      current = false;
+    };
+  }, [open, booking, toast, gst]);
 
   // The server works out the bill both ways, so this screen shows exactly what will be charged.
   const preview = fresh?.checkout;
@@ -194,6 +206,7 @@ export function CheckOutDialog({
         body: {
           action: "check_out",
           useBookedDates,
+          ...(gst && { gstRate: gst.value }),
           ...(pay > 0 && { payment: { amount: pay, method } }),
         },
       });
@@ -256,7 +269,7 @@ export function CheckOutDialog({
             </div>
           )}
           <div className="rounded-xl bg-slate-50 p-3">
-            <Row label={`Room (${f.nightCount} night${f.nightCount === 1 ? "" : "s"}, incl. tax)`}>{formatCurrency(f.roomAfterDiscount + f.roomTax)}</Row>
+            <Row label={`Room (${f.nightCount} night${f.nightCount === 1 ? "" : "s"}, incl. ${f.roomTaxRate}% GST)`}>{formatCurrency(f.roomAfterDiscount + f.roomTax)}</Row>
             {f.extrasTotal > 0 && <Row label="Extras (food, laundry...)">{formatCurrency(f.extrasTotal + f.extrasTax)}</Row>}
             <Row label="Total bill (incl. tax)" strong>
               {formatCurrency(f.grandTotal)}
@@ -266,6 +279,10 @@ export function CheckOutDialog({
               <span className={balance > 0 ? "text-red-600" : "text-emerald-600"}>{formatCurrency(Math.abs(balance))}</span>
             </Row>
           </div>
+
+          <Field label="GST on the room" hint="The default comes from Settings. Change it only if this bill needs a different rate.">
+            <GstPicker value={gst ? gst.value : (fresh?.gstRate ?? null)} defaultRate={f.defaultRoomTaxRate} onChange={(v) => setGst({ value: v })} />
+          </Field>
 
           {balance > 0 && (
             <>
@@ -291,6 +308,50 @@ export function CheckOutDialog({
         </div>
       )}
     </Modal>
+  );
+}
+
+const GST_CHOICES = [0, 5, 12, 18];
+
+/** GST % on the room for one booking: the default from Settings or another rate. null means the default. */
+export function GstPicker({ value, defaultRate, onChange }: { value: number | null; defaultRate: number; onChange: (v: number | null) => void }) {
+  const choices = [...new Set([...GST_CHOICES, defaultRate])].sort((a, b) => a - b);
+  const current = value ?? defaultRate;
+  const [other, setOther] = useState(!choices.includes(current));
+  const chip = (selected: boolean) =>
+    "rounded-xl border px-3 py-2 text-sm font-semibold transition " +
+    (selected ? "border-primary-500 bg-primary-50 text-primary-700 ring-2 ring-primary-200" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50");
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {choices.map((r) => (
+          <button
+            key={r}
+            type="button"
+            onClick={() => {
+              setOther(false);
+              onChange(r === defaultRate ? null : r);
+            }}
+            className={chip(!other && current === r)}
+          >
+            {r}%{r === defaultRate && <span className="ml-1 text-xs font-normal">(default)</span>}
+          </button>
+        ))}
+        <button type="button" onClick={() => setOther(true)} className={chip(other)}>
+          Other
+        </button>
+      </div>
+      {other && (
+        <NumberInput
+          value={value}
+          onChange={(v) => onChange(v === null ? null : Math.min(v, 40))}
+          placeholder={`e.g. ${defaultRate}`}
+          aria-label="GST %"
+          className="w-40"
+          autoFocus
+        />
+      )}
+    </div>
   );
 }
 
