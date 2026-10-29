@@ -90,6 +90,7 @@ export interface FolioInput {
   charges: Array<{ amount: number }>;
   payments: Array<{ amount: number; type: string; status?: string }>;
   tax: TaxRules;
+  gstRate?: number | null; // GST % on the room chosen for this booking, instead of the default
 }
 
 export interface Folio {
@@ -99,6 +100,7 @@ export interface Folio {
   discount: number;
   roomAfterDiscount: number;
   roomTaxRate: number;
+  defaultRoomTaxRate: number; // what Settings would charge, shown when choosing another rate
   roomTax: number;
   extrasTotal: number;
   extrasTaxRate: number;
@@ -127,7 +129,8 @@ export function computeFolio(input: FolioInput): Folio {
   const discount = round2(Math.min(Math.max(0, input.discount || 0), roomTotal));
   const roomAfterDiscount = round2(roomTotal - discount);
   const nightCount = input.nights.length;
-  const rRate = roomTaxRate(nightCount ? roomAfterDiscount / nightCount : 0, input.tax);
+  const defaultRate = roomTaxRate(nightCount ? roomAfterDiscount / nightCount : 0, input.tax);
+  const rRate = input.gstRate ?? defaultRate;
   const roomTax = round2((roomAfterDiscount * rRate) / 100);
   const extrasTotal = round2(input.charges.reduce((s, c) => s + c.amount, 0));
   const extrasTaxRate = input.tax.extrasTaxRate || 0;
@@ -143,6 +146,7 @@ export function computeFolio(input: FolioInput): Folio {
     discount,
     roomAfterDiscount,
     roomTaxRate: rRate,
+    defaultRoomTaxRate: defaultRate,
     roomTax,
     extrasTotal,
     extrasTaxRate,

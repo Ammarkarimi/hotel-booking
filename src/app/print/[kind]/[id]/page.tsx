@@ -218,9 +218,7 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
           {formatDate(b.checkOutDate)} by {s.checkOutTime}
         </Info>
         <Info label="Nights">{f.nightCount}</Info>
-        <Info label="Room">
-          {label(b.room.type)} (Room {b.room.roomNumber})
-        </Info>
+        <Info label="Room">{label(b.room.type)} room</Info>
         <Info label="Guests">
           {b.adults} adult(s){b.children ? `, ${b.children} child(ren)` : ""}
         </Info>

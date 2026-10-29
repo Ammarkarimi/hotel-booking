@@ -86,6 +86,7 @@ export interface BookingDTO {
   ratePerNight: number;
   fixedRate: boolean;
   discount: number;
+  gstRate: number | null; // GST % on the room chosen for this booking; null = the default from Settings
   adults: number;
   children: number;
   notes: string | null;

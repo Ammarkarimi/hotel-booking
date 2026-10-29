@@ -194,6 +194,7 @@ model Booking {
   source              String    @default("walk_in") // walk_in, phone, website, booking_com, makemytrip, airbnb, agoda, travel_agent, other
   ratePerNight        Float     @default(0) // agreed base price per night
   fixedRate           Boolean   @default(false) // true = ignore weekend / seasonal price changes
+  gstRate             Float? // GST % on the room for this booking; null = the default from Settings
   discount            Float     @default(0)
   adults              Int       @default(1)
   children            Int       @default(0)

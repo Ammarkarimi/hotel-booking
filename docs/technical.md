@@ -67,7 +67,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
 | `Guest`, `GuestDocument` | Hotel | Guest profile and ID uploads |
-| `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show |
+| `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings) |
 | `Charge` | Hotel, Booking | Extras on the bill |
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |

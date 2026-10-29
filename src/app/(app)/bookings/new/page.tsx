@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, MessageCircle, Printer, Search, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
-import { MethodPicker } from "@/components/booking-actions";
+import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -70,6 +70,7 @@ function NewBookingWizard() {
   const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [customRate, setCustomRate] = useState("");
   const [discount, setDiscount] = useState("");
+  const [gstRate, setGstRate] = useState<number | null>(null); // null = the default from Settings
   const [source, setSource] = useState(walkInParam ? "walk_in" : "phone");
   const [advance, setAdvance] = useState("");
   const [method, setMethod] = useState("upi");
@@ -157,8 +158,9 @@ function NewBookingWizard() {
       charges: [],
       payments: Number(advance) > 0 ? [{ amount: Number(advance), type: "advance" }] : [],
       tax: { taxMode: settings.taxMode, taxRate: settings.taxRate, gstSlabs: settings.gstSlabs, extrasTaxRate: settings.extrasTaxRate },
+      gstRate,
     });
-  }, [selectedRoom, settings, customRate, discount, advance, checkIn, checkOut, nights]);
+  }, [selectedRoom, settings, customRate, discount, advance, checkIn, checkOut, nights, gstRate]);
 
   function setNights(n: number) {
     setCheckOut(addDays(checkIn, n));
@@ -180,6 +182,7 @@ function NewBookingWizard() {
           children,
           source,
           discount: Number(discount) || 0,
+          ...(gstRate !== null && { gstRate }),
           ...(customRate !== "" && { ratePerNight: Number(customRate) }),
           notes,
           ...(isOtaSource(source) && otaReference.trim() && { otaReference: otaReference.trim() }),
@@ -204,7 +207,7 @@ function NewBookingWizard() {
       `Dear ${created.guestName},`,
       `Your booking at ${shell.hotelName} is confirmed.`,
       `Booking no: #${created.number}`,
-      `Room: ${label(created.room.type)} (Room ${created.room.roomNumber})`,
+      `Room: ${label(created.room.type)} room`,
       `Arrival: ${formatDate(created.checkInDate)}${settings ? ` from ${settings.checkInTime}` : ""}`,
       `Departure: ${formatDate(created.checkOutDate)}${settings ? ` by ${settings.checkOutTime}` : ""}`,
       `Total: ${formatCurrency(created.folio.grandTotal)}${created.folio.netPaid > 0 ? `, paid ${formatCurrency(created.folio.netPaid)}` : ""}`,
@@ -518,6 +521,11 @@ function NewBookingWizard() {
                   <Input type="number" min={0} inputMode="decimal" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
                 </Field>
               </div>
+              {folio && (
+                <Field label="GST on the room" hint="The default comes from Settings. Change it only if this booking needs a different rate.">
+                  <GstPicker value={gstRate} defaultRate={folio.defaultRoomTaxRate} onChange={setGstRate} />
+                </Field>
+              )}
               <Field label="How did this booking come?">
                 <Select value={source} onChange={(e) => setSource(e.target.value)}>
                   {BOOKING_SOURCES.map((s) => (
@@ -573,7 +581,7 @@ function NewBookingWizard() {
                 <div className="mt-4 border-t border-slate-100 pt-3">
                   <Row label="Room">{formatCurrency(folio.roomTotal)}</Row>
                   {folio.discount > 0 && <Row label="Discount">− {formatCurrency(folio.discount)}</Row>}
-                  <Row label={`Tax (${folio.roomTaxRate}%)`}>{formatCurrency(folio.taxTotal)}</Row>
+                  <Row label={`GST (${folio.roomTaxRate}%)`}>{formatCurrency(folio.taxTotal)}</Row>
                   <Row label="Total" strong>
                     {formatCurrency(folio.grandTotal)}
                   </Row>
