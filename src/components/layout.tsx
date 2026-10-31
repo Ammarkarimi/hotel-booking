@@ -18,6 +18,7 @@ import {
   Search,
   Settings,
   Sparkles,
+  Timer,
   UserCircle,
   Users,
   Wallet,
@@ -28,6 +29,7 @@ import { cn, label } from "@/lib/utils";
 import { api } from "@/lib/client";
 import { AppProvider, useApp, type ShellSettings } from "@/components/app-provider";
 import { Button, StatusBadge } from "@/components/ui";
+import { ShiftControl } from "@/components/shift";
 import type { SessionUser } from "@/lib/session";
 
 const NAV = [
@@ -40,6 +42,7 @@ const NAV = [
   { href: "/expenses", label: "Expenses", icon: Receipt, hint: "Money spent" },
   { href: "/rooms", label: "Rooms", icon: BedDouble, hint: "Your rooms & prices" },
   { href: "/reports", label: "Reports", icon: BarChart3, hint: "Business summary", admin: true },
+  { href: "/shifts", label: "Staff shifts", icon: Timer, hint: "Attendance & handover notes", admin: true },
   { href: "/settings", label: "Settings", icon: Settings, hint: "Hotel details & staff", admin: true },
 ];
 
@@ -56,6 +59,15 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAdmin, settings } = useApp();
+  // The owner sees how many shift reports are new.
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    if (!isAdmin) return;
+    const load = () => api<{ unread?: number }>("/api/shifts/current").then((r) => setUnread(r.unread ?? 0)).catch(() => undefined);
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
+  }, [isAdmin, pathname]);
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -90,10 +102,15 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
               )}
             >
               <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-600" : "text-slate-400 group-hover:text-slate-600")} />
-              <span className="min-w-0">
+              <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold leading-tight">{item.label}</span>
                 <span className="block text-xs text-slate-400">{item.hint}</span>
               </span>
+              {item.href === "/shifts" && unread > 0 && (
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white" aria-label={`${unread} new shift reports`}>
+                  {unread}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -272,6 +289,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </button>
           <GlobalSearch />
           <div className="ml-auto flex shrink-0 gap-2">
+            <ShiftControl />
             <Link href="/bookings/new">
               <Button className="whitespace-nowrap">
                 <CalendarPlus className="h-5 w-5" />

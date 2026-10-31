@@ -21,9 +21,10 @@ import {
 import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatCard, StatusBadge } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { useBookingActions } from "@/components/booking-actions";
+import { HandoverNotes } from "@/components/shift";
 import { api } from "@/lib/client";
 import { cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
-import type { BookingDTO } from "@/lib/types";
+import type { BookingDTO, CurrentShiftDTO } from "@/lib/types";
 
 interface DashboardRoom {
   id: string;
@@ -170,10 +171,11 @@ function RoomBoard({ rooms }: { rooms: DashboardRoom[] }) {
 }
 
 export default function TodayPage() {
-  const { user, isAdmin } = useApp();
+  const { user, isAdmin, settings } = useApp();
   const router = useRouter();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
+  const [shifts, setShifts] = useState<CurrentShiftDTO | null>(null);
 
   const load = useCallback(() => {
     api<Dashboard>("/api/dashboard")
@@ -182,6 +184,7 @@ export default function TodayPage() {
         setError("");
       })
       .catch((e) => setError(e.message));
+    api<CurrentShiftDTO>("/api/shifts/current").then(setShifts).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -223,6 +226,23 @@ export default function TodayPage() {
       </div>
 
       {isAdmin && <SetupChecklist data={data} />}
+
+      {shifts && shifts.handovers.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Handover notes"
+            description="Left by staff at the end of their shift"
+            action={
+              isAdmin ? (
+                <Link href="/shifts" className="text-sm font-semibold text-primary-600 hover:underline">
+                  All shifts{shifts.unread ? ` (${shifts.unread} new)` : ""}
+                </Link>
+              ) : undefined
+            }
+          />
+          <HandoverNotes notes={shifts.handovers} timeZone={settings.timezone} className="px-5 pb-5" />
+        </Card>
+      )}
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-5">
         <StatCard title="Guests staying" value={`${stats.occupied} / ${stats.totalRooms - stats.maintenance}`} subtitle={`${stats.occupancy}% full tonight`} icon={<Users className="h-5 w-5" />} tone="sky" />

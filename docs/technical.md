@@ -42,6 +42,9 @@ src/
 │   ├── bookings.ts            # Availability, locks, folio, booking numbers
 │   ├── pricing.ts, dates.ts   # Pricing, GST, date keys (pure)
 │   ├── reports.ts             # Report numbers; hotelMetrics() holds the occupancy, ADR, RevPAR and per-room maths (pure)
+│   ├── shifts.ts              # Staff shifts: summary of what a person did between two moments (database)
+│   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
+│   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
 │   ├── expenses.ts            # Expense validation and who may change what
 │   ├── settings.ts, public.ts, api.ts, …
@@ -72,6 +75,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
 | `ActivityLog` | Hotel | Who did what |
+| `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts and money, fixed at the end), `endedBy` when the owner closed it, `ownerSeenAt` |
 | `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
 
 `Booking` also holds booking-site payout fields: `otaReference`, `payoutAmount`

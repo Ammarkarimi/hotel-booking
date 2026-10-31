@@ -76,8 +76,10 @@ export function shiftMessage(input: {
   currency?: string;
 }) {
   const { summary: s, timeZone, currency } = input;
-  const time = (d: Date | string) =>
-    new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone }).format(new Date(d));
+  const time = (d: Date | string, withDay = true) =>
+    new Intl.DateTimeFormat("en-IN", { ...(withDay && { day: "numeric", month: "short" }), hour: "numeric", minute: "2-digit", timeZone }).format(new Date(d));
+  const day = (d: Date | string) => new Intl.DateTimeFormat("en-CA", { timeZone }).format(new Date(d));
+  const sameDay = day(input.startedAt) === day(input.endedAt);
   const money = (n: number) => formatCurrency(n, currency);
   const methods = Object.entries(s.byMethod)
     .filter(([, v]) => v !== 0)
@@ -86,7 +88,7 @@ export function shiftMessage(input: {
   return [
     `Shift report · ${input.hotelName}`,
     `Staff: ${input.staffName}`,
-    `Shift: ${time(input.startedAt)} to ${time(input.endedAt)} (${durationLabel(new Date(input.endedAt).getTime() - new Date(input.startedAt).getTime())})`,
+    `Shift: ${time(input.startedAt)} to ${time(input.endedAt, !sameDay)} (${durationLabel(new Date(input.endedAt).getTime() - new Date(input.startedAt).getTime())})`,
     `Guest check-ins: ${s.checkIns}`,
     `Guest check-outs: ${s.checkOuts}`,
     `New bookings: ${s.bookingsMade}`,

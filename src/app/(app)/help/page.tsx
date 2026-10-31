@@ -62,6 +62,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     ],
   },
   {
+    q: "How do I start and end my shift?",
+    steps: [
+      "When you sign in, read the handover notes from the last shift, then press “Start my shift”. A timer runs at the top of the screen.",
+      "Before you leave, press “End shift”. Write a handover note for the next person (for example “Room 203 is staying 2 hours more and will pay ₹500”).",
+      "Type the code shown on the screen and press “End shift”.",
+      "Press “Send to owner on WhatsApp” to send your shift report, then sign out.",
+    ],
+  },
+  {
     q: "How do I count cash at the end of my shift?",
     steps: [
       "Open “Payments” and choose “Today”.",
@@ -77,6 +86,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "You can fix your own entry on the same day by tapping it. The owner sees every expense in Reports.",
     ],
     link: { href: "/expenses", text: "Open expenses" },
+  },
+  {
+    q: "For owners: who worked when, and what did they leave for the next shift?",
+    steps: [
+      "Open “Staff shifts” for attendance: when each person started and ended, hours worked, check-ins, check-outs and money received.",
+      "Every handover note is there, and the latest ones also show on the Today screen.",
+      "If someone forgot to end their shift, press “Close shift”. Turn shifts on or off, and set your WhatsApp number for shift reports, in Settings → Staff.",
+    ],
+    link: { href: "/shifts", text: "Open staff shifts" },
   },
   {
     q: "For owners: how is my hotel doing?",

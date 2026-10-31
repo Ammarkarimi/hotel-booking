@@ -42,7 +42,7 @@ test("the WhatsApp shift report has the times, counts, money and note", () => {
     handoverNote: "Room 203 is staying 2 hours more and will pay ₹500.",
   });
   assert.match(text, /Staff: Pooja Verma/);
-  assert.match(text, /9:00 am to 31 Oct, 5:45 pm \(8h 45m\)/);
+  assert.match(text, /Shift: 31 Oct, 9:00 am to 5:45 pm \(8h 45m\)/);
   assert.match(text, /Guest check-ins: 1\nGuest check-outs: 2/);
   assert.match(text, /Cash to hand over: ₹1,500/);
   assert.match(text, /Handover note: Room 203 is staying 2 hours more/);
