@@ -145,10 +145,33 @@ Staff; owners and managers never need to).
   with the shift report addressed to the owner's number, and they sign out.
 - **Next person:** sees that handover note before starting their own shift, and
   it shows on the Today screen.
+- **How many at once:** the owner sets how many people work at the front desk at
+  the same time (Settings → Staff, default 1). While there is room, staff just
+  start their shift.
+- **Taking over a full desk:** when the desk is full, the new person chooses
+  whose shift they are taking over. That person gets a pop-up within seconds
+  ("Sana wants to take over your shift"): they write their handover note and
+  press **Accept & hand over** (their shift ends and Sana's starts at the same
+  moment), or **Not now** (Sana is told and can choose someone else). Nobody's
+  shift is ended without them agreeing. If the person has already left, the
+  owner approves the request in **Staff shifts** (the shift ends without a
+  note). Every check-in, check-out and payment counts only for the person who
+  did it. Without an open shift, front-desk staff cannot check
+  guests in or out, take payments or change bookings, even if still signed in.
+- **Saved for good:** notes and the shift report are saved on the server when the
+  shift ends and cannot be changed. Editing the WhatsApp message before sending
+  does not change the saved report the owner sees.
 - **Owner:** **Staff shifts** lists who is on shift now, attendance per person
   (shifts, hours, check-ins, check-outs, money) for any day, week, month or
-  dates, and every shift with its notes. New reports have a red badge. A shift
-  someone forgot to end can be closed, and everything downloads for Excel.
+  dates, and every shift with its notes, the bookings checked in and out, how it
+  ended and the report as saved. New reports have a red badge. A shift someone
+  forgot to end can be closed.
+- **Staff report (Excel):** one row per shift (the same name appears on several
+  rows across days): date, start, end, time on duty, hours, how it ended,
+  check-ins and check-outs with booking numbers, new bookings, money by method,
+  cash paid for expenses, cash to hand over, the start note and the handover
+  note as saved; then totals per person (shifts, days worked, hours, check-ins,
+  check-outs, bookings, money).
 
 ### Reports (owner)
 
@@ -200,7 +223,7 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
-| Staff | Shifts on or off and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
+| Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
 
 ## The hotel’s online booking website

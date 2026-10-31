@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { ExternalLink, KeyRound, Plus, Trash2, UserPlus } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Input, Loading, NumberInput, Modal, PageHeader, Select, Tabs, Textarea, Tip, Toggle } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, NumberInput, Modal, PageHeader, Select, Tabs, Textarea, Tip, Toggle } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { ROOM_TYPES, formatDate, formatDateTime, label } from "@/lib/utils";
@@ -25,6 +25,18 @@ function ShiftSettings({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDT
           label="Staff must start and end a shift"
           description="When they end it, they must write a handover note for the next person and type a code shown on screen. Their check-ins, check-outs and money received are then sent to you on WhatsApp, and every shift appears in Staff shifts."
         />
+        <Field
+          label="People at the front desk at the same time"
+          hint={
+            s.frontDeskStaff === 1
+              ? "One at a time. The next person asks to take over, and the person on shift confirms with their handover note."
+              : `Up to ${s.frontDeskStaff} people can be on shift together. When the desk is full, the next person asks someone on shift to hand over, and they confirm.`
+          }
+        >
+          <div className="max-w-[13rem]">
+            <CountInput min={1} max={20} value={s.frontDeskStaff} onChange={(frontDeskStaff) => set({ frontDeskStaff })} aria-label="People at the front desk at the same time" />
+          </div>
+        </Field>
         <Field label="Your WhatsApp number for shift reports" hint="With country code, for example +91 98765 43210.">
           <Input value={s.ownerWhatsapp ?? ""} onChange={(e) => set({ ownerWhatsapp: e.target.value })} inputMode="tel" className="max-w-xs" placeholder="+91 98765 43210" />
         </Field>

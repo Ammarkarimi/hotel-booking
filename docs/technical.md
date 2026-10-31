@@ -75,7 +75,8 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
 | `ActivityLog` | Hotel | Who did what |
-| `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts and money, fixed at the end), `endedBy` when the owner closed it, `ownerSeenAt` |
+| `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts, booking lists and money, fixed at the end), `reportText` (the report as saved), `endReason` (staff, owner, transferred), `endedBy` when the owner closed or approved it, `ownerSeenAt`. No route edits a shift once ended. A shift starts only while fewer than `HotelSettings.frontDeskStaff` (default 1) are open; when the desk is full a `ShiftTransfer` asks the person on shift (or the owner) to accept, which ends their shift (`endReason` transferred, `handedOverTo`) and starts the new one at the same moment; front-desk changes need an open shift (`assertOnShift`) |
+| `ShiftTransfer` | Hotel | A request to take over someone's shift when the front desk is full: `fromShiftId`, `toStaffId`, `startNote`, `status` (pending, accepted, declined, cancelled), who answered and when |
 | `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
 
 `Booking` also holds booking-site payout fields: `otaReference`, `payoutAmount`

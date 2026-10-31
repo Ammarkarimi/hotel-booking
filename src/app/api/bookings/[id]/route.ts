@@ -19,6 +19,7 @@ import {
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -61,6 +62,7 @@ const editSchema = z.object({
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = editSchema.parse(await request.json());
     const ctx = await getBillingContext();
@@ -147,6 +149,7 @@ const actionSchema = z.object({
 
 export async function POST(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = actionSchema.parse(await request.json());
     const ctx = await getBillingContext();

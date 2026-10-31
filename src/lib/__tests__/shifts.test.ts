@@ -4,7 +4,14 @@ import { codeMatches, durationLabel, shiftCode, shiftMessage, summarize } from "
 
 test("a shift counts check-ins, check-outs, bookings and the cash to hand over", () => {
   const s = summarize({
-    actions: ["Guest checked in", "Walk-in checked in", "Guest checked out", "New booking", "Payment received", "Extra charge added"],
+    actions: [
+      { action: "Guest checked in", details: "#1021 for Asha Rao (Room 203)" },
+      { action: "Walk-in checked in", details: "#1022 for Ravi Shah (Room 101), 2026-10-31 to 2026-11-01" },
+      { action: "Guest checked out", details: "#1009 for John Smith (Room 401) — paid by card" },
+      { action: "New booking", details: "#1023 for Meera Nair (Room 301), 2026-11-03 to 2026-11-05" },
+      { action: "Payment received", details: "#1009: 4000 by cash" },
+      { action: "Extra charge added", details: "#1021" },
+    ],
     payments: [
       { amount: 4000, method: "cash", type: "balance" },
       { amount: 2500, method: "upi", type: "advance" },
@@ -21,6 +28,8 @@ test("a shift counts check-ins, check-outs, bookings and the cash to hand over",
   assert.equal(s.received, 6000);
   assert.equal(s.cashExpenses, 500);
   assert.equal(s.cashInHand, 3000);
+  assert.deepEqual(s.checkInList, ["#1021 for Asha Rao (Room 203)", "#1022 for Ravi Shah (Room 101)"]);
+  assert.deepEqual(s.checkOutList, ["#1009 for John Smith (Room 401)"]);
 });
 
 test("the end-of-shift code avoids look-alike characters and is checked loosely", () => {
@@ -38,7 +47,7 @@ test("the WhatsApp shift report has the times, counts, money and note", () => {
     endedAt: "2026-10-31T12:15:00Z",
     timeZone: "Asia/Kolkata",
     currency: "INR",
-    summary: summarize({ actions: ["Guest checked in", "Guest checked out", "Guest checked out"], payments: [{ amount: 1500, method: "cash", type: "balance" }], cashExpenses: [] }),
+    summary: summarize({ actions: [{ action: "Guest checked in" }, { action: "Guest checked out" }, { action: "Guest checked out" }], payments: [{ amount: 1500, method: "cash", type: "balance" }], cashExpenses: [] }),
     handoverNote: "Room 203 is staying 2 hours more and will pay ₹500.",
   });
   assert.match(text, /Staff: Pooja Verma/);

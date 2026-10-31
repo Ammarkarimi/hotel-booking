@@ -6,6 +6,7 @@ import { dateFromKey, toDateKey } from "@/lib/dates";
 import { canChangeExpense, checkExpenseDate, expenseSchema, serializeExpense } from "@/lib/expenses";
 import { logActivity } from "@/lib/activity";
 import { formatCurrency, label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,7 @@ async function loadForChange(id: string, user: Parameters<typeof canChangeExpens
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = expenseSchema.parse(await request.json());
     const { ctx, expense } = await loadForChange(id, user);
@@ -43,6 +45,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const { ctx, expense } = await loadForChange(id, user);
     await prisma.expense.delete({ where: { id } });

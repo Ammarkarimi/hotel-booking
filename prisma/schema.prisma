@@ -37,6 +37,7 @@ model Hotel {
   activities           ActivityLog[]
   expenses             Expense[]
   shifts               Shift[]
+  shiftTransfers       ShiftTransfer[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -101,6 +102,7 @@ model HotelSettings {
   websiteAbout     String?
   staffShifts      Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
   ownerWhatsapp    String? // where staff send their shift report
+  frontDeskStaff   Int      @default(1) // how many people can be on shift at the same time
   updatedAt        DateTime @updatedAt
   hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -310,23 +312,47 @@ model Expense {
 
 /// One front-desk shift: when a staff member started and ended work, and the handover note they left.
 model Shift {
-  id           String    @id @default(cuid())
+  id           String          @id @default(cuid())
   hotelId      String
   staffId      String?
   staffName    String
-  startedAt    DateTime  @default(now())
+  startedAt    DateTime        @default(now())
   startNote    String?
   endedAt      DateTime?
   handoverNote String?
   endCode      String? // the code shown on screen that must be typed to end the shift
   endedBy      String? // the owner's name when the owner closed a shift the staff forgot to end
+  endReason    String? // staff (ended it themselves), owner (closed by the owner), transferred (handed over to the next person)
+  handedOverTo String? // who took over the shift, when it was handed over
   summary      String? // JSON: check-ins, check-outs, bookings and money, fixed when the shift ends
+  reportText   String? // the shift report exactly as saved; editing it in WhatsApp does not change this
   ownerSeenAt  DateTime?
-  staff        Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  staff        Staff?          @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  hotel        Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  transfers    ShiftTransfer[]
 
   @@index([hotelId, startedAt])
   @@index([hotelId, staffId, endedAt])
+}
+
+/// A request to take over someone's shift when the front desk is full. The person on shift (or the owner) accepts or declines.
+model ShiftTransfer {
+  id            String    @id @default(cuid())
+  hotelId       String
+  fromShiftId   String
+  fromStaffName String
+  toStaffId     String
+  toStaffName   String
+  startNote     String? // the new person's note for the start of their shift
+  status        String    @default("pending") // pending, accepted, declined, cancelled
+  createdAt     DateTime  @default(now())
+  respondedAt   DateTime?
+  respondedBy   String?
+  fromShift     Shift     @relation(fields: [fromShiftId], references: [id], onDelete: Cascade)
+  hotel         Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+  @@index([fromShiftId])
 }
 
 model ActivityLog {

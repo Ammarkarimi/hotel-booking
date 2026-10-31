@@ -63,7 +63,10 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const [unread, setUnread] = useState(0);
   useEffect(() => {
     if (!isAdmin) return;
-    const load = () => api<{ unread?: number }>("/api/shifts/current").then((r) => setUnread(r.unread ?? 0)).catch(() => undefined);
+    const load = () =>
+      api<{ unread?: number; waitingHandovers?: number }>("/api/shifts/current")
+        .then((r) => setUnread((r.unread ?? 0) + (r.waitingHandovers ?? 0)))
+        .catch(() => undefined);
     load();
     const t = setInterval(load, 60000);
     return () => clearInterval(t);

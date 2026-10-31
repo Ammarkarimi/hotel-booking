@@ -8,6 +8,7 @@ import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
 import { bookingLabel, folioFor, loadBooking, serializeBooking } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
 import { GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -49,6 +50,7 @@ const paymentSchema = z.object({
 
 export async function POST(request: NextRequest) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const body = paymentSchema.parse(await request.json());
     const ctx = await getBillingContext();
     const booking = await loadBooking(body.bookingId);

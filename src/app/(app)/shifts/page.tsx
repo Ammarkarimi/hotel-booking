@@ -6,9 +6,9 @@ import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Loading, Page
 import { PeriodPicker, periodFor, type PeriodValue } from "@/components/period-picker";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
-import { durationLabel } from "@/lib/shift-report";
+import { durationLabel, END_REASONS } from "@/lib/shift-report";
 import { formatCurrency, label } from "@/lib/utils";
-import type { ShiftDTO } from "@/lib/types";
+import type { ShiftDTO, ShiftTransferDTO } from "@/lib/types";
 
 interface ShiftList {
   from: string;
@@ -63,6 +63,12 @@ function ShiftCard({ s, timeZone, onClose }: { s: ShiftDTO; timeZone: string; on
           Cash to hand over <b>{formatCurrency(sum.cashInHand)}</b>
         </span>
       </div>
+      {(sum.checkInList?.length || sum.checkOutList?.length) ? (
+        <div className="mt-2 space-y-0.5 text-xs text-slate-600">
+          {!!sum.checkInList?.length && <p>Checked in: {sum.checkInList.join(" · ")}</p>}
+          {!!sum.checkOutList?.length && <p>Checked out: {sum.checkOutList.join(" · ")}</p>}
+        </div>
+      ) : null}
       {s.startNote && <p className="mt-2 text-sm text-slate-600">At the start: {s.startNote}</p>}
       {s.handoverNote && (
         <p className="mt-2 whitespace-pre-line rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[15px] text-slate-900">
@@ -70,7 +76,25 @@ function ShiftCard({ s, timeZone, onClose }: { s: ShiftDTO; timeZone: string; on
           {s.handoverNote}
         </p>
       )}
-      {s.endedBy && <p className="mt-2 text-xs text-slate-500">Closed by {s.endedBy} (the staff member did not end it).</p>}
+      {!s.open && s.endReason === "transferred" && (
+        <p className="mt-2 text-xs font-semibold text-slate-600">
+          Handed over to {s.handedOverTo}
+          {s.endedBy ? `, approved by ${s.endedBy} (no handover note)` : ""}
+        </p>
+      )}
+      {!s.open && s.endReason === "owner" && (
+        <p className="mt-2 text-xs font-semibold text-amber-700">
+          {END_REASONS.owner}
+          {s.endedBy ? ` (${s.endedBy})` : ""}: the staff member did not end it, so there is no handover note.
+        </p>
+      )}
+      {s.reportText && (
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer font-semibold text-primary-700">Shift report as saved</summary>
+          <pre className="mt-1 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 font-sans text-slate-800">{s.reportText}</pre>
+          <p className="text-xs text-slate-500">Saved when the shift ended. It cannot be changed, even if the WhatsApp message was edited before sending.</p>
+        </details>
+      )}
     </li>
   );
 }
@@ -81,12 +105,14 @@ export default function ShiftsPage() {
   const [staffId, setStaffId] = useState("");
   const [data, setData] = useState<ShiftList | null>(null);
   const [onShift, setOnShift] = useState<ShiftDTO[] | null>(null);
+  const [waiting, setWaiting] = useState<ShiftTransferDTO[]>([]);
 
   const query = `from=${period.from}&to=${period.to}${staffId ? `&staffId=${staffId}` : ""}`;
   const load = useCallback(() => {
     setData(null);
     api<ShiftList>(`/api/shifts?${query}&markSeen=1`).then(setData).catch((e) => toast((e as Error).message, "error"));
     api<ShiftDTO[]>("/api/shifts?open=1").then(setOnShift).catch(() => setOnShift([]));
+    api<ShiftTransferDTO[]>("/api/shifts/transfers").then(setWaiting).catch(() => setWaiting([]));
   }, [query, toast]);
   useEffect(() => {
     if (isAdmin) load();
@@ -124,6 +150,26 @@ export default function ShiftsPage() {
     }
   }
 
+  // For someone who has already left: approve the handover (their shift ends without a note) or decline it.
+  async function answer(t: ShiftTransferDTO, action: "accept" | "decline") {
+    if (action === "accept") {
+      const ok = await confirm({
+        title: `Hand ${t.fromStaffName}'s shift over to ${t.toStaffName}?`,
+        message: `${t.fromStaffName}'s shift ends now without a handover note, and ${t.toStaffName}'s starts.`,
+        confirmText: "Yes, hand over",
+      });
+      if (!ok) return;
+    }
+    try {
+      await api(`/api/shifts/transfers/${t.id}`, { body: { action } });
+      toast(action === "accept" ? `${t.toStaffName} is now on shift` : "Request declined");
+      load();
+    } catch (e) {
+      toast((e as Error).message, "error");
+      load();
+    }
+  }
+
   if (!isAdmin) return <EmptyState title="Staff shifts are for the owner / manager" />;
 
   return (
@@ -133,10 +179,36 @@ export default function ShiftsPage() {
         description="Attendance, handover notes, and what each person did on their shift."
         actions={
           <Button variant="outline" onClick={() => window.open(`/api/shifts?${query}&format=csv`, "_blank")}>
-            <Download className="h-4 w-4" /> Download for Excel
+            <Download className="h-4 w-4" /> Download staff report
           </Button>
         }
       />
+
+      {waiting.length > 0 && (
+        <Card className="border-amber-300">
+          <CardHeader title="Waiting to take over a shift" description="The person on shift is asked first. If they have already left, you can approve it here." />
+          <ul className="divide-y divide-slate-100">
+            {waiting.map((t) => (
+              <li key={t.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3">
+                <span className="text-[15px]">
+                  <b>{t.toStaffName}</b> wants to take over <b>{t.fromStaffName}</b>&apos;s shift
+                  <span className="block text-xs text-slate-500">
+                    Asked at {new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: settings.timezone }).format(new Date(t.createdAt))}
+                  </span>
+                </span>
+                <span className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => answer(t, "decline")}>
+                    Decline
+                  </Button>
+                  <Button size="sm" onClick={() => answer(t, "accept")}>
+                    Approve handover
+                  </Button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <Card>
         <CardHeader title="On shift now" />

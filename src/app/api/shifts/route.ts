@@ -6,8 +6,8 @@ import { csvResponse, fail, isAdmin, withAuth } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { addDays, isDateKey, todayKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
-import { durationLabel } from "@/lib/shifts";
-import { recentHandovers, serializeShift } from "@/lib/shift-api";
+import { durationLabel, END_REASONS } from "@/lib/shifts";
+import { deskStatus, recentHandovers, serializeShift, startShift } from "@/lib/shift-api";
 
 /** Attendance: shifts that started in a date range (hotel's own days). The owner sees everyone; staff see their own. */
 export async function GET(request: NextRequest) {
@@ -40,26 +40,66 @@ export async function GET(request: NextRequest) {
 
     if (searchParams.get("format") === "csv") {
       const time = (d: Date | null) => (d ? new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: tz }).format(d) : "");
-      return csvResponse(`staff_shifts_${from}_to_${to}.csv`, [
-        ["Date", "Staff", "Started", "Ended", "Hours", "Guest check-ins", "Guest check-outs", "New bookings", "Money received", "Cash received", "Cash paid for expenses", "Cash to hand over", "Note when starting", "Handover note", "Closed by"],
-        ...shifts.map((s) => [
+      const ms = (s: (typeof shifts)[number]) => (s.endedAt ?? new Date()).getTime() - s.startedAt.getTime();
+      const hours = (n: number) => Math.round((n / 3600000) * 100) / 100;
+      const oldestFirst = [...shifts].reverse();
+      const rows: Array<Array<string | number | null | undefined>> = [
+        [
+          "Date", "Staff", "Started", "Ended", "Time on duty", "Hours", "How the shift ended",
+          "Guest check-ins", "Checked in (bookings)", "Guest check-outs", "Checked out (bookings)", "New bookings",
+          "Money received", "Cash", "UPI", "Card", "Bank transfer", "Other",
+          "Cash paid for expenses", "Cash to hand over", "Note when starting", "Handover note (as saved)", "Closed by",
+        ],
+        ...oldestFirst.map((s) => [
           todayKey(tz, s.startedAt),
           s.staffName,
           time(s.startedAt),
-          s.endedAt ? time(s.endedAt) : "Still on shift",
-          durationLabel((s.endedAt ?? new Date()).getTime() - s.startedAt.getTime()),
+          s.endedAt ? (todayKey(tz, s.endedAt) === todayKey(tz, s.startedAt) ? time(s.endedAt) : `${todayKey(tz, s.endedAt)} ${time(s.endedAt)}`) : "Still on shift",
+          durationLabel(ms(s)),
+          hours(ms(s)),
+          !s.endedAt
+            ? "Still on shift"
+            : s.endReason === "transferred"
+              ? `Handed over to ${s.handedOverTo}${s.endedBy ? ` (approved by ${s.endedBy})` : ""}`
+              : END_REASONS[s.endReason ?? "staff"],
           s.summary.checkIns,
+          (s.summary.checkInList ?? []).join("; "),
           s.summary.checkOuts,
+          (s.summary.checkOutList ?? []).join("; "),
           s.summary.bookingsMade,
           s.summary.received,
           s.summary.byMethod.cash || 0,
+          s.summary.byMethod.upi || 0,
+          s.summary.byMethod.card || 0,
+          s.summary.byMethod.bank_transfer || 0,
+          s.summary.byMethod.other || 0,
           s.summary.cashExpenses,
           s.summary.cashInHand,
           s.startNote,
           s.handoverNote,
           s.endedBy,
         ]),
-      ]);
+      ];
+      // Totals for each person over the period, below the shifts.
+      const byStaff = new Map<string, { name: string; shifts: number; days: Set<string>; ms: number; checkIns: number; checkOuts: number; bookings: number; received: number; cash: number }>();
+      for (const s of oldestFirst) {
+        const key = s.staffId ?? s.staffName;
+        const t = byStaff.get(key) ?? { name: s.staffName, shifts: 0, days: new Set<string>(), ms: 0, checkIns: 0, checkOuts: 0, bookings: 0, received: 0, cash: 0 };
+        t.shifts += 1;
+        t.days.add(todayKey(tz, s.startedAt));
+        t.ms += ms(s);
+        t.checkIns += s.summary.checkIns;
+        t.checkOuts += s.summary.checkOuts;
+        t.bookings += s.summary.bookingsMade;
+        t.received += s.summary.received;
+        t.cash += s.summary.cashInHand;
+        byStaff.set(key, t);
+      }
+      rows.push([], ["Totals by staff"], ["Staff", "Shifts", "Days worked", "Time on duty", "Hours", "Guest check-ins", "Guest check-outs", "New bookings", "Money received", "Cash to hand over"]);
+      for (const t of byStaff.values()) {
+        rows.push([t.name, t.shifts, t.days.size, durationLabel(t.ms), hours(t.ms), t.checkIns, t.checkOuts, t.bookings, Math.round(t.received * 100) / 100, Math.round(t.cash * 100) / 100]);
+      }
+      return csvResponse(`staff_report_${from}_to_${to}.csv`, rows);
     }
 
     // Opening the list is how the owner reads new shift reports.
@@ -79,10 +119,11 @@ export async function POST(request: NextRequest) {
     const body = startSchema.parse(await request.json().catch(() => ({})));
     const open = await prisma.shift.findFirst({ where: { staffId: user.id, endedAt: null } });
     if (open) return NextResponse.json(await serializeShift(open));
-    const shift = await prisma.shift.create({
-      data: { hotelId: currentHotelId(), staffId: user.id, staffName: user.name, startNote: body.startNote || null },
-    });
-    await logActivity(user, "Shift started", body.startNote || undefined);
+    // The owner sets how many people work at the front desk together. When it is full, the new person asks
+    // someone on shift to hand over; nobody's shift is ended without them (or the owner) agreeing.
+    const desk = await deskStatus(user.id);
+    if (desk.full) fail("The front desk is full. Choose whose shift you are taking over; they will be asked to confirm.", 409);
+    const shift = await startShift(user, body.startNote || null);
     return NextResponse.json({ ...(await serializeShift(shift)), handovers: await recentHandovers(shift.id) });
   });
 }

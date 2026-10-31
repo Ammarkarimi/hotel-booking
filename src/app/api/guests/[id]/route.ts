@@ -6,6 +6,7 @@ import { guestData, guestSchema } from "@/lib/guests";
 import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
 import { deleteStoredFile } from "@/lib/storage";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -37,6 +38,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = guestSchema.partial().parse(await request.json());
     const guest = await prisma.guest.findUnique({ where: { id } });

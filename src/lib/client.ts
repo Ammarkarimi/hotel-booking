@@ -19,6 +19,10 @@ export async function api<T = unknown>(url: string, options: { method?: string; 
     throw new Error("Please sign in again.");
   }
   const data = await res.json().catch(() => ({}));
+  // The person's shift has ended (for example someone else started theirs): show the start-shift screen.
+  if (res.status === 409 && typeof window !== "undefined" && /shift has ended/i.test((data as { error?: string }).error ?? "")) {
+    window.dispatchEvent(new Event("shift-changed"));
+  }
   if (!res.ok) throw new Error((data as { error?: string }).error || "Something went wrong. Please try again.");
   return data as T;
 }
