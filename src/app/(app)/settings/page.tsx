@@ -29,8 +29,8 @@ function ShiftSettings({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDT
           label="People at the front desk at the same time"
           hint={
             s.frontDeskStaff === 1
-              ? "One at a time: when someone starts a shift, the person before them is ended automatically."
-              : `Up to ${s.frontDeskStaff} people can be on shift together. If one more starts, whoever has been on shift the longest is ended automatically.`
+              ? "One at a time. The next person asks to take over, and the person on shift confirms with their handover note."
+              : `Up to ${s.frontDeskStaff} people can be on shift together. When the desk is full, the next person asks someone on shift to hand over, and they confirm.`
           }
         >
           <div className="max-w-[13rem]">
