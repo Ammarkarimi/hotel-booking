@@ -39,6 +39,8 @@ const settingsSchema = z.object({
   bookingTerms: text,
   websiteEnabled: z.boolean(),
   websiteAbout: text,
+  staffShifts: z.boolean(),
+  ownerWhatsapp: z.string().trim().max(30).optional().nullable(),
 });
 
 export async function PUT(request: NextRequest) {

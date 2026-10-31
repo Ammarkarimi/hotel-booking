@@ -1,0 +1,33 @@
+// Shared by the shift API routes.
+import type { Shift } from "@prisma/client";
+import { prisma } from "./db";
+import type { SessionUser } from "./session";
+import { getSettings } from "./settings";
+import { parseSummary, shiftSummary } from "./shifts";
+
+/** Front-desk staff work in shifts when the owner has it switched on. The owner never has to. */
+export async function shiftsRequired(user: SessionUser) {
+  if (user.role === "admin") return false;
+  return (await getSettings()).staffShifts;
+}
+
+/** A shift for the screens: the code to end it is never sent, and an open shift shows its activity so far. */
+export async function serializeShift(shift: Shift) {
+  const summary = parseSummary(shift.summary) ?? (await shiftSummary({ id: shift.staffId, name: shift.staffName }, shift.startedAt, shift.endedAt ?? new Date()));
+  const { endCode: _code, summary: _raw, ...rest } = shift;
+  return { ...rest, summary, open: !shift.endedAt };
+}
+
+export type ShiftDTO = Awaited<ReturnType<typeof serializeShift>>;
+
+/** The latest handover notes, so whoever starts next reads them first. */
+export async function recentHandovers(excludeShiftId?: string) {
+  const since = new Date(Date.now() - 48 * 3600 * 1000);
+  const rows = await prisma.shift.findMany({
+    where: { endedAt: { gte: since }, handoverNote: { not: null }, ...(excludeShiftId && { id: { not: excludeShiftId } }) },
+    orderBy: { endedAt: "desc" },
+    take: 3,
+    select: { id: true, staffName: true, endedAt: true, handoverNote: true, endedBy: true },
+  });
+  return rows;
+}
