@@ -115,10 +115,12 @@ export async function POST(request: NextRequest) {
     const body = startSchema.parse(await request.json().catch(() => ({})));
     const open = await prisma.shift.findFirst({ where: { staffId: user.id, endedAt: null } });
     if (open) return NextResponse.json(await serializeShift(open));
-    // One person at the front desk at a time: whoever is still on shift is ended now, so nothing is counted twice.
-    const others = await prisma.shift.findMany({ where: { endedAt: null, staffId: { not: user.id } } });
+    // The owner sets how many people work at the front desk together. When this shift would go over that,
+    // whoever has been on shift the longest is ended now, so a forgotten shift never stays open.
+    const settings = await getSettings();
+    const others = await prisma.shift.findMany({ where: { endedAt: null, staffId: { not: user.id } }, orderBy: { startedAt: "asc" } });
     const startedAt = new Date();
-    for (const other of others) {
+    for (const other of others.slice(0, Math.max(0, others.length - (settings.frontDeskStaff - 1)))) {
       await closeShift(other, { reason: "next_shift", at: startedAt }).catch(() => undefined);
       await logActivity(user, "Shift ended automatically", `${other.staffName}'s shift ended when ${user.name} started`);
     }

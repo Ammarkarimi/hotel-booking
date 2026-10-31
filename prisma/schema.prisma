@@ -101,6 +101,7 @@ model HotelSettings {
   websiteAbout     String?
   staffShifts      Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
   ownerWhatsapp    String? // where staff send their shift report
+  frontDeskStaff   Int      @default(1) // how many people can be on shift at the same time
   updatedAt        DateTime @updatedAt
   hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }

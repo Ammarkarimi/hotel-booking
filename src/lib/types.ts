@@ -144,6 +144,7 @@ export interface SettingsDTO {
   websiteAbout: string | null;
   staffShifts: boolean;
   ownerWhatsapp: string | null;
+  frontDeskStaff: number;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 

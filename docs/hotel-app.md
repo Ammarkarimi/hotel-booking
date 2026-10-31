@@ -145,10 +145,12 @@ Staff; owners and managers never need to).
   with the shift report addressed to the owner's number, and they sign out.
 - **Next person:** sees that handover note before starting their own shift, and
   it shows on the Today screen.
-- **One person on shift at a time:** when someone starts a shift, anyone still on
-  shift is ended automatically at that moment ("ended automatically when the
-  next person started"), so every check-in, check-out and payment counts for the
-  person actually on duty. Without an open shift, front-desk staff cannot check
+- **How many at once:** the owner sets how many people work at the front desk at
+  the same time (Settings → Staff, default 1). When one more person starts a
+  shift, whoever has been on shift the longest is ended automatically at that
+  moment ("ended automatically when the next person started"). With 1, the
+  previous person's shift ends as soon as the next one starts. Every check-in,
+  check-out and payment counts only for the person who did it. Without an open shift, front-desk staff cannot check
   guests in or out, take payments or change bookings, even if still signed in.
 - **Saved for good:** notes and the shift report are saved on the server when the
   shift ends and cannot be changed. Editing the WhatsApp message before sending
@@ -215,7 +217,7 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
-| Staff | Shifts on or off and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
+| Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
 
 ## The hotel’s online booking website

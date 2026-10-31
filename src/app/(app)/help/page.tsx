@@ -68,7 +68,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Before you leave, press “End shift”. Write a handover note for the next person (for example “Room 203 is staying 2 hours more and will pay ₹500”).",
       "Type the code shown on the screen and press “End shift”.",
       "Press “Send to owner on WhatsApp” to send your shift report, then sign out.",
-      "Your note and report are saved and cannot be changed later. When the next person starts their shift, yours ends, and you can no longer check guests in or out until you start a new one.",
+      "Your note and report are saved and cannot be changed later. When the next person starts their shift and the front desk is full, the longest-running shift ends, and that person can no longer check guests in or out until they start a new one.",
     ],
   },
   {

@@ -41,6 +41,7 @@ const settingsSchema = z.object({
   websiteAbout: text,
   staffShifts: z.boolean(),
   ownerWhatsapp: z.string().trim().max(30).optional().nullable(),
+  frontDeskStaff: z.coerce.number().int().min(1, "At least 1 person works at the front desk").max(20, "Please choose 20 or fewer"),
 });
 
 export async function PUT(request: NextRequest) {

@@ -75,7 +75,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
 | `ActivityLog` | Hotel | Who did what |
-| `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts, booking lists and money, fixed at the end), `reportText` (the report as saved), `endReason` (staff, owner, next_shift), `endedBy` when the owner closed it, `ownerSeenAt`. No route edits a shift once ended. Starting a shift ends any other open shift; front-desk changes need an open shift (`assertOnShift`) |
+| `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts, booking lists and money, fixed at the end), `reportText` (the report as saved), `endReason` (staff, owner, next_shift), `endedBy` when the owner closed it, `ownerSeenAt`. No route edits a shift once ended. Starting a shift ends the longest-running open shifts beyond `HotelSettings.frontDeskStaff` (default 1); front-desk changes need an open shift (`assertOnShift`) |
 | `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
 
 `Booking` also holds booking-site payout fields: `otaReference`, `payoutAmount`
