@@ -68,6 +68,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Before you leave, press “End shift”. Write a handover note for the next person (for example “Room 203 is staying 2 hours more and will pay ₹500”).",
       "Type the code shown on the screen and press “End shift”.",
       "Press “Send to owner on WhatsApp” to send your shift report, then sign out.",
+      "Your note and report are saved and cannot be changed later. When the next person starts their shift, yours ends, and you can no longer check guests in or out until you start a new one.",
     ],
   },
   {
@@ -91,6 +92,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     q: "For owners: who worked when, and what did they leave for the next shift?",
     steps: [
       "Open “Staff shifts” for attendance: when each person started and ended, hours worked, check-ins, check-outs and money received.",
+      "Press “Download staff report” for one Excel file with a row for every shift (date, times, hours, bookings checked in and out, money, notes as saved) and totals per person.",
       "Every handover note is there, and the latest ones also show on the Today screen.",
       "If someone forgot to end their shift, press “Close shift”. Turn shifts on or off, and set your WhatsApp number for shift reports, in Settings → Staff.",
     ],

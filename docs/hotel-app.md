@@ -145,10 +145,25 @@ Staff; owners and managers never need to).
   with the shift report addressed to the owner's number, and they sign out.
 - **Next person:** sees that handover note before starting their own shift, and
   it shows on the Today screen.
+- **One person on shift at a time:** when someone starts a shift, anyone still on
+  shift is ended automatically at that moment ("ended automatically when the
+  next person started"), so every check-in, check-out and payment counts for the
+  person actually on duty. Without an open shift, front-desk staff cannot check
+  guests in or out, take payments or change bookings, even if still signed in.
+- **Saved for good:** notes and the shift report are saved on the server when the
+  shift ends and cannot be changed. Editing the WhatsApp message before sending
+  does not change the saved report the owner sees.
 - **Owner:** **Staff shifts** lists who is on shift now, attendance per person
   (shifts, hours, check-ins, check-outs, money) for any day, week, month or
-  dates, and every shift with its notes. New reports have a red badge. A shift
-  someone forgot to end can be closed, and everything downloads for Excel.
+  dates, and every shift with its notes, the bookings checked in and out, how it
+  ended and the report as saved. New reports have a red badge. A shift someone
+  forgot to end can be closed.
+- **Staff report (Excel):** one row per shift (the same name appears on several
+  rows across days): date, start, end, time on duty, hours, how it ended,
+  check-ins and check-outs with booking numbers, new bookings, money by method,
+  cash paid for expenses, cash to hand over, the start note and the handover
+  note as saved; then totals per person (shifts, days worked, hours, check-ins,
+  check-outs, bookings, money).
 
 ### Reports (owner)
 
