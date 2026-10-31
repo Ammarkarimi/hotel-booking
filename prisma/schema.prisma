@@ -36,6 +36,7 @@ model Hotel {
   bills                Bill[]
   activities           ActivityLog[]
   expenses             Expense[]
+  shifts               Shift[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -68,6 +69,7 @@ model Staff {
   updatedAt    DateTime      @updatedAt
   lastLoginAt  DateTime?
   activities   ActivityLog[]
+  shifts       Shift[]
   hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId])
@@ -97,6 +99,8 @@ model HotelSettings {
   bookingTerms     String?
   websiteEnabled   Boolean  @default(true)
   websiteAbout     String?
+  staffShifts      Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
+  ownerWhatsapp    String? // where staff send their shift report
   updatedAt        DateTime @updatedAt
   hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -302,6 +306,27 @@ model Expense {
   hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, date])
+}
+
+/// One front-desk shift: when a staff member started and ended work, and the handover note they left.
+model Shift {
+  id           String    @id @default(cuid())
+  hotelId      String
+  staffId      String?
+  staffName    String
+  startedAt    DateTime  @default(now())
+  startNote    String?
+  endedAt      DateTime?
+  handoverNote String?
+  endCode      String? // the code shown on screen that must be typed to end the shift
+  endedBy      String? // the owner's name when the owner closed a shift the staff forgot to end
+  summary      String? // JSON: check-ins, check-outs, bookings and money, fixed when the shift ends
+  ownerSeenAt  DateTime?
+  staff        Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, startedAt])
+  @@index([hotelId, staffId, endedAt])
 }
 
 model ActivityLog {

@@ -1,6 +1,7 @@
 // Shapes of the JSON our API returns, used by the screens.
 import type { Folio } from "./pricing";
 import type { PayoutSummary } from "./payouts";
+import type { ShiftSummary } from "./shift-report";
 
 export interface GuestDTO {
   id: string;
@@ -141,7 +142,41 @@ export interface SettingsDTO {
   bookingTerms: string | null;
   websiteEnabled: boolean;
   websiteAbout: string | null;
+  staffShifts: boolean;
+  ownerWhatsapp: string | null;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 
 export type BookingDetailDTO = BookingDTO & { guest: GuestDTO & { documents: DocumentDTO[] }; settings: SettingsDTO };
+
+export interface ShiftDTO {
+  id: string;
+  staffId: string | null;
+  staffName: string;
+  startedAt: string;
+  startNote: string | null;
+  endedAt: string | null;
+  handoverNote: string | null;
+  endedBy: string | null;
+  ownerSeenAt: string | null;
+  open: boolean;
+  summary: ShiftSummary;
+}
+
+export interface HandoverDTO {
+  id: string;
+  staffName: string;
+  endedAt: string;
+  handoverNote: string;
+  endedBy: string | null;
+}
+
+export interface CurrentShiftDTO {
+  required: boolean;
+  shift: ShiftDTO | null;
+  handovers: HandoverDTO[];
+  ownerWhatsapp: string | null;
+  unread?: number;
+  onDuty?: number;
+}
+

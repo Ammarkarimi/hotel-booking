@@ -13,6 +13,26 @@ type Tab = "hotel" | "prices" | "website" | "staff" | "activity";
 
 const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Kathmandu", "Asia/Dhaka", "Asia/Colombo", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 
+/** Shifts for front-desk staff: start and end of work, handover note, and a report to the owner on WhatsApp. */
+function ShiftSettings({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDTO>) => void }) {
+  return (
+    <Card className="mb-6">
+      <CardHeader title="Shifts" description="Front-desk staff start a shift when they arrive and end it when they leave." />
+      <CardContent className="space-y-4">
+        <Toggle
+          checked={s.staffShifts}
+          onChange={(staffShifts) => set({ staffShifts })}
+          label="Staff must start and end a shift"
+          description="When they end it, they must write a handover note for the next person and type a code shown on screen. Their check-ins, check-outs and money received are then sent to you on WhatsApp, and every shift appears in Staff shifts."
+        />
+        <Field label="Your WhatsApp number for shift reports" hint="With country code, for example +91 98765 43210.">
+          <Input value={s.ownerWhatsapp ?? ""} onChange={(e) => set({ ownerWhatsapp: e.target.value })} inputMode="tel" className="max-w-xs" placeholder="+91 98765 43210" />
+        </Field>
+      </CardContent>
+    </Card>
+  );
+}
+
 function SaveBar({ saving, onSave }: { saving: boolean; onSave: () => void }) {
   return (
     <div className="sticky bottom-4 mt-6 flex justify-end">
@@ -517,9 +537,14 @@ function SettingsView() {
       {tab === "hotel" && <HotelTab s={s} set={set} />}
       {tab === "prices" && <PricesTab s={s} set={set} reload={load} />}
       {tab === "website" && <WebsiteTab s={s} set={set} />}
-      {tab === "staff" && <StaffTab />}
+      {tab === "staff" && (
+        <>
+          <ShiftSettings s={s} set={set} />
+          <StaffTab />
+        </>
+      )}
       {tab === "activity" && <ActivityTab />}
-      {(tab === "hotel" || tab === "prices" || tab === "website") && <SaveBar saving={saving} onSave={save} />}
+      {(tab === "hotel" || tab === "prices" || tab === "website" || tab === "staff") && <SaveBar saving={saving} onSave={save} />}
     </div>
   );
 }

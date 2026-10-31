@@ -130,6 +130,26 @@ phone, booking site commission, advertising, taxes & licences, and other.
   with drawer cash) and fix their own entries on the same day. They see only
   their own entries, so salaries stay private.
 
+### Staff shifts
+
+Front-desk staff work in shifts (the owner can switch this off in Settings →
+Staff; owners and managers never need to).
+
+- **Start of shift:** after signing in, a screen shows the latest handover notes
+  and stays until the staff member presses **Start my shift**, with an optional
+  note such as the cash in the drawer. A timer then runs in the top bar.
+- **End of shift:** **End shift** shows what they did on the shift (guest
+  check-ins, check-outs, new bookings, money received, cash to hand over). A
+  **handover note** for the next person is compulsory, and they must type the
+  random code shown on screen. Then **Send to owner on WhatsApp** opens WhatsApp
+  with the shift report addressed to the owner's number, and they sign out.
+- **Next person:** sees that handover note before starting their own shift, and
+  it shows on the Today screen.
+- **Owner:** **Staff shifts** lists who is on shift now, attendance per person
+  (shifts, hours, check-ins, check-outs, money) for any day, week, month or
+  dates, and every shift with its notes. New reports have a red badge. A shift
+  someone forgot to end can be closed, and everything downloads for Excel.
+
 ### Reports (owner)
 
 Choose **Day**, **Week** (Monday to Sunday), **Month** or **Year** and step back
@@ -180,7 +200,7 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
-| Staff | Add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
+| Staff | Shifts on or off and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
 
 ## The hotel’s online booking website
