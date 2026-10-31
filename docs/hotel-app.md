@@ -146,11 +146,17 @@ Staff; owners and managers never need to).
 - **Next person:** sees that handover note before starting their own shift, and
   it shows on the Today screen.
 - **How many at once:** the owner sets how many people work at the front desk at
-  the same time (Settings → Staff, default 1). When one more person starts a
-  shift, whoever has been on shift the longest is ended automatically at that
-  moment ("ended automatically when the next person started"). With 1, the
-  previous person's shift ends as soon as the next one starts. Every check-in,
-  check-out and payment counts only for the person who did it. Without an open shift, front-desk staff cannot check
+  the same time (Settings → Staff, default 1). While there is room, staff just
+  start their shift.
+- **Taking over a full desk:** when the desk is full, the new person chooses
+  whose shift they are taking over. That person gets a pop-up within seconds
+  ("Sana wants to take over your shift"): they write their handover note and
+  press **Accept & hand over** (their shift ends and Sana's starts at the same
+  moment), or **Not now** (Sana is told and can choose someone else). Nobody's
+  shift is ended without them agreeing. If the person has already left, the
+  owner approves the request in **Staff shifts** (the shift ends without a
+  note). Every check-in, check-out and payment counts only for the person who
+  did it. Without an open shift, front-desk staff cannot check
   guests in or out, take payments or change bookings, even if still signed in.
 - **Saved for good:** notes and the shift report are saved on the server when the
   shift ends and cannot be changed. Editing the WhatsApp message before sending

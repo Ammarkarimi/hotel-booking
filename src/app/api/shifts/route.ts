@@ -57,7 +57,11 @@ export async function GET(request: NextRequest) {
           s.endedAt ? (todayKey(tz, s.endedAt) === todayKey(tz, s.startedAt) ? time(s.endedAt) : `${todayKey(tz, s.endedAt)} ${time(s.endedAt)}`) : "Still on shift",
           durationLabel(ms(s)),
           hours(ms(s)),
-          s.endedAt ? END_REASONS[s.endReason ?? "staff"] : "Still on shift",
+          !s.endedAt
+            ? "Still on shift"
+            : s.endReason === "transferred"
+              ? `Handed over to ${s.handedOverTo}${s.endedBy ? ` (approved by ${s.endedBy})` : ""}`
+              : END_REASONS[s.endReason ?? "staff"],
           s.summary.checkIns,
           (s.summary.checkInList ?? []).join("; "),
           s.summary.checkOuts,
