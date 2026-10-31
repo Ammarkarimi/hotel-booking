@@ -7,6 +7,7 @@ import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
 import { canChangeExpense, checkExpenseDate, expenseSchema, serializeExpense } from "@/lib/expenses";
 import { logActivity } from "@/lib/activity";
 import { EXPENSE_CATEGORIES, formatCurrency, label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 export async function GET(request: NextRequest) {
   return withAuth(async (user) => {
@@ -36,6 +37,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const body = expenseSchema.parse(await request.json());
     const ctx = await getBillingContext();
     checkExpenseDate(body.date, ctx.today, user);

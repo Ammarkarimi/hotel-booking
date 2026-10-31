@@ -12,6 +12,8 @@ export interface ShiftSummary {
   byMethod: Record<string, number>;
   cashExpenses: number; // cash this person paid out for expenses
   cashInHand: number; // cash received minus cash paid out
+  checkInList?: string[]; // the bookings checked in, e.g. "#1022 for Asha Rao (Room 101)"
+  checkOutList?: string[];
 }
 
 // Activity names written by the booking screens (see logActivity calls in the bookings API).
@@ -33,11 +35,14 @@ export function codeMatches(expected: string | null | undefined, typed: string) 
 
 /** Builds a summary from the shift's activity, payments and cash expenses. Pure, for tests. */
 export function summarize(input: {
-  actions: string[];
+  actions: Array<{ action: string; details?: string | null }>;
   payments: Array<{ amount: number; method: string; type: string }>;
   cashExpenses: number[];
 }): ShiftSummary {
-  const count = (names: string[]) => input.actions.filter((a) => names.includes(a)).length;
+  const count = (names: string[]) => input.actions.filter((a) => names.includes(a.action)).length;
+  // The booking part of an activity's details, without any reason added after it.
+  const bookingsOf = (names: string[]) =>
+    input.actions.filter((a) => names.includes(a.action) && a.details).map((a) => a.details!.split(/, \d{4}-| — /)[0]);
   const byMethod: Record<string, number> = {};
   for (const p of input.payments) {
     if (p.method === "ota") continue; // prepaid on a booking site: no money changed hands at the desk
@@ -54,6 +59,8 @@ export function summarize(input: {
     byMethod,
     cashExpenses,
     cashInHand: round2((byMethod.cash || 0) - cashExpenses),
+    checkInList: bookingsOf(CHECK_IN_ACTIONS),
+    checkOutList: bookingsOf(CHECK_OUT_ACTIONS),
   };
 }
 
@@ -63,6 +70,12 @@ export function durationLabel(ms: number) {
   const m = minutes % 60;
   return h ? `${h}h ${m}m` : `${m}m`;
 }
+
+export const END_REASONS: Record<string, string> = {
+  staff: "Ended by the staff member",
+  owner: "Closed by the owner",
+  next_shift: "Ended automatically when the next person started their shift",
+};
 
 /** The shift report the staff member sends to the owner on WhatsApp. */
 export function shiftMessage(input: {

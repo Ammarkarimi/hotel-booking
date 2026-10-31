@@ -7,6 +7,7 @@ import { bookingLabel, loadBooking, serializeBooking } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
 import { round2 } from "@/lib/pricing";
 import { CHARGE_CATEGORIES, label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -24,6 +25,7 @@ function assertOpen(status: string) {
 
 export async function POST(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = chargeSchema.parse(await request.json());
     const booking = await loadBooking(id);
@@ -49,6 +51,7 @@ export async function POST(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const chargeId = new URL(request.url).searchParams.get("chargeId");
     if (!chargeId) fail("Charge not specified");

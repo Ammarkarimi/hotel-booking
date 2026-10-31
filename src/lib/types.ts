@@ -158,6 +158,8 @@ export interface ShiftDTO {
   endedAt: string | null;
   handoverNote: string | null;
   endedBy: string | null;
+  endReason: string | null;
+  reportText: string | null;
   ownerSeenAt: string | null;
   open: boolean;
   summary: ShiftSummary;

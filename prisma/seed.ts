@@ -11,6 +11,7 @@ import bcrypt from "bcryptjs";
 import { currentHotelId, prisma, rawPrisma, runForHotel } from "../src/lib/db";
 import { addDays, dateFromKey, todayKey } from "../src/lib/dates";
 import { computeFolio, parseGstSlabs, priceNights } from "../src/lib/pricing";
+import { shiftMessage } from "../src/lib/shift-report";
 
 const withDemo = process.argv.includes("--demo");
 
@@ -299,6 +300,19 @@ async function seedDemo() {
   // Yesterday's front-desk shift, with the handover note today's staff will read first.
   const desk = await rawPrisma.staff.findUniqueOrThrow({ where: { email: "staff@hotel.com" } });
   const yesterday = addDays(today, -1);
+  const demoNote = "Room 401 guest is staying 2 hours past check-out tomorrow and will pay ₹500 extra. Room 102 AC repair man comes at 11 am.";
+  const demoSummary = {
+    checkIns: 2,
+    checkOuts: 1,
+    bookingsMade: 1,
+    paymentsCount: 3,
+    received: 14800,
+    byMethod: { cash: 4800, upi: 10000 },
+    cashExpenses: 300,
+    cashInHand: 4500,
+    checkInList: ["#1012 for Priya Sharma (Room 401)", "#1011 for Rajesh Kumar (Room 201)"],
+    checkOutList: ["#1010 for Anita Desai (Room 203)"],
+  };
   await prisma.shift.create({
     data: {
       hotelId,
@@ -307,8 +321,19 @@ async function seedDemo() {
       startedAt: new Date(`${yesterday}T09:02:00+05:30`),
       startNote: "Cash in drawer ₹5,000",
       endedAt: new Date(`${yesterday}T17:31:00+05:30`),
-      handoverNote: "Room 401 guest is staying 2 hours past check-out tomorrow and will pay ₹500 extra. Room 102 AC repair man comes at 11 am.",
-      summary: JSON.stringify({ checkIns: 2, checkOuts: 1, bookingsMade: 1, paymentsCount: 3, received: 14800, byMethod: { cash: 4800, upi: 10000 }, cashExpenses: 300, cashInHand: 4500 }),
+      handoverNote: demoNote,
+      endReason: "staff",
+      summary: JSON.stringify(demoSummary),
+      reportText: shiftMessage({
+        hotelName: settings.hotelName,
+        staffName: desk.name,
+        startedAt: new Date(`${yesterday}T09:02:00+05:30`),
+        endedAt: new Date(`${yesterday}T17:31:00+05:30`),
+        timeZone: settings.timezone,
+        currency: settings.currency,
+        summary: demoSummary,
+        handoverNote: demoNote,
+      }),
     },
   });
 

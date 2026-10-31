@@ -320,7 +320,9 @@ model Shift {
   handoverNote String?
   endCode      String? // the code shown on screen that must be typed to end the shift
   endedBy      String? // the owner's name when the owner closed a shift the staff forgot to end
+  endReason    String? // staff (ended it themselves), owner (closed by the owner), next_shift (someone else started a shift)
   summary      String? // JSON: check-ins, check-outs, bookings and money, fixed when the shift ends
+  reportText   String? // the shift report exactly as saved; editing it in WhatsApp does not change this
   ownerSeenAt  DateTime?
   staff        Staff?    @relation(fields: [staffId], references: [id], onDelete: SetNull)
   hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)

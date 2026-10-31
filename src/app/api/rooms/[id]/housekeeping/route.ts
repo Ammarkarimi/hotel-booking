@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { withAuth, fail } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -16,6 +17,7 @@ const schema = z.object({
 /** Any staff member can update cleaning status. */
 export async function POST(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const body = schema.parse(await request.json());
     const room = await prisma.room.findUnique({ where: { id } });

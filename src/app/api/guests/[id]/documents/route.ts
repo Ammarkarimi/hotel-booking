@@ -5,6 +5,7 @@ import { saveUploadedFile } from "@/lib/upload";
 import { deleteStoredFile } from "@/lib/storage";
 import { logActivity } from "@/lib/activity";
 import { DOCUMENT_TYPES, label } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -14,6 +15,7 @@ const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"
 
 export async function POST(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const guest = await prisma.guest.findUnique({ where: { id } });
     if (!guest) fail("Guest not found", 404);
@@ -45,6 +47,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const { id } = await params;
     const docId = new URL(request.url).searchParams.get("docId");
     const doc = docId ? await prisma.guestDocument.findFirst({ where: { id: docId, guestId: id } }) : null;

@@ -18,6 +18,7 @@ import {
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
+import { assertOnShift } from "@/lib/shift-api";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -102,6 +103,7 @@ const createSchema = z.object({
 
 export async function POST(request: NextRequest) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const body = createSchema.parse(await request.json());
     const ctx = await getBillingContext();
     const checkIn = parseStayDate(body.checkInDate, "arrival");

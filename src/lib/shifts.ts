@@ -9,14 +9,14 @@ export async function shiftSummary(staff: { id: string | null; name: string }, f
   const range = { gte: from, lte: to };
   const [activities, payments, expenses] = await Promise.all([
     staff.id
-      ? prisma.activityLog.findMany({ where: { staffId: staff.id, createdAt: range }, select: { action: true } })
+      ? prisma.activityLog.findMany({ where: { staffId: staff.id, createdAt: range }, select: { action: true, details: true }, orderBy: { createdAt: "asc" } })
       : Promise.resolve([]),
     prisma.payment.findMany({ where: { receivedBy: staff.name, status: "completed", createdAt: range }, select: { amount: true, method: true, type: true } }),
     staff.id
       ? prisma.expense.findMany({ where: { addedById: staff.id, method: "cash", createdAt: range }, select: { amount: true } })
       : Promise.resolve([]),
   ]);
-  return summarize({ actions: activities.map((a) => a.action), payments, cashExpenses: expenses.map((e) => e.amount) });
+  return summarize({ actions: activities, payments, cashExpenses: expenses.map((e) => e.amount) });
 }
 
 export function parseSummary(raw: string | null | undefined): ShiftSummary | null {

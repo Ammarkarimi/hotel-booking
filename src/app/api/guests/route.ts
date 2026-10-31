@@ -4,6 +4,7 @@ import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { guestData, guestSchema } from "@/lib/guests";
+import { assertOnShift } from "@/lib/shift-api";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   return withAuth(async (user) => {
+    await assertOnShift(user);
     const body = guestSchema.parse(await request.json());
     const data = guestData(body);
     const guest = await prisma.guest.create({

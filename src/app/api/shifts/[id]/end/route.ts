@@ -3,8 +3,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { fail, isAdmin, withAuth } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
-import { codeMatches, durationLabel, shiftSummary } from "@/lib/shifts";
-import { serializeShift } from "@/lib/shift-api";
+import { codeMatches, durationLabel, parseSummary } from "@/lib/shifts";
+import { closeShift, serializeShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -31,21 +31,10 @@ export async function POST(request: NextRequest, { params }: Params) {
       if (body.handoverNote.length < 5) fail("Please write a handover note for the next person (at least a few words)");
       if (!codeMatches(shift.endCode, body.code)) fail("The code does not match. Please type the code shown on the screen.");
     }
-    const endedAt = new Date();
-    const summary = await shiftSummary({ id: shift.staffId, name: shift.staffName }, shift.startedAt, endedAt);
+    const updated = await closeShift(shift, { reason: own ? "staff" : "owner", handoverNote: own ? body.handoverNote : undefined, by: user.name });
+    const summary = parseSummary(updated.summary)!;
+    const endedAt = updated.endedAt!;
     const closedByOwner = !own;
-    const updated = await prisma.shift.update({
-      where: { id },
-      data: {
-        endedAt,
-        endCode: null,
-        summary: JSON.stringify(summary),
-        handoverNote: body.handoverNote || (closedByOwner ? null : shift.handoverNote),
-        endedBy: closedByOwner ? user.name : null,
-        // The owner closing a shift has already seen it.
-        ownerSeenAt: closedByOwner ? endedAt : null,
-      },
-    });
     await logActivity(
       user,
       closedByOwner ? "Shift closed by owner" : "Shift ended",

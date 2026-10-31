@@ -6,7 +6,7 @@ import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Loading, Page
 import { PeriodPicker, periodFor, type PeriodValue } from "@/components/period-picker";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
-import { durationLabel } from "@/lib/shift-report";
+import { durationLabel, END_REASONS } from "@/lib/shift-report";
 import { formatCurrency, label } from "@/lib/utils";
 import type { ShiftDTO } from "@/lib/types";
 
@@ -63,6 +63,12 @@ function ShiftCard({ s, timeZone, onClose }: { s: ShiftDTO; timeZone: string; on
           Cash to hand over <b>{formatCurrency(sum.cashInHand)}</b>
         </span>
       </div>
+      {(sum.checkInList?.length || sum.checkOutList?.length) ? (
+        <div className="mt-2 space-y-0.5 text-xs text-slate-600">
+          {!!sum.checkInList?.length && <p>Checked in: {sum.checkInList.join(" · ")}</p>}
+          {!!sum.checkOutList?.length && <p>Checked out: {sum.checkOutList.join(" · ")}</p>}
+        </div>
+      ) : null}
       {s.startNote && <p className="mt-2 text-sm text-slate-600">At the start: {s.startNote}</p>}
       {s.handoverNote && (
         <p className="mt-2 whitespace-pre-line rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[15px] text-slate-900">
@@ -70,7 +76,19 @@ function ShiftCard({ s, timeZone, onClose }: { s: ShiftDTO; timeZone: string; on
           {s.handoverNote}
         </p>
       )}
-      {s.endedBy && <p className="mt-2 text-xs text-slate-500">Closed by {s.endedBy} (the staff member did not end it).</p>}
+      {!s.open && s.endReason !== "staff" && (
+        <p className="mt-2 text-xs font-semibold text-amber-700">
+          {END_REASONS[s.endReason ?? "staff"]}
+          {s.endedBy ? ` (${s.endedBy})` : ""}: the staff member did not end it, so there is no handover note.
+        </p>
+      )}
+      {s.reportText && (
+        <details className="mt-2 text-sm">
+          <summary className="cursor-pointer font-semibold text-primary-700">Shift report as saved</summary>
+          <pre className="mt-1 whitespace-pre-wrap rounded-xl bg-slate-50 p-3 font-sans text-slate-800">{s.reportText}</pre>
+          <p className="text-xs text-slate-500">Saved when the shift ended. It cannot be changed, even if the WhatsApp message was edited before sending.</p>
+        </details>
+      )}
     </li>
   );
 }
@@ -133,7 +151,7 @@ export default function ShiftsPage() {
         description="Attendance, handover notes, and what each person did on their shift."
         actions={
           <Button variant="outline" onClick={() => window.open(`/api/shifts?${query}&format=csv`, "_blank")}>
-            <Download className="h-4 w-4" /> Download for Excel
+            <Download className="h-4 w-4" /> Download staff report
           </Button>
         }
       />

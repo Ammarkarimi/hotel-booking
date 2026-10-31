@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Clock, Copy, LogOut, MessageCircle, NotebookPen, PlayCircle, StopCircle } from "lucide-react";
 import { Button, Field, Input, Modal, Textarea, Tip } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
-import { durationLabel, shiftMessage, type ShiftSummary } from "@/lib/shift-report";
+import { durationLabel, type ShiftSummary } from "@/lib/shift-report";
 import { formatCurrency } from "@/lib/utils";
 import type { CurrentShiftDTO, HandoverDTO, ShiftDTO } from "@/lib/types";
 
@@ -137,7 +137,7 @@ function StartShiftGate({ current, onStarted }: { current: CurrentShiftDTO; onSt
 
 /** Ending a shift: a summary, a compulsory handover note and the code on screen, then the report to the owner on WhatsApp. */
 function EndShiftDialog({ shift, ownerWhatsapp, open, onClose }: { shift: ShiftDTO; ownerWhatsapp: string | null; open: boolean; onClose: () => void }) {
-  const { user, settings, toast } = useApp();
+  const { settings, toast } = useApp();
   const router = useRouter();
   const [code, setCode] = useState<string | null>(null);
   const [summary, setSummary] = useState<ShiftSummary>(shift.summary);
@@ -174,27 +174,18 @@ function EndShiftDialog({ shift, ownerWhatsapp, open, onClose }: { shift: ShiftD
     }
   }
 
-  const report = ended
-    ? shiftMessage({
-        hotelName: settings.hotelName,
-        staffName: user.name,
-        startedAt: ended.startedAt,
-        endedAt: ended.endedAt!,
-        timeZone: settings.timezone,
-        summary: ended.summary,
-        handoverNote: ended.handoverNote ?? "",
-        currency: settings.currency,
-      })
-    : "";
+  // The report as the server saved it. Editing it in WhatsApp does not change the saved copy.
+  const report = ended?.reportText ?? "";
 
   if (ended) {
     return (
-      <Modal open={open} onClose={() => undefined} title="Shift ended" description={`${dayTimeOf(ended.startedAt, settings.timezone)} to ${timeOf(ended.endedAt!, settings.timezone)} · ${durationLabel(new Date(ended.endedAt!).getTime() - new Date(ended.startedAt).getTime())}`} size="lg">
+      <Modal open={open} onClose={onClose} title="Shift ended" description={`${dayTimeOf(ended.startedAt, settings.timezone)} to ${timeOf(ended.endedAt!, settings.timezone)} · ${durationLabel(new Date(ended.endedAt!).getTime() - new Date(ended.startedAt).getTime())}`} size="lg">
         <div className="space-y-4">
           <SummaryTiles s={ended.summary} />
           <div>
             <p className="mb-1 text-sm font-semibold text-slate-700">Report for the owner</p>
             <pre className="whitespace-pre-wrap rounded-xl bg-slate-50 p-3 font-sans text-sm text-slate-800">{report}</pre>
+            <p className="mt-1 text-xs text-slate-500">Your note and this report are saved and cannot be changed. Changing the text in WhatsApp does not change the saved copy the owner sees.</p>
           </div>
           {ownerWhatsapp ? (
             <a href={whatsappLink(ownerWhatsapp, report)} target="_blank" rel="noopener noreferrer" onClick={() => setSent(true)} className="block">
@@ -291,11 +282,29 @@ export function ShiftControl() {
   const now = useNow();
   const [current, setCurrent] = useState<CurrentShiftDTO | null>(null);
   const [ending, setEnding] = useState(false);
+  const endingRef = useRef(false);
+  endingRef.current = ending;
 
   const load = useCallback(() => {
     api<CurrentShiftDTO>("/api/shifts/current").then(setCurrent).catch(() => undefined);
   }, []);
-  useEffect(() => load(), [load]);
+  // Checked again every minute and whenever the screen comes back into view: if someone else started a shift,
+  // this person's shift has ended and the start-shift screen appears.
+  useEffect(() => {
+    if (user.role === "admin") return;
+    load();
+    const refresh = () => {
+      if (!endingRef.current) load();
+    };
+    const t = setInterval(refresh, 60000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("shift-changed", refresh);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("shift-changed", refresh);
+    };
+  }, [load, user.role]);
 
   if (user.role === "admin" || !current) return null;
   // Pop-ups go straight on the page: the top bar's blur would otherwise trap them inside it.
@@ -314,7 +323,19 @@ export function ShiftControl() {
           <span className="sm:hidden">{durationLabel(now - since)}</span>
         </Button>
       </div>
-      {ending && createPortal(<EndShiftDialog shift={current.shift} ownerWhatsapp={current.ownerWhatsapp} open={ending} onClose={() => setEnding(false)} />, document.body)}
+      {ending &&
+        createPortal(
+          <EndShiftDialog
+            shift={current.shift}
+            ownerWhatsapp={current.ownerWhatsapp}
+            open={ending}
+            onClose={() => {
+              setEnding(false);
+              load();
+            }}
+          />,
+          document.body
+        )}
     </>
   );
 }
