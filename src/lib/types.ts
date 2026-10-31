@@ -161,6 +161,7 @@ export interface ShiftDTO {
   endedBy: string | null;
   endReason: string | null;
   reportText: string | null;
+  handedOverTo: string | null;
   ownerSeenAt: string | null;
   open: boolean;
   summary: ShiftSummary;
@@ -174,9 +175,26 @@ export interface HandoverDTO {
   endedBy: string | null;
 }
 
+export interface ShiftTransferDTO {
+  id: string;
+  fromShiftId: string;
+  fromStaffName: string;
+  toStaffId: string;
+  toStaffName: string;
+  startNote: string | null;
+  status: "pending" | "accepted" | "declined" | "cancelled";
+  createdAt: string;
+  respondedAt: string | null;
+  respondedBy: string | null;
+}
+
 export interface CurrentShiftDTO {
   required: boolean;
   shift: ShiftDTO | null;
+  desk: { limit: number; full: boolean; onShift: Array<{ id: string; staffName: string; startedAt: string }> } | null;
+  incoming: ShiftTransferDTO | null;
+  myRequest: ShiftTransferDTO | null;
+  waitingHandovers?: number;
   handovers: HandoverDTO[];
   ownerWhatsapp: string | null;
   unread?: number;

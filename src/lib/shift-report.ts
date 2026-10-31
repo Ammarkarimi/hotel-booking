@@ -74,7 +74,7 @@ export function durationLabel(ms: number) {
 export const END_REASONS: Record<string, string> = {
   staff: "Ended by the staff member",
   owner: "Closed by the owner",
-  next_shift: "Ended automatically when the next person started their shift",
+  transferred: "Handed over to the next person",
 };
 
 /** The shift report the staff member sends to the owner on WhatsApp. */

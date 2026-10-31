@@ -7,7 +7,7 @@ import { getSettings } from "@/lib/settings";
 import { addDays, isDateKey, todayKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
 import { durationLabel, END_REASONS } from "@/lib/shifts";
-import { closeShift, recentHandovers, serializeShift } from "@/lib/shift-api";
+import { deskStatus, recentHandovers, serializeShift, startShift } from "@/lib/shift-api";
 
 /** Attendance: shifts that started in a date range (hotel's own days). The owner sees everyone; staff see their own. */
 export async function GET(request: NextRequest) {
@@ -115,19 +115,11 @@ export async function POST(request: NextRequest) {
     const body = startSchema.parse(await request.json().catch(() => ({})));
     const open = await prisma.shift.findFirst({ where: { staffId: user.id, endedAt: null } });
     if (open) return NextResponse.json(await serializeShift(open));
-    // The owner sets how many people work at the front desk together. When this shift would go over that,
-    // whoever has been on shift the longest is ended now, so a forgotten shift never stays open.
-    const settings = await getSettings();
-    const others = await prisma.shift.findMany({ where: { endedAt: null, staffId: { not: user.id } }, orderBy: { startedAt: "asc" } });
-    const startedAt = new Date();
-    for (const other of others.slice(0, Math.max(0, others.length - (settings.frontDeskStaff - 1)))) {
-      await closeShift(other, { reason: "next_shift", at: startedAt }).catch(() => undefined);
-      await logActivity(user, "Shift ended automatically", `${other.staffName}'s shift ended when ${user.name} started`);
-    }
-    const shift = await prisma.shift.create({
-      data: { hotelId: currentHotelId(), staffId: user.id, staffName: user.name, startNote: body.startNote || null, startedAt },
-    });
-    await logActivity(user, "Shift started", body.startNote || undefined);
+    // The owner sets how many people work at the front desk together. When it is full, the new person asks
+    // someone on shift to hand over; nobody's shift is ended without them (or the owner) agreeing.
+    const desk = await deskStatus(user.id);
+    if (desk.full) fail("The front desk is full. Choose whose shift you are taking over; they will be asked to confirm.", 409);
+    const shift = await startShift(user, body.startNote || null);
     return NextResponse.json({ ...(await serializeShift(shift)), handovers: await recentHandovers(shift.id) });
   });
 }
