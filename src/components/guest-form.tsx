@@ -5,6 +5,7 @@ import { Button, Field, Input, Modal, Select, Textarea, Toggle } from "@/compone
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { label } from "@/lib/utils";
+import { INDIAN_STATES, aadhaarLast4 } from "@/lib/guest-form";
 import type { GuestDTO } from "@/lib/types";
 
 const EMPTY = {
@@ -14,6 +15,9 @@ const EMPTY = {
   email: "",
   nationality: "Indian",
   address: "",
+  city: "",
+  state: "",
+  pinCode: "",
   idType: "aadhar",
   idNumber: "",
   company: "",
@@ -96,19 +100,47 @@ export function GuestFormDialog({
           </Field>
           <Field label="ID proof" optional>
             <div className="flex gap-2">
-              <Select value={form.idType} onChange={set("idType")} className="w-40">
+              <Select value={form.idType} onChange={(e) => setForm({ ...form, idType: e.target.value, idNumber: "" })} className="w-40">
                 {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
                   <option key={t} value={t}>
                     {label(t)}
                   </option>
                 ))}
               </Select>
-              <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />
+              {form.idType === "aadhar" ? (
+                <Input
+                  value={aadhaarLast4(form.idNumber) || form.idNumber.replace(/\D/g, "")}
+                  onChange={(e) => setForm({ ...form, idNumber: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  inputMode="numeric"
+                  maxLength={4}
+                  placeholder="Last 4 digits"
+                  aria-label="Last 4 digits of the Aadhaar"
+                />
+              ) : (
+                <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />
+              )}
             </div>
+            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Only the last 4 digits are saved. Keep a copy of the card under ID documents.</p>}
           </Field>
-          <Field label="Address" optional className="sm:col-span-2">
+          <Field label="Address" optional className="sm:col-span-2" hint="House, street and area">
             <Input value={form.address} onChange={set("address")} />
           </Field>
+          <Field label="City" optional>
+            <Input value={form.city} onChange={set("city")} />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="State" optional>
+              <Input value={form.state} onChange={set("state")} list="indian-states" />
+            </Field>
+            <Field label="PIN code" optional>
+              <Input value={form.pinCode} onChange={set("pinCode")} inputMode="numeric" maxLength={12} />
+            </Field>
+          </div>
+          <datalist id="indian-states">
+            {INDIAN_STATES.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
           {foreign && (
             <>
               <Field label="Passport number" hint="Needed for foreign guest registration (Form C).">

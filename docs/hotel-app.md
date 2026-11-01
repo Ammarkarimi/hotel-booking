@@ -8,7 +8,7 @@ under **Help & guide**.
 
 | | Owner / manager | Front desk |
 |---|:-:|:-:|
-| Bookings, check-in/out, payments, extras, guests, ID photos, calendar, housekeeping | ✅ | ✅ |
+| Bookings, check-in/out, payments, extras, guests, ID photos, guest forms, calendar, housekeeping | ✅ | ✅ |
 | Write down expenses | ✅ all | ✅ their own, last 7 days |
 | Reports and CSV downloads | ✅ | — |
 | Settings (hotel details, prices & tax, online booking, staff, activity history) | ✅ | — |
@@ -81,6 +81,42 @@ full booking. When a guest is checked out after their leaving date, the extra
 nights are added, unless staff choose to charge only up to the booked date (for a
 guest who really left on time). The check-out screen always shows the exact final
 bill before anyone presses the button.
+
+### Guest forms (WhatsApp)
+
+Instead of typing a guest's details at the desk, send them a form:
+
+1. Press **Send guest form** on Today (or **Guest forms → Send a form**). Type
+   the guest's WhatsApp number, and their name and dates if you know them. Press
+   **Send on WhatsApp** and then Send in WhatsApp. The link works for 7 days.
+2. The guest opens the link on their phone and fills in: arrival and leaving
+   dates, adults and children, name, mobile, date of birth, email, nationality,
+   home address (house and street, city, state, PIN code), where they are coming
+   from and going next, their vehicle number, and the name of every other adult.
+   They upload a photo or PDF of an ID for every adult (Aadhaar front and back,
+   passport and visa for foreign guests, driving licence, voter ID). For an
+   Aadhaar they type only its last 4 digits; no other ID number is asked. They
+   tick that they agree and press Send.
+3. The front desk gets a pop-up within 30 seconds, a red number on **Guest
+   forms** and a card on Today. Press **Choose room & book**: the dates, people
+   and special requests are already filled in, and the guest's details and ID
+   copies are shown. If the mobile number belongs to a returning guest, choose
+   whether it is the same person (a matching Aadhaar ending is marked “Same
+   Aadhaar”). Pick the room, check the price and confirm.
+4. The guest profile, the ID copies (named by person) and the booking's journey,
+   vehicle and companions are saved, and they print on the registration card.
+
+A form can be sent again (another 7 days) or closed. Closing a filled-in form
+deletes the details and ID copies the guest sent. A form can make only one
+booking.
+
+**Only the last 4 digits of an Aadhaar are kept**, shown as `XXXX XXXX 1234`
+(like UIDAI's masked Aadhaar). The copy of the card is the proof; the 4 digits
+help recognise a returning guest. On the form, a guest who uploads an Aadhaar
+types its last 4 digits, and can upload the masked Aadhaar from the myAadhaar
+app instead of the full card. Staff type only the last 4 digits too; if a full
+number is typed, only its last 4 digits are saved. Numbers of other IDs
+(passport, driving licence…) are saved as typed.
 
 ### Room calendar
 

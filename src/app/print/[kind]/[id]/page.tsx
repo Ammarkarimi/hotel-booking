@@ -1,3 +1,4 @@
+import { fullAddress } from "@/lib/guest-form";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma, runForHotel } from "@/lib/db";
@@ -254,7 +255,15 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
   );
 }
 
-function Registration({ b, s }: { b: SerializedBooking & { guest: SerializedBooking["guest"] & { dateOfBirth: Date | null } }; s: HotelSettingsRecord }) {
+function Registration({
+  b,
+  s,
+  docs,
+}: {
+  b: SerializedBooking & { guest: SerializedBooking["guest"] & { dateOfBirth: Date | null } };
+  s: HotelSettingsRecord;
+  docs: { person: string | null; type: string }[];
+}) {
   const g = b.guest;
   const foreign = g.nationality.toLowerCase() !== "indian";
   return (
@@ -268,7 +277,7 @@ function Registration({ b, s }: { b: SerializedBooking & { guest: SerializedBook
           <Info label="Email">{g.email}</Info>
           <Info label="Nationality">{g.nationality}</Info>
           <Info label="Date of birth">{g.dateOfBirth ? formatDate(g.dateOfBirth) : ""}</Info>
-          <Info label="Address">{g.address}</Info>
+          <Info label="Address">{fullAddress(g)}</Info>
           <Info label="Company">{g.company}</Info>
           <Info label="GSTIN">{g.gstin}</Info>
         </div>
@@ -284,6 +293,9 @@ function Registration({ b, s }: { b: SerializedBooking & { guest: SerializedBook
           </Info>
           <Info label="Rate / night">{formatCurrency(b.ratePerNight, s.currency)}</Info>
           <Info label="ID proof">{g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : ""}</Info>
+          <Info label="Coming from">{b.comingFrom}</Info>
+          <Info label="Going to">{b.goingTo}</Info>
+          <Info label="Vehicle no.">{b.vehicleNumber}</Info>
         </div>
       </div>
       {foreign && (
@@ -303,12 +315,25 @@ function Registration({ b, s }: { b: SerializedBooking & { guest: SerializedBook
         </div>
       )}
       <div className="mt-6 grid grid-cols-2 gap-x-8">
-        {Array.from({ length: Math.max(0, b.adults - 1) }).map((_, i) => (
-          <div key={i} className="mb-3 text-sm">
-            <p className="text-slate-500">Accompanying guest {i + 1}: name & ID</p>
-            <div className="mt-6 border-b border-slate-300" />
-          </div>
-        ))}
+        {Array.from({ length: Math.max(0, b.adults - 1) }).map((_, i) => {
+          const c = b.companions[i];
+          const ids = [...new Set(docs.filter((d) => c && d.person === c.name).map((d) => label(d.type)))];
+          return (
+            <div key={i} className="mb-3 text-sm">
+              <p className="text-slate-500">Accompanying guest {i + 1}: name & ID</p>
+              {c ? (
+                <p className="mt-1 border-b border-slate-300 pb-1 font-semibold">
+                  {c.name}
+                  {c.phone && ` · ${c.phone}`}
+                  {c.aadhaar && ` · Aadhaar ${c.aadhaar}`}
+                  {ids.length > 0 && <span className="font-normal text-slate-600"> · {ids.join(", ")} copy saved</span>}
+                </p>
+              ) : (
+                <div className="mt-6 border-b border-slate-300" />
+              )}
+            </div>
+          );
+        })}
       </div>
       {s.bookingTerms && (
         <div className="mt-6">
@@ -333,7 +358,9 @@ export default async function PrintPage({ params }: Params) {
 
   const data = await runForHotel(session.hotelId, async () => {
     const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
-    return booking ? { booking, ctx: await getBillingContext() } : null;
+    if (!booking) return null;
+    const docs = await prisma.guestDocument.findMany({ where: { guestId: booking.guestId }, select: { person: true, type: true } });
+    return { booking, docs, ctx: await getBillingContext() };
   });
   if (!data) notFound();
   const { ctx } = data;
@@ -346,7 +373,7 @@ export default async function PrintPage({ params }: Params) {
         <div className="print-page mx-auto my-6 min-w-[640px] max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow sm:p-10">
           {kind === "invoice" && <Invoice b={b} s={ctx.settings} />}
           {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} />}
-          {kind === "registration" && <Registration b={b} s={ctx.settings} />}
+          {kind === "registration" && <Registration b={b} s={ctx.settings} docs={data.docs} />}
         </div>
       </div>
     </div>

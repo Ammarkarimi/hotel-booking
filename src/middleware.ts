@@ -3,8 +3,8 @@ import type { NextRequest } from "next/server";
 import { COOKIE_NAME, PLATFORM_COOKIE_NAME, verifyPlatformToken, verifySessionToken } from "@/lib/session";
 
 // Pages and APIs anyone can open without signing in (the guest booking website and the
-// public landing page with its video and images).
-const publicPaths = ["/login", "/api/auth/login", "/book", "/api/public", "/welcome"];
+// public landing page with its video and images), and the guest form sent on WhatsApp.
+const publicPaths = ["/login", "/api/auth/login", "/book", "/form", "/api/public", "/welcome"];
 
 // The software provider's panel. It has its own sign-in; hotel accounts never get in.
 const platformPaths = ["/platform", "/api/platform"];

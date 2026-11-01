@@ -8,6 +8,7 @@ import {
   BedDouble,
   CalendarDays,
   CalendarPlus,
+  ClipboardCheck,
   ClipboardList,
   Globe,
   HelpCircle,
@@ -37,6 +38,7 @@ const NAV = [
   { href: "/calendar", label: "Room Calendar", icon: CalendarDays, hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", icon: ClipboardList, hint: "All reservations" },
   { href: "/guests", label: "Guests", icon: Users, hint: "Guest records & IDs" },
+  { href: "/guest-forms", label: "Guest forms", icon: ClipboardCheck, hint: "Details sent on WhatsApp" },
   { href: "/housekeeping", label: "Housekeeping", icon: Sparkles, hint: "Room cleaning" },
   { href: "/payments", label: "Payments", icon: Wallet, hint: "Money received" },
   { href: "/expenses", label: "Expenses", icon: Receipt, hint: "Money spent" },
@@ -55,7 +57,7 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
+function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsWaiting: number }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAdmin, settings } = useApp();
@@ -109,6 +111,11 @@ function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
                 <span className="block text-[15px] font-semibold leading-tight">{item.label}</span>
                 <span className="block text-xs text-slate-400">{item.hint}</span>
               </span>
+              {item.href === "/guest-forms" && formsWaiting > 0 && (
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white" aria-label={`${formsWaiting} guest forms need a room`}>
+                  {formsWaiting}
+                </span>
+              )}
               {item.href === "/shifts" && unread > 0 && (
                 <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white" aria-label={`${unread} new shift reports`}>
                   {unread}
@@ -252,16 +259,44 @@ function GlobalSearch() {
   );
 }
 
+/** How many guests have sent their WhatsApp form and wait for a room. Tells the desk when a new one arrives. */
+function useFormsWaiting() {
+  const { toast } = useApp();
+  const pathname = usePathname();
+  const [count, setCount] = useState(0);
+  const last = useRef<number | null>(null);
+  useEffect(() => {
+    const load = () =>
+      api<{ received: number }>("/api/guest-forms?count=1")
+        .then(({ received }) => {
+          const added = last.current === null ? 0 : received - last.current;
+          if (added > 0) toast(added === 1 ? "A guest has sent their form. Choose a room in Guest forms." : `${added} guests have sent their forms. See Guest forms.`);
+          last.current = received;
+          setCount(received);
+        })
+        .catch(() => undefined);
+    load();
+    const t = setInterval(load, 30000);
+    window.addEventListener("guest-forms-changed", load);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("guest-forms-changed", load);
+    };
+  }, [pathname, toast]);
+  return count;
+}
+
 function Shell({ children }: { children: React.ReactNode }) {
   const { settings } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   useEffect(() => setMenuOpen(false), [pathname]);
+  const formsWaiting = useFormsWaiting();
 
   return (
     <div className="min-h-screen">
       <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200 lg:block">
-        <Sidebar />
+        <Sidebar formsWaiting={formsWaiting} />
       </aside>
 
       {menuOpen && (
@@ -275,7 +310,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             >
               <X className="h-5 w-5" />
             </button>
-            <Sidebar onNavigate={() => setMenuOpen(false)} />
+            <Sidebar onNavigate={() => setMenuOpen(false)} formsWaiting={formsWaiting} />
           </div>
         </div>
       )}
@@ -292,6 +327,14 @@ function Shell({ children }: { children: React.ReactNode }) {
           </button>
           <GlobalSearch />
           <div className="ml-auto flex shrink-0 gap-2">
+            {formsWaiting > 0 && pathname !== "/guest-forms" && (
+              <Link href="/guest-forms" aria-label={`${formsWaiting} guest forms need a room`} title="Guest forms waiting for a room">
+                <Button variant="outline" className="relative px-3">
+                  <ClipboardCheck className="h-5 w-5 text-primary-600" />
+                  <span className="rounded-full bg-red-600 px-1.5 text-xs font-bold text-white">{formsWaiting}</span>
+                </Button>
+              </Link>
+            )}
             <ShiftControl />
             <Link href="/bookings/new">
               <Button className="whitespace-nowrap">

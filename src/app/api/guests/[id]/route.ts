@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
-import { guestData, guestSchema } from "@/lib/guests";
+import { guestData, guestUpdateSchema } from "@/lib/guests";
 import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
 import { deleteStoredFile } from "@/lib/storage";
@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
     await assertOnShift(user);
     const { id } = await params;
-    const body = guestSchema.partial().parse(await request.json());
+    const body = guestUpdateSchema.parse(await request.json());
     const guest = await prisma.guest.findUnique({ where: { id } });
     if (!guest) fail("Guest not found", 404);
     const updated = await prisma.guest.update({ where: { id }, data: guestData(body), include: { documents: true } });

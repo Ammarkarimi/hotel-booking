@@ -89,6 +89,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/expenses", text: "Open expenses" },
   },
   {
+    q: "How do I get a guest's details and ID before they arrive?",
+    steps: [
+      "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
+      "The guest fills in their details and uploads a photo or PDF of an ID for every adult. For an Aadhaar, only its last 4 digits are asked and saved.",
+      "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
+    ],
+    link: { href: "/guest-forms", text: "Open guest forms" },
+  },
+  {
     q: "For owners: who worked when, and what did they leave for the next shift?",
     steps: [
       "Open “Staff shifts” for attendance: when each person started and ended, hours worked, check-ins, check-outs and money received.",
