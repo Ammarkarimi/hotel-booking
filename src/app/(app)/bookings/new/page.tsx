@@ -7,7 +7,6 @@ import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, 
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { FormDetails } from "@/components/guest-form-send";
-import { aadhaarLast4 } from "@/lib/guest-form";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -108,9 +107,7 @@ function NewBookingWizard() {
           .then((list) => {
             setSameNumber(list);
             // The same person stayed before: keep one profile for them.
-            const same =
-              list.find((g) => d.aadhaarLast4 && g.idType === "aadhar" && aadhaarLast4(g.idNumber) === d.aadhaarLast4) ??
-              list.find((g) => g.firstName.trim().toLowerCase() === d.firstName.trim().toLowerCase());
+            const same = list.find((g) => g.firstName.trim().toLowerCase() === d.firstName.trim().toLowerCase());
             if (same) setLinkGuestId(same.id);
           })
           .catch(() => undefined);
@@ -232,7 +229,7 @@ function NewBookingWizard() {
             ? { guestFormId: guestForm.id, ...(linkGuestId && { guestId: linkGuestId }) }
             : guest
               ? { guestId: guest.id }
-              : { guest: { ...newGuest, idType: newGuest.idNumber ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
+              : { guest: { ...newGuest, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
           ...(Number(advance) > 0 && { advance: { amount: Number(advance), method } }),
         },
       });
@@ -478,12 +475,7 @@ function NewBookingWizard() {
                               {g.firstName} {g.lastName}
                             </span>{" "}
                             {g.blacklisted && <Badge variant="danger">Do not allow</Badge>}
-                            {guestForm.details?.aadhaarLast4 && g.idType === "aadhar" && aadhaarLast4(g.idNumber) === guestForm.details.aadhaarLast4 && (
-                              <Badge variant="success">Same Aadhaar (…{guestForm.details.aadhaarLast4})</Badge>
-                            )}
-                            <span className="block text-sm text-slate-500">
-                              {g.idType === "aadhar" && g.idNumber ? `Aadhaar ${g.idNumber} · ` : ""}Same person: their profile is updated from the form
-                            </span>
+                            <span className="block text-sm text-slate-500">Same person: their profile is updated from the form</span>
                           </span>
                         </label>
                       ))}
@@ -561,7 +553,7 @@ function NewBookingWizard() {
                     <Field
                       label="ID proof"
                       optional
-                      hint={newGuest.idType === "aadhar" ? "Only the last 4 digits are saved. Upload a copy of the card on the guest's page after booking." : "You can also upload a photo of the ID later."}
+                      hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Scan its QR code on the booking at check-in." : "You can also upload a photo of the ID later."}
                     >
                       <div className="flex gap-2">
                         <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value, idNumber: "" })} className="w-40">
@@ -571,16 +563,7 @@ function NewBookingWizard() {
                             </option>
                           ))}
                         </Select>
-                        {newGuest.idType === "aadhar" ? (
-                          <Input
-                            value={newGuest.idNumber}
-                            onChange={(e) => setNewGuest({ ...newGuest, idNumber: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                            inputMode="numeric"
-                            maxLength={4}
-                            placeholder="Last 4 digits"
-                            aria-label="Last 4 digits of the Aadhaar"
-                          />
-                        ) : (
+                        {newGuest.idType !== "aadhar" && (
                           <Input value={newGuest.idNumber} onChange={(e) => setNewGuest({ ...newGuest, idNumber: e.target.value })} placeholder="ID number" />
                         )}
                       </div>

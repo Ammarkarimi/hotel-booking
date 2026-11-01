@@ -26,6 +26,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       const type = String(fd.get("type") || "");
       const person = String(fd.get("person") || "");
       if (!/^\d{1,2}$/.test(person) || Number(person) > 19) fail("Please choose whose ID this is");
+      if (type === "aadhar") fail("Aadhaar copies are not saved. Its QR code is scanned at check-in instead.");
       if (!(FORM_ID_TYPES as readonly string[]).includes(type)) fail("Please choose the type of ID");
       if (!(file instanceof File) || file.size === 0) fail("Please choose a photo or PDF of the ID");
       if (file.size > MAX_BYTES) fail("The file is too large. Please use a photo, or a PDF under 4 MB.");

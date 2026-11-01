@@ -93,30 +93,47 @@ Instead of typing a guest's details at the desk, send them a form:
    dates, adults and children, name, mobile, date of birth, email, nationality,
    home address (house and street, city, state, PIN code), where they are coming
    from and going next, their vehicle number, and the name of every other adult.
-   They upload a photo or PDF of an ID for every adult (Aadhaar front and back,
-   passport and visa for foreign guests, driving licence, voter ID). For an
-   Aadhaar they type only its last 4 digits; no other ID number is asked. They
-   tick that they agree and press Send.
+   For every adult they choose **Aadhaar** (shown at check-in, nothing uploaded)
+   or upload a photo or PDF of another ID (driving licence, voter ID; passport
+   and visa for foreign guests). No ID number is asked. They tick that they
+   agree and press Send.
 3. The front desk gets a pop-up within 30 seconds, a red number on **Guest
    forms** and a card on Today. Press **Choose room & book**: the dates, people
    and special requests are already filled in, and the guest's details and ID
    copies are shown. If the mobile number belongs to a returning guest, choose
-   whether it is the same person (a matching Aadhaar ending is marked “Same
-   Aadhaar”). Pick the room, check the price and confirm.
-4. The guest profile, the ID copies (named by person) and the booking's journey,
-   vehicle and companions are saved, and they print on the registration card.
+   whether it is the same person. Pick the room, check the price and confirm.
+4. The guest profile, any ID copies (named by person) and the booking's
+   journey, vehicle and companions are saved, and they print on the
+   registration card.
+5. At check-in, verify each adult's ID under **ID check** on the booking (see
+   below).
 
 A form can be sent again (another 7 days) or closed. Closing a filled-in form
 deletes the details and ID copies the guest sent. A form can make only one
 booking.
 
-**Only the last 4 digits of an Aadhaar are kept**, shown as `XXXX XXXX 1234`
-(like UIDAI's masked Aadhaar). The copy of the card is the proof; the 4 digits
-help recognise a returning guest. On the form, a guest who uploads an Aadhaar
-types its last 4 digits, and can upload the masked Aadhaar from the myAadhaar
-app instead of the full card. Staff type only the last 4 digits too; if a full
-number is typed, only its last 4 digits are saved. Numbers of other IDs
-(passport, driving licence…) are saved as typed.
+### ID check at check-in (Aadhaar QR)
+
+**Nothing from an Aadhaar is saved anywhere in the software**: no number, no
+copy, no photo. Instead the front desk checks it is genuine:
+
+1. On the booking, **ID check** lists every adult. Press **Scan Aadhaar** and
+   point the phone camera at the QR code on the Aadhaar card, e-Aadhaar or the
+   Aadhaar app (or choose a photo or screenshot of the QR).
+2. The phone checks UIDAI's digital signature in the QR. If it is genuine it
+   shows **Genuine Aadhaar: signed by UIDAI** with the name, photo, date of
+   birth and district from the card, and whether the name matches the booking.
+3. Look at the guest. If the photo is them, press **Photo matches: verified**.
+   Only “Aadhaar verified with its QR code, by Pooja, 3 Nov 4:10 pm” is saved;
+   what was read from the card is forgotten when the screen closes.
+4. For another ID, press **Other ID**, choose which one you saw and press **I
+   checked it**.
+
+Check-in warns when not every adult has been checked. A QR that is not signed
+by UIDAI (a fake, or an old card printed before 2021 with an older key, or the
+plain QR on letters before 2018) is refused: ask for the Aadhaar app, a newly
+downloaded e-Aadhaar or another photo ID. A check marked by mistake can be
+removed by the owner, or by the same person on the same day.
 
 ### Room calendar
 
@@ -133,7 +150,8 @@ staying or already left who still owe money), **Past & cancelled**, and **All**.
 Guest profiles show every stay, nights, total paid and money owed. Each profile can hold:
 
 - ID photo uploads straight from the phone camera, or an existing photo or PDF
-  (Aadhaar, PAN, passport, visa, driving licence, voter ID). Photos are shrunk
+  (PAN, passport, visa, driving licence, voter ID). Aadhaar copies are never
+  saved: scan its QR code at check-in instead. Photos are shrunk
   on the phone before sending, so they upload quickly; PDFs must be under 4 MB.
 - passport and visa numbers for foreign guests
 - company name and GSTIN for business invoices

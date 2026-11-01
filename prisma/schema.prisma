@@ -39,6 +39,7 @@ model Hotel {
   shifts               Shift[]
   shiftTransfers       ShiftTransfer[]
   guestForms           GuestForm[]
+  idChecks             IdCheck[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -265,6 +266,7 @@ model Booking {
   payments            Payment[]
   charges             Charge[]
   bill                Bill?
+  idChecks            IdCheck[]
   hotel               Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, number])
@@ -408,4 +410,30 @@ model ActivityLog {
   hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, createdAt])
+}
+
+// An ID checked at the front desk for one adult in a booking. Nothing from the ID itself is
+// saved: an Aadhaar is checked by scanning its QR code on the staff phone (UIDAI's signature
+// and the photo), and only who checked it and when is kept.
+model IdCheck {
+  id            String   @id @default(cuid())
+  hotelId       String
+  bookingId     String
+  person        String? // null = the guest who booked; otherwise the name of another adult in the room
+  method        String // aadhaar_qr, id_seen
+  idType        String? // for id_seen: passport, driving_licence, voter_id, pan, other
+  checkedById   String?
+  checkedByName String
+  createdAt     DateTime @default(now())
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+}
+
+// Uploaded files waiting to be deleted from storage (for example Aadhaar copies saved before
+// Aadhaar stopped being stored). The app deletes them in small batches while it is in use.
+model FileCleanup {
+  filePath  String   @id
+  createdAt DateTime @default(now())
 }

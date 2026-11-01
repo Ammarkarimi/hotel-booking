@@ -21,7 +21,7 @@ type GuestDetail = GuestDTO & {
 function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; open: boolean; onClose: () => void; onDone: () => void }) {
   const { toast } = useApp();
   const foreign = guest.nationality.toLowerCase() !== "indian";
-  const [type, setType] = useState(foreign ? "passport" : "aadhar");
+  const [type, setType] = useState(foreign ? "passport" : "driving_licence");
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [preparing, setPreparing] = useState(false);
@@ -32,7 +32,7 @@ function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; op
   useEffect(() => {
     if (open) {
       setFile(null);
-      setType(foreign ? "passport" : "aadhar");
+      setType(foreign ? "passport" : "driving_licence");
     }
   }, [open, foreign]);
 
@@ -228,7 +228,7 @@ export default function GuestProfilePage() {
         <Card>
           <CardHeader
             title="ID documents"
-            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of the Aadhaar, driving licence or any government photo ID. For Aadhaar only the last 4 digits are kept."}
+            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of a driving licence, voter ID or other photo ID. Aadhaar is never saved: scan its QR code on the booking at check-in."}
             action={
               <Button size="sm" onClick={() => setUploadOpen(true)}>
                 <Upload className="h-4 w-4" /> Add

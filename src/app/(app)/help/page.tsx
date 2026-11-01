@@ -92,10 +92,18 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     q: "How do I get a guest's details and ID before they arrive?",
     steps: [
       "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
-      "The guest fills in their details and uploads a photo or PDF of an ID for every adult. For an Aadhaar, only its last 4 digits are asked and saved.",
+      "The guest fills in their details. For each adult they choose Aadhaar (shown at check-in) or upload a photo of another ID.",
       "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
     ],
     link: { href: "/guest-forms", text: "Open guest forms" },
+  },
+  {
+    q: "How do I check a guest's Aadhaar?",
+    steps: [
+      "Open the booking. Under “ID check”, press “Scan Aadhaar” next to the person and point the camera at the QR code on their Aadhaar card, e-Aadhaar or Aadhaar app.",
+      "If it says “Genuine Aadhaar: signed by UIDAI”, look at the photo. If it is the guest, press “Photo matches: verified”.",
+      "Nothing from the Aadhaar is saved, only who checked it and when. If the QR is refused, ask for the Aadhaar app or another photo ID and use “Other ID”.",
+    ],
   },
   {
     q: "For owners: who worked when, and what did they leave for the next shift?",

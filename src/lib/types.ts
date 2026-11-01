@@ -103,6 +103,8 @@ export interface BookingDTO {
   vehicleNumber: string | null;
   /** The other adults in the room. */
   companions: Companion[];
+  /** IDs checked at the desk (nothing from the ID itself is kept). */
+  idChecks: IdCheckDTO[];
   createdAt: string;
   guestName: string;
   guest: GuestDTO;
@@ -231,4 +233,14 @@ export interface GuestFormDTO {
   closedAt: string | null;
   closedBy: string | null;
   documents: DocumentDTO[];
+}
+
+export interface IdCheckDTO {
+  id: string;
+  person: string | null;
+  method: "aadhaar_qr" | "id_seen";
+  idType: string | null;
+  checkedById: string | null;
+  checkedByName: string;
+  createdAt: string;
 }

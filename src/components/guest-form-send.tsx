@@ -180,7 +180,7 @@ export function FormDetails({ form }: { form: GuestFormDTO }) {
         {d.email && <Row label="Email">{d.email}</Row>}
         <Row label="Date of birth">{formatDate(d.dateOfBirth)}</Row>
         <Row label="Nationality">{isIndian(d.nationality) ? "Indian" : d.nationality}</Row>
-        {d.aadhaarLast4 && <Row label="Aadhaar">XXXX XXXX {d.aadhaarLast4}</Row>}
+        {d.aadhaarAtDesk && <Row label="ID">Aadhaar: scan the QR at check-in</Row>}
         <Row label="Address">
           <span className="text-right">{fullAddress(d)}</span>
         </Row>
@@ -190,7 +190,7 @@ export function FormDetails({ form }: { form: GuestFormDTO }) {
         {d.companions.length > 0 && (
           <Row label="Staying with">
             <span className="text-right">{d.companions
-                .map((c) => c.name + [c.phone, c.aadhaarLast4 && `Aadhaar …${c.aadhaarLast4}`].filter(Boolean).map((x) => ` (${x})`).join(""))
+                .map((c) => c.name + [c.phone, c.aadhaarAtDesk && "Aadhaar at check-in"].filter(Boolean).map((x) => ` (${x})`).join(""))
                 .join(", ")}</span>
           </Row>
         )}
