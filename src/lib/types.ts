@@ -158,6 +158,10 @@ export interface SettingsDTO {
   staffShifts: boolean;
   ownerWhatsapp: string | null;
   frontDeskStaff: number;
+  /** WhatsApp messages in the owner's words; null = the default wording. */
+  msgBooking: string | null;
+  msgCheckIn: string | null;
+  msgCheckOut: string | null;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 

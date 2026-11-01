@@ -98,6 +98,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/guest-forms", text: "Open guest forms" },
   },
   {
+    q: "Can I change the WhatsApp messages sent to guests?",
+    steps: [
+      "Yes. Open Settings → WhatsApp messages (owner / manager).",
+      "Change the booking confirmation, the welcome at check-in and the thank-you at check-out. Tap a detail such as “Hotel check-out time” to add it where the cursor is. You see an example of what the guest receives.",
+      "Press Save. After every check-in and check-out the front desk is offered the message with a “Send on WhatsApp” button.",
+    ],
+    link: { href: "/settings?tab=messages", text: "Open WhatsApp messages" },
+  },
+  {
     q: "How do I check a guest's ID at check-in?",
     steps: [
       "Open the booking. “ID check” lists every adult.",

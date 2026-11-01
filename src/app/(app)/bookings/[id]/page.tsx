@@ -25,6 +25,8 @@ import {
 import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
 import { GstPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { IdCheckCard } from "@/components/id-checks";
+import { useGuestMessage } from "@/components/guest-message";
+import { messageKindFor } from "@/lib/messages";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -468,6 +470,7 @@ export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { toast, confirm, isAdmin, settings: shell } = useApp();
+  const guestMessage = useGuestMessage();
   const [b, setB] = useState<BookingDetailDTO | null>(null);
   const [error, setError] = useState("");
   const [chargeOpen, setChargeOpen] = useState(false);
@@ -493,16 +496,9 @@ export default function BookingDetailPage() {
   const pState = paymentState(f.grandTotal, f.netPaid);
   const s = b.settings;
 
-  const shareText = [
-    `Dear ${b.guestName},`,
-    `Your booking at ${s.hotelName}: #${b.number}`,
-    `Room: ${label(b.room.type)} room`,
-    `${formatDate(b.checkInDate)} → ${formatDate(b.checkOutDate)} (${f.nightCount} night${f.nightCount > 1 ? "s" : ""})`,
-    `Total: ${formatCurrency(f.grandTotal)} · Paid: ${formatCurrency(f.netPaid)} · Balance: ${formatCurrency(Math.max(0, f.balance))}`,
-    s.phone ? `Call us: ${s.phone}` : "",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  // The message for where the guest is now: confirmation, welcome while staying, thanks after leaving.
+  const shareKind = messageKindFor(b.status);
+  const shareText = guestMessage(shareKind, b);
 
   async function removeCharge(chargeId: string, desc: string) {
     const ok = await confirm({ title: "Remove this item from the bill?", message: desc, confirmText: "Yes, remove", danger: true });
@@ -754,7 +750,8 @@ export default function BookingDetailPage() {
               )}
               <a href={whatsappLink(b.guest.phone, shareText)} target="_blank" rel="noopener noreferrer" className="block pt-1">
                 <Button variant="success" size="sm" className="w-full">
-                  <MessageCircle className="h-4 w-4" /> Send details on WhatsApp
+                  <MessageCircle className="h-4 w-4" />{" "}
+                  {shareKind === "checkIn" ? "Send welcome message" : shareKind === "checkOut" ? "Send thank-you message" : "Send booking details"}
                 </Button>
               </a>
             </CardContent>

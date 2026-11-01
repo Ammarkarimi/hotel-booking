@@ -15,6 +15,13 @@ export interface ShellSettings {
   bookingSlug: string;
   /** Shown to owners when the software subscription is overdue. */
   subscriptionNotice?: string | null;
+  /** For WhatsApp messages to guests. */
+  checkInTime: string;
+  checkOutTime: string;
+  phone: string | null;
+  address: string | null;
+  /** The owner's wording for each message; null = the default. */
+  messages: { booking: string | null; checkIn: string | null; checkOut: string | null };
 }
 
 type ToastTone = "success" | "error" | "info";
@@ -80,7 +87,7 @@ export function AppProvider({ user, settings, children }: { user: SessionUser; s
     <AppContext.Provider value={{ user, isAdmin: user.role === "admin", settings, toast, confirm }}>
       {children}
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:items-end sm:px-6">
+      <div className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:top-auto sm:items-end sm:px-6">
         {toasts.map((t) => {
           const Icon = icons[t.tone];
           return (

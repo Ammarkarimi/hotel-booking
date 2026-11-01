@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, 
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { FormDetails } from "@/components/guest-form-send";
+import { useGuestMessage } from "@/components/guest-message";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -50,6 +51,7 @@ function NewBookingWizard() {
   const router = useRouter();
   const params = useSearchParams();
   const { settings: shell, toast } = useApp();
+  const guestMessage = useGuestMessage();
   const walkInParam = params.get("walkin") === "1";
 
   const [step, setStep] = useState(0);
@@ -244,19 +246,8 @@ function NewBookingWizard() {
   }
 
   if (created) {
-    const msg = [
-      `Dear ${created.guestName},`,
-      `Your booking at ${shell.hotelName} is confirmed.`,
-      `Booking no: #${created.number}`,
-      `Room: ${label(created.room.type)} room`,
-      `Arrival: ${formatDate(created.checkInDate)}${settings ? ` from ${settings.checkInTime}` : ""}`,
-      `Departure: ${formatDate(created.checkOutDate)}${settings ? ` by ${settings.checkOutTime}` : ""}`,
-      `Total: ${formatCurrency(created.folio.grandTotal)}${created.folio.netPaid > 0 ? `, paid ${formatCurrency(created.folio.netPaid)}` : ""}`,
-      settings?.phone ? `Questions? Call us on ${settings.phone}` : "",
-      "Thank you!",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    // A walk-in is already checked in, so they get the welcome message; others the booking confirmation.
+    const msg = guestMessage(created.status === "checked_in" ? "checkIn" : "booking", created);
     return (
       <div className="mx-auto max-w-xl py-6">
         <Card>

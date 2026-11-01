@@ -45,6 +45,7 @@ src/
 │   ├── shifts.ts              # Staff shifts: summary of what a person did between two moments (database)
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
 │   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
+│   ├── messages.ts            # WhatsApp messages to guests: default wording, {fields} and filling them in (pure)
 │   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
 │   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
@@ -68,7 +69,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Hotel` | — | One per customer hotel. `slug` is the booking-page address, `status` is `active` or `suspended`, plus `monthlyFee`, `billingStart` (`YYYY-MM`), and `bookingSeq` (last booking number used) |
 | `SubscriptionPayment` | Hotel | Money the hotel paid you. `month` is `YYYY-MM`; `clearsMonth = false` means a part payment |
 | `Staff` | Hotel | Sign-ins. `email` is unique across **all** hotels. `role` is `admin` (owner / manager) or `staff` (front desk). Also `active` and `lastLoginAt` |
-| `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings |
+| `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings. `msgBooking`, `msgCheckIn`, `msgCheckOut`: the owner's wording for the guest WhatsApp messages (null = the default in `src/lib/messages.ts`) |
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
 | `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`), and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |

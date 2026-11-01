@@ -269,8 +269,36 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
+| WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
+
+## WhatsApp messages to guests
+
+Staff send three messages to guests on WhatsApp (they tap the button, WhatsApp
+opens with the message ready, and they press Send):
+
+- **Booking confirmation:** on the “Booking confirmed” screen, and with **Send
+  booking details** on the booking until the guest arrives. Walk-ins get the
+  welcome message instead.
+- **Welcome at check-in:** offered right after **Check in**, and with **Send
+  welcome message** on the booking while the guest is staying. By default it
+  starts “Welcome to *hotel*, *guest*!”, gives the room, guests, when they
+  checked in, the check-out date and time, the bill so far, paid and balance,
+  asks them to check out on time, and ends “Thank you for staying at *hotel*!”.
+- **Thank you at check-out:** offered right after **Check out**, and with
+  **Send thank-you message** after the guest has left: invoice number, stay,
+  bill, paid, balance and a thank-you.
+
+The owner can change the wording in **Settings → WhatsApp messages**. Each
+message shows a live example of what the guest receives. Tap a detail (hotel
+name, guest name, room number, check-in time, check-out time, balance and so
+on) to put it where the cursor is; it appears in `{curly brackets}` and is
+filled in from the booking. Anything else can be typed too, such as the Wi-Fi
+password or breakfast timings. A line whose detail is missing (for example the
+invoice number before check-out, or the hotel phone if none is saved) is left
+out. **Use the default** brings back the original wording. The check-in and
+check-out times come from **Settings → Hotel details**.
 
 ## The hotel’s online booking website
 

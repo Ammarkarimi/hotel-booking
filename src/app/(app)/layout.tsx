@@ -40,6 +40,11 @@ export default async function SignedInLayout({ children }: { children: React.Rea
         today: todayKey(settings.timezone),
         bookingSlug: hotel.slug,
         subscriptionNotice,
+        checkInTime: settings.checkInTime,
+        checkOutTime: settings.checkOutTime,
+        phone: settings.phone,
+        address: [settings.address, settings.city].filter(Boolean).join(", ") || null,
+        messages: { booking: settings.msgBooking, checkIn: settings.msgCheckIn, checkOut: settings.msgCheckOut },
       }}
     >
       {children}
