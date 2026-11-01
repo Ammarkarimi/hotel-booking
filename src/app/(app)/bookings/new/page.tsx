@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, MessageCircle, Printer, Search, UserPlus, Users } from "lucide-react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, MessageCircle, Pencil, Printer, Search, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { FormDetails } from "@/components/guest-form-send";
+import { EditGuestFormDialog } from "@/components/guest-form-edit";
+import { useGuestMessage } from "@/components/guest-message";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -50,6 +52,7 @@ function NewBookingWizard() {
   const router = useRouter();
   const params = useSearchParams();
   const { settings: shell, toast } = useApp();
+  const guestMessage = useGuestMessage();
   const walkInParam = params.get("walkin") === "1";
 
   const [step, setStep] = useState(0);
@@ -85,7 +88,23 @@ function NewBookingWizard() {
   const [sameNumber, setSameNumber] = useState<GuestResult[]>([]);
   const [linkGuestId, setLinkGuestId] = useState(""); // "" = a new guest profile
 
+  const [editForm, setEditForm] = useState(false);
+
   const nights = Math.max(0, diffDays(checkIn, checkOut));
+
+  /** The stay as the guest (or the desk, after a change) filled it in. */
+  const applyForm = useCallback(
+    (f: GuestFormDTO) => {
+      const d = f.details!;
+      setGuestForm(f);
+      setCheckIn(d.checkIn < shell.today ? shell.today : d.checkIn);
+      setCheckOut(d.checkOut > shell.today ? d.checkOut : addDays(shell.today, 1));
+      setAdults(d.adults);
+      setChildren(d.children);
+      if (d.requests) setNotes(d.requests);
+    },
+    [shell.today]
+  );
 
   useEffect(() => {
     const id = params.get("form");
@@ -97,12 +116,7 @@ function NewBookingWizard() {
           return;
         }
         const d = f.details;
-        setGuestForm(f);
-        setCheckIn(d.checkIn < shell.today ? shell.today : d.checkIn);
-        setCheckOut(d.checkOut > shell.today ? d.checkOut : addDays(shell.today, 1));
-        setAdults(d.adults);
-        setChildren(d.children);
-        if (d.requests) setNotes(d.requests);
+        applyForm(f);
         api<GuestResult[]>(`/api/guests?search=${encodeURIComponent(d.phone)}&limit=5`)
           .then((list) => {
             setSameNumber(list);
@@ -113,7 +127,7 @@ function NewBookingWizard() {
           .catch(() => undefined);
       })
       .catch((e) => toast(e.message, "error"));
-  }, [params, shell.today, toast]);
+  }, [params, shell.today, toast, applyForm]);
 
   useEffect(() => {
     api<SettingsDTO>("/api/settings").then(setSettings).catch(() => undefined);
@@ -244,19 +258,8 @@ function NewBookingWizard() {
   }
 
   if (created) {
-    const msg = [
-      `Dear ${created.guestName},`,
-      `Your booking at ${shell.hotelName} is confirmed.`,
-      `Booking no: #${created.number}`,
-      `Room: ${label(created.room.type)} room`,
-      `Arrival: ${formatDate(created.checkInDate)}${settings ? ` from ${settings.checkInTime}` : ""}`,
-      `Departure: ${formatDate(created.checkOutDate)}${settings ? ` by ${settings.checkOutTime}` : ""}`,
-      `Total: ${formatCurrency(created.folio.grandTotal)}${created.folio.netPaid > 0 ? `, paid ${formatCurrency(created.folio.netPaid)}` : ""}`,
-      settings?.phone ? `Questions? Call us on ${settings.phone}` : "",
-      "Thank you!",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    // A walk-in is already checked in, so they get the welcome message; others the booking confirmation.
+    const msg = guestMessage(created.status === "checked_in" ? "checkIn" : "booking", created);
     return (
       <div className="mx-auto max-w-xl py-6">
         <Card>
@@ -458,11 +461,29 @@ function NewBookingWizard() {
             {guestForm ? (
               <div className="space-y-4">
                 <div className="rounded-xl border-2 border-primary-200 bg-primary-50 p-4">
-                  <p className="mb-3 flex items-center gap-2 text-lg font-bold">
-                    <ClipboardCheck className="h-5 w-5 text-primary-600" /> {guestName}: from the guest form
-                  </p>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <p className="flex items-center gap-2 text-lg font-bold">
+                      <ClipboardCheck className="h-5 w-5 text-primary-600" /> {guestName}: from the guest form
+                    </p>
+                    <Button size="sm" variant="outline" onClick={() => setEditForm(true)}>
+                      <Pencil className="h-4 w-4" /> Edit details
+                    </Button>
+                  </div>
                   <FormDetails form={guestForm} />
                 </div>
+                <EditGuestFormDialog
+                  form={guestForm}
+                  open={editForm}
+                  onClose={() => setEditForm(false)}
+                  onSaved={(f) => {
+                    const d = guestForm.details!;
+                    const n = f.details!;
+                    const stayChanged = n.checkIn !== d.checkIn || n.checkOut !== d.checkOut || n.adults !== d.adults || n.children !== d.children;
+                    if (n.requests !== d.requests) setNotes(n.requests);
+                    applyForm(f);
+                    if (stayChanged) toast("The dates and people on this booking now match the changed details. Please check the room.");
+                  }}
+                />
                 {sameNumber.length > 0 && (
                   <div className="rounded-xl border border-slate-200 p-4">
                     <p className="mb-2 font-semibold">This mobile number is already saved. Whose profile is this?</p>

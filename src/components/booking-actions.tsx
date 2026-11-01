@@ -8,6 +8,7 @@ import { api } from "@/lib/client";
 import { diffDays } from "@/lib/dates";
 import { formatCurrency, formatDate, GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
 import type { BookingDTO } from "@/lib/types";
+import { SendGuestMessageDialog } from "@/components/guest-message";
 
 type MinimalBooking = Pick<BookingDTO, "id" | "number" | "guestName" | "status" | "checkInDate" | "checkOutDate" | "folio"> & {
   room: { roomNumber: string; housekeeping?: string };
@@ -363,6 +364,8 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
   const [paymentFor, setPaymentFor] = useState<MinimalBooking | null>(null);
   const [checkoutFor, setCheckoutFor] = useState<MinimalBooking | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  // Right after check-in or check-out, staff are offered the welcome / thank-you message on WhatsApp.
+  const [messageFor, setMessageFor] = useState<{ kind: "checkIn" | "checkOut"; booking: BookingDTO } | null>(null);
 
   async function run(b: MinimalBooking, action: string, extra: Record<string, unknown> = {}) {
     setBusy(b.id);
@@ -370,6 +373,7 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
       const updated = await api<BookingDTO>(`/api/bookings/${b.id}`, { body: { action, ...extra } });
       toast(updated.message || "Done");
       onChanged(updated);
+      if (action === "check_in" && updated.status === "checked_in") setMessageFor({ kind: "checkIn", booking: updated });
     } catch (e) {
       toast((e as Error).message, "error");
     } finally {
@@ -448,7 +452,16 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
   const dialogs = (
     <>
       <PaymentDialog booking={paymentFor} open={!!paymentFor} onClose={() => setPaymentFor(null)} onDone={(b) => onChanged(b)} />
-      <CheckOutDialog booking={checkoutFor} open={!!checkoutFor} onClose={() => setCheckoutFor(null)} onDone={(b) => onChanged(b)} />
+      <CheckOutDialog
+        booking={checkoutFor}
+        open={!!checkoutFor}
+        onClose={() => setCheckoutFor(null)}
+        onDone={(b) => {
+          onChanged(b);
+          if (b.status === "checked_out") setMessageFor({ kind: "checkOut", booking: b });
+        }}
+      />
+      <SendGuestMessageDialog open={!!messageFor} onClose={() => setMessageFor(null)} kind={messageFor?.kind ?? "checkIn"} booking={messageFor?.booking ?? null} />
     </>
   );
 

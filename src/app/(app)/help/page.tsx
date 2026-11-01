@@ -94,8 +94,18 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
       "The guest fills in their details. For each adult they choose Aadhaar (shown at check-in) or upload a photo of another ID.",
       "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
+      "Something wrong in what the guest filled in? Press “Edit details” on the form and correct it. After booking, use “Change” on the booking for the journey, vehicle and other adults' names, and “Edit” on the guest's profile for their own details.",
     ],
     link: { href: "/guest-forms", text: "Open guest forms" },
+  },
+  {
+    q: "Can I change the WhatsApp messages sent to guests?",
+    steps: [
+      "Yes. Open Settings → WhatsApp messages (owner / manager).",
+      "Change the booking confirmation, the welcome at check-in and the thank-you at check-out. Tap a detail such as “Hotel check-out time” to add it where the cursor is. You see an example of what the guest receives.",
+      "Press Save. After every check-in and check-out the front desk is offered the message with a “Send on WhatsApp” button.",
+    ],
+    link: { href: "/settings?tab=messages", text: "Open WhatsApp messages" },
   },
   {
     q: "How do I check a guest's ID at check-in?",

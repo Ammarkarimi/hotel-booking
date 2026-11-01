@@ -105,6 +105,10 @@ model HotelSettings {
   staffShifts      Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
   ownerWhatsapp    String? // where staff send their shift report
   frontDeskStaff   Int      @default(1) // how many people can be on shift at the same time
+  // WhatsApp messages to guests in the owner's own words; null = the default wording (src/lib/messages.ts)
+  msgBooking       String?
+  msgCheckIn       String?
+  msgCheckOut      String?
   updatedAt        DateTime @updatedAt
   hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }

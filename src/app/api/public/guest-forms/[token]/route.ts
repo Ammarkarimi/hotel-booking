@@ -7,7 +7,7 @@ import { deleteStoredFile } from "@/lib/storage";
 import { logActivity } from "@/lib/activity";
 import { noStore } from "@/lib/public";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
-import { formStatus, guestFormSchema, isIndian, missingDocuments } from "@/lib/guest-form";
+import { cleanDetails, formStatus, guestFormSchema, missingDocuments } from "@/lib/guest-form";
 import { assertFormOpen, withFormLink } from "@/lib/guest-forms-api";
 
 type Params = { params: Promise<{ token: string }> };
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       if (missing.length) fail(missing[0]);
 
       // A foreign guest shows a passport, not an Aadhaar.
-      const saved = { ...details, pinCode: details.pinCode.replace(/\s/g, ""), aadhaarAtDesk: isIndian(details.nationality) && details.aadhaarAtDesk };
+      const saved = cleanDetails(details);
 
       // Copies for people no longer on the form (the guest lowered the number of adults) are deleted.
       const people = details.companions.length;

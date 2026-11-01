@@ -42,6 +42,10 @@ const settingsSchema = z.object({
   staffShifts: z.boolean(),
   ownerWhatsapp: z.string().trim().max(30).optional().nullable(),
   frontDeskStaff: z.coerce.number().int().min(1, "At least 1 person works at the front desk").max(20, "Please choose 20 or fewer"),
+  // WhatsApp messages; empty = the default wording.
+  msgBooking: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
+  msgCheckIn: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
+  msgCheckOut: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
 });
 
 export async function PUT(request: NextRequest) {
@@ -55,6 +59,9 @@ export async function PUT(request: NextRequest) {
       }
     }
     const { gstSlabs, ...rest } = body;
+    for (const k of ["msgBooking", "msgCheckIn", "msgCheckOut"] as const) {
+      if (rest[k] !== undefined) rest[k] = rest[k]?.trim() ? rest[k] : null;
+    }
     const data = {
       ...rest,
       ...(rest.currency && { currency: rest.currency.toUpperCase() }),

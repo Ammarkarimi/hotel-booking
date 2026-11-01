@@ -108,6 +108,19 @@ Instead of typing a guest's details at the desk, send them a form:
 5. At check-in, check each adult's ID and tick it under **ID check** on the
    booking (see below).
 
+**Correcting the details:** if the guest made a mistake (a spelling, the wrong
+city, a missing vehicle number, the wrong number of adults), press **Edit
+details** on the form, either on **Guest forms** or on the booking screen when
+you choose the room. Everything the guest filled in can be changed. Renaming an
+adult keeps their ID copies with them; taking an adult off the form deletes the
+copies they uploaded (you are asked first). Changing the dates or people from
+the booking screen updates the booking too, so check the room again.
+
+After the booking is made, change the guest's name, mobile, address and date of
+birth on their profile (**Edit**), and the journey, vehicle and other adults'
+names on the booking (**Stay → Change → Travel and other adults**). A corrected
+name keeps its ID tick and ID copies.
+
 A form can be sent again (another 7 days) or closed. Closing a filled-in form
 deletes the details and ID copies the guest sent. A form can make only one
 booking.
@@ -269,8 +282,36 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
+| WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
+
+## WhatsApp messages to guests
+
+Staff send three messages to guests on WhatsApp (they tap the button, WhatsApp
+opens with the message ready, and they press Send):
+
+- **Booking confirmation:** on the “Booking confirmed” screen, and with **Send
+  booking details** on the booking until the guest arrives. Walk-ins get the
+  welcome message instead.
+- **Welcome at check-in:** offered right after **Check in**, and with **Send
+  welcome message** on the booking while the guest is staying. By default it
+  starts “Welcome to *hotel*, *guest*!”, gives the room, guests, when they
+  checked in, the check-out date and time, the bill so far, paid and balance,
+  asks them to check out on time, and ends “Thank you for staying at *hotel*!”.
+- **Thank you at check-out:** offered right after **Check out**, and with
+  **Send thank-you message** after the guest has left: invoice number, stay,
+  bill, paid, balance and a thank-you.
+
+The owner can change the wording in **Settings → WhatsApp messages**. Each
+message shows a live example of what the guest receives. Tap a detail (hotel
+name, guest name, room number, check-in time, check-out time, balance and so
+on) to put it where the cursor is; it appears in `{curly brackets}` and is
+filled in from the booking. Anything else can be typed too, such as the Wi-Fi
+password or breakfast timings. A line whose detail is missing (for example the
+invoice number before check-out, or the hotel phone if none is saved) is left
+out. **Use the default** brings back the original wording. The check-in and
+check-out times come from **Settings → Hotel details**.
 
 ## The hotel’s online booking website
 
