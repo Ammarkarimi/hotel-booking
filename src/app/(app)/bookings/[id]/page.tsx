@@ -719,7 +719,7 @@ export default function BookingDetailPage() {
               {b.guest.company && <p className="text-slate-600">{b.guest.company}{b.guest.gstin && ` · GSTIN ${b.guest.gstin}`}</p>}
               <p className="text-slate-600">
                 {b.guest.idType === "aadhar" ? (
-                  <>ID: Aadhaar · checked by scanning its QR code (see ID check)</>
+                  <>ID: Aadhaar · checked at the desk (see ID check)</>
                 ) : (
                   <>
                     ID: {b.guest.idType ? `${label(b.guest.idType)} ${b.guest.idNumber ?? ""}` : "not entered"} ·{" "}

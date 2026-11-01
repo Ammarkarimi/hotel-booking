@@ -98,11 +98,11 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/guest-forms", text: "Open guest forms" },
   },
   {
-    q: "How do I check a guest's Aadhaar?",
+    q: "How do I check a guest's ID at check-in?",
     steps: [
-      "Open the booking. Under “ID check”, press “Scan Aadhaar” next to the person and point the camera at the QR code on their Aadhaar card, e-Aadhaar or Aadhaar app.",
-      "If it says “Genuine Aadhaar: signed by UIDAI”, look at the photo. If it is the guest, press “Photo matches: verified”.",
-      "Nothing from the Aadhaar is saved, only who checked it and when. If the QR is refused, ask for the Aadhaar app or another photo ID and use “Other ID”.",
+      "Open the booking. “ID check” lists every adult.",
+      "Look at each person's original ID (Aadhaar card or app, driving licence, voter ID…) and check the photo is them.",
+      "Choose which ID they showed and tick the box. Only who verified it and when is saved; nothing from an Aadhaar is kept.",
     ],
   },
   {

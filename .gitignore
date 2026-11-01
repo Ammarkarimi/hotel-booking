@@ -19,8 +19,6 @@
 /build
 
 # misc
-# copied from node_modules by scripts/copy-qr-reader.mjs
-/public/zxing_reader.wasm
 .DS_Store
 *.pem
 

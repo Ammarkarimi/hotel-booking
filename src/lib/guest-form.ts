@@ -12,7 +12,7 @@ export const MAX_FILES_PER_PERSON = 4;
 
 /**
  * ID proofs a guest can upload. Copies only: the form never asks for an ID number. Aadhaar is not
- * uploaded or saved at all: the hotel scans the Aadhaar QR code at check-in instead.
+ * uploaded or saved at all: the front desk checks the card at check-in instead.
  */
 export const FORM_ID_TYPES = ["passport", "visa", "driving_licence", "voter_id", "pan", "other"] as const;
 
@@ -81,7 +81,7 @@ export const guestFormSchema = z
     comingFrom: z.string().trim().min(2, "Please say which city you are coming from").max(80),
     goingTo: z.string().trim().max(80).default(""),
     vehicleNumber: z.string().trim().max(20).default(""),
-    // The guest will show their Aadhaar at check-in, where its QR code is scanned (nothing is uploaded).
+    // The guest will show their Aadhaar at check-in, where the front desk checks it (nothing is uploaded).
     aadhaarAtDesk: z.boolean().default(false),
     companions: z
       .array(

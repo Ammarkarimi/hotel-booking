@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
                 nationality: body.guest.nationality || "Indian",
                 address: body.guest.address || null,
                 idType: body.guest.idType || null,
-                // Nothing from an Aadhaar is saved: it is checked by scanning its QR code at check-in.
+                // Nothing from an Aadhaar is saved: the front desk checks the card at check-in.
                 idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
               },
             })
@@ -261,7 +261,7 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
     ? await tx.guest.findUnique({ where: { id: chosenId } })
     : await tx.guest.findFirst({ where: { phone: d.phone, firstName: { equals: d.firstName, mode: "insensitive" } } });
   if (chosenId && !existing) fail("Guest not found", 404);
-  // The guest's ID: their Aadhaar (checked with its QR code at check-in, nothing saved) or the copy they uploaded.
+  // The guest's ID: their Aadhaar (checked at the desk, nothing saved) or the copy they uploaded.
   const idType = d.aadhaarAtDesk ? "aadhar" : (proof?.type ?? null);
   if (existing) {
     await tx.guest.update({

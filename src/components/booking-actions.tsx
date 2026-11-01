@@ -383,7 +383,7 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
     if (b.idChecks && b.adults) {
       const checked = new Set(b.idChecks.map((c) => c.person ?? "")).size;
       if (checked < b.adults)
-        warnings.push(`ID checked for ${checked} of ${b.adults} adult${b.adults > 1 ? "s" : ""}. Scan each Aadhaar QR (or check another ID) under “ID check” on the booking.`);
+        warnings.push(`ID verified for ${checked} of ${b.adults} adult${b.adults > 1 ? "s" : ""}. Check each adult's ID and tick it under “ID check” on the booking.`);
     } else if (b.guest?.documents && b.guest.documents.length === 0) warnings.push("No ID proof uploaded yet — remember to collect it.");
     const earlyNights = diffDays(settings.today, b.checkInDate);
     if (earlyNights > 0) {

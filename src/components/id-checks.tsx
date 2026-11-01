@@ -1,72 +1,124 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, IdCard, QrCode, Undo2 } from "lucide-react";
-import { Button, Card, CardHeader, Field, Modal, Select, Tip } from "@/components/ui";
-import { AadhaarScanDialog } from "@/components/aadhaar-scan";
+import { CheckCircle2, IdCard, Undo2 } from "lucide-react";
+import { Card, CardHeader, Select } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
-import { DOCUMENT_TYPES, formatDateTime, label } from "@/lib/utils";
+import { DOCUMENT_TYPES, cn, formatDateTime, label } from "@/lib/utils";
 import type { BookingDTO, IdCheckDTO } from "@/lib/types";
 
-type Person = { key: string | null; name: string; aadhaar: boolean };
+type Person = { key: string | null; name: string; aadhaar: boolean; copies: string[] };
+
+/** IDs the front desk can tick as verified: Aadhaar (seen, never saved) and the other photo IDs. */
+const CHECK_TYPES = ["aadhar", ...DOCUMENT_TYPES.filter((t) => t !== "visa")];
 
 /** Every adult in the room: the guest, the others named on the guest form, then any unnamed adults. */
 export function bookingAdults(b: Pick<BookingDTO, "guestName" | "guest" | "companions" | "adults">): Person[] {
+  const copiesOf = (key: string | null) => [...new Set((b.guest.documents ?? []).filter((d) => (d.person ?? null) === key).map((d) => d.type))];
   const people: Person[] = [
-    { key: null, name: b.guestName, aadhaar: b.guest.idType === "aadhar" },
-    ...b.companions.map((c) => ({ key: c.name, name: c.name, aadhaar: !!c.aadhaarAtDesk })),
+    { key: null, name: b.guestName, aadhaar: b.guest.idType === "aadhar", copies: copiesOf(null) },
+    ...b.companions.map((c) => ({ key: c.name, name: c.name, aadhaar: !!c.aadhaarAtDesk, copies: copiesOf(c.name) })),
   ];
-  for (let i = people.length; i < b.adults; i++) people.push({ key: `Adult ${i + 1}`, name: `Adult ${i + 1}`, aadhaar: false });
+  for (let i = people.length; i < b.adults; i++) people.push({ key: `Adult ${i + 1}`, name: `Adult ${i + 1}`, aadhaar: false, copies: [] });
   return people;
 }
 
 function checkText(c: IdCheckDTO) {
-  return c.method === "aadhaar_qr" ? "Aadhaar verified with its QR code" : `${label(c.idType)} checked`;
+  return `${c.method === "aadhaar_qr" ? "Aadhaar card" : label(c.idType)} verified`;
 }
 
-/** ID check at the front desk: scan each adult's Aadhaar QR, or note another ID that was seen. */
-export function IdCheckCard({ booking: b, onChanged }: { booking: BookingDTO; onChanged: () => void }) {
+function PersonRow({ b, p, onChanged }: { b: BookingDTO; p: Person; onChanged: () => void }) {
   const { toast, confirm, user, isAdmin, settings } = useApp();
-  const [scanFor, setScanFor] = useState<Person | null>(null);
-  const [otherFor, setOtherFor] = useState<Person | null>(null);
-  const [otherType, setOtherType] = useState("driving_licence");
-  const [saving, setSaving] = useState(false);
-  const people = bookingAdults(b);
+  const check = [...b.idChecks].reverse().find((c) => (c.person ?? null) === p.key);
+  const [idType, setIdType] = useState(p.aadhaar ? "aadhar" : (p.copies.find((t) => CHECK_TYPES.includes(t)) ?? "aadhar"));
+  const [busy, setBusy] = useState(false);
   const closed = b.status === "cancelled" || b.status === "no_show";
-  const checkFor = (p: Person) => [...b.idChecks].reverse().find((c) => (c.person ?? null) === p.key);
-  const done = people.filter((p) => checkFor(p)).length;
+  const canUndo = check && (isAdmin || (check.checkedById === user.id && Date.now() - new Date(check.createdAt).getTime() < 12 * 3600 * 1000));
 
-  async function save(p: Person, body: Record<string, unknown>) {
-    await api(`/api/bookings/${b.id}/id-checks`, { body: { person: p.key, ...body } });
-    toast(body.method === "aadhaar_qr" ? `Aadhaar verified for ${p.name}` : `ID checked for ${p.name}`);
-    onChanged();
-  }
-
-  async function saveOther() {
-    if (!otherFor) return;
-    setSaving(true);
-    try {
-      await save(otherFor, { method: "id_seen", idType: otherType });
-      setOtherFor(null);
-    } catch (e) {
-      toast((e as Error).message, "error");
-    } finally {
-      setSaving(false);
+  async function toggle() {
+    if (busy || closed) return;
+    if (check) {
+      if (!canUndo) return toast("Only the owner can untick this.", "error");
+      const ok = await confirm({ title: `Untick the ID for ${p.name}?`, message: "Use this only if it was ticked by mistake.", confirmText: "Untick", danger: true });
+      if (!ok) return;
     }
-  }
-
-  async function undo(c: IdCheckDTO, p: Person) {
-    const ok = await confirm({ title: `Remove the ID check for ${p.name}?`, message: "Use this only if it was marked by mistake.", confirmText: "Remove", danger: true });
-    if (!ok) return;
+    setBusy(true);
     try {
-      await api(`/api/bookings/${b.id}/id-checks?checkId=${c.id}`, { method: "DELETE" });
+      if (check) await api(`/api/bookings/${b.id}/id-checks?checkId=${check.id}`, { method: "DELETE" });
+      else {
+        await api(`/api/bookings/${b.id}/id-checks`, { body: { person: p.key, idType } });
+        toast(`ID verified for ${p.name}`);
+      }
       onChanged();
     } catch (e) {
       toast((e as Error).message, "error");
+    } finally {
+      setBusy(false);
     }
   }
 
+  return (
+    <li className="px-5 py-3">
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={!!check}
+          aria-label={`ID verified for ${p.name}`}
+          onClick={toggle}
+          disabled={busy || closed || (!!check && !canUndo)}
+          className={cn(
+            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 transition disabled:cursor-not-allowed",
+            check ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white hover:border-primary-500"
+          )}
+        >
+          {check && <CheckCircle2 className="h-5 w-5" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold">{p.name}</p>
+          {check ? (
+            <p className="text-sm text-emerald-700">
+              {checkText(check)} · {check.checkedByName}, {formatDateTime(check.createdAt, settings.timezone)}
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-amber-700">
+                {p.aadhaar
+                  ? "Will show Aadhaar at check-in."
+                  : p.copies.length
+                    ? `Copy uploaded: ${p.copies.map(label).join(", ")}. Check the original.`
+                    : "Not verified yet."}
+              </p>
+              {!closed && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Select value={idType} onChange={(e) => setIdType(e.target.value)} className="h-10 w-48 py-1.5 text-sm" aria-label={`Which ID ${p.name} showed`}>
+                    {CHECK_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {label(t)}
+                      </option>
+                    ))}
+                  </Select>
+                  <span className="text-xs text-slate-500">then tick the box</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        {check && canUndo && (
+          <button onClick={toggle} className="rounded p-1.5 text-slate-300 hover:bg-slate-100 hover:text-slate-600" aria-label={`Untick the ID for ${p.name}`}>
+            <Undo2 className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
+
+/** ID check at the front desk: the receptionist looks at each adult's original ID and ticks it as verified. */
+export function IdCheckCard({ booking: b, onChanged }: { booking: BookingDTO; onChanged: () => void }) {
+  const people = bookingAdults(b);
+  const done = people.filter((p) => b.idChecks.some((c) => (c.person ?? null) === p.key)).length;
   return (
     <Card>
       <CardHeader
@@ -75,92 +127,14 @@ export function IdCheckCard({ booking: b, onChanged }: { booking: BookingDTO; on
             <IdCard className="h-5 w-5 text-primary-600" /> ID check
           </span>
         }
-        description={`${done} of ${people.length} adult${people.length > 1 ? "s" : ""} checked`}
+        description={`${done} of ${people.length} adult${people.length > 1 ? "s" : ""} verified`}
       />
       <ul className="divide-y divide-slate-100">
-        {people.map((p) => {
-          const c = checkFor(p);
-          const copies = b.guest.documents?.filter((d) => (d.person ?? null) === p.key) ?? [];
-          const canUndo = c && (isAdmin || (c.checkedById === user.id && Date.now() - new Date(c.createdAt).getTime() < 12 * 3600 * 1000));
-          return (
-            <li key={p.key ?? "guest"} className="px-5 py-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-semibold">{p.name}</p>
-                  {c ? (
-                    <p className="flex items-center gap-1 text-sm text-emerald-700">
-                      <CheckCircle2 className="h-4 w-4 shrink-0" /> {checkText(c)} · {c.checkedByName}, {formatDateTime(c.createdAt, settings.timezone)}
-                    </p>
-                  ) : (
-                    <p className="text-sm text-amber-700">
-                      {p.aadhaar ? "Will show Aadhaar: scan its QR code" : copies.length ? `Copy uploaded: ${[...new Set(copies.map((d) => label(d.type)))].join(", ")}. Check the original.` : "Not checked yet"}
-                    </p>
-                  )}
-                </div>
-                {canUndo && (
-                  <button onClick={() => undo(c, p)} className="rounded p-1.5 text-slate-300 hover:bg-slate-100 hover:text-slate-600" aria-label={`Remove ID check for ${p.name}`}>
-                    <Undo2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-              {!c && !closed && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => setScanFor(p)}>
-                    <QrCode className="h-4 w-4" /> Scan Aadhaar
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setOtherFor(p)}>
-                    Other ID
-                  </Button>
-                </div>
-              )}
-            </li>
-          );
-        })}
+        {people.map((p) => (
+          <PersonRow key={p.key ?? "guest"} b={b} p={p} onChanged={onChanged} />
+        ))}
       </ul>
-      <p className="px-5 pb-4 text-xs text-slate-500">Nothing from an Aadhaar is saved: only who checked it and when.</p>
-
-      <AadhaarScanDialog
-        open={!!scanFor}
-        onClose={() => setScanFor(null)}
-        personName={scanFor?.name.startsWith("Adult ") ? "" : (scanFor?.name ?? "")}
-        onVerified={async () => {
-          if (!scanFor) return;
-          try {
-            await save(scanFor, { method: "aadhaar_qr" });
-          } catch (e) {
-            toast((e as Error).message, "error");
-            throw e;
-          }
-        }}
-      />
-      <Modal
-        open={!!otherFor}
-        onClose={() => setOtherFor(null)}
-        title={`Other ID: ${otherFor?.name ?? ""}`}
-        footer={
-          <>
-            <Button variant="outline" onClick={() => setOtherFor(null)}>
-              Cancel
-            </Button>
-            <Button loading={saving} onClick={saveOther}>
-              <CheckCircle2 className="h-4 w-4" /> I checked it
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-3">
-          <Field label="Which ID did you see?">
-            <Select value={otherType} onChange={(e) => setOtherType(e.target.value)}>
-              {DOCUMENT_TYPES.filter((t) => t !== "visa").map((t) => (
-                <option key={t} value={t}>
-                  {label(t)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Tip>Look at the original ID and check that the photo is the guest. To keep a copy, upload it on the guest’s page.</Tip>
-        </div>
-      </Modal>
+      <p className="px-5 pb-4 text-xs text-slate-500">Look at the original ID and check the photo is the guest, then tick. Nothing from an Aadhaar is saved: only who verified it and when.</p>
     </Card>
   );
 }

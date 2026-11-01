@@ -20,7 +20,6 @@ const envFileHasDatabase = existsSync(".env") && /^\s*DATABASE_URL\s*=\s*["']?[^
 const hasDatabase = Boolean(process.env.DATABASE_URL) || envFileHasDatabase;
 
 run("prisma generate");
-run("node scripts/copy-qr-reader.mjs");
 
 if (isPreview) {
   console.log(`\n▶ Vercel ${vercelEnv} build: skipping database migrations.\n`);

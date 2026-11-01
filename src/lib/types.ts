@@ -103,7 +103,7 @@ export interface BookingDTO {
   vehicleNumber: string | null;
   /** The other adults in the room. */
   companions: Companion[];
-  /** IDs checked at the desk (nothing from the ID itself is kept). */
+  /** IDs ticked as verified at the desk (nothing from the ID itself is kept). */
   idChecks: IdCheckDTO[];
   createdAt: string;
   guestName: string;
@@ -238,6 +238,7 @@ export interface GuestFormDTO {
 export interface IdCheckDTO {
   id: string;
   person: string | null;
+  /** id_seen: ticked after looking at the original. aadhaar_qr: older checks made with the QR scanner. */
   method: "aadhaar_qr" | "id_seen";
   idType: string | null;
   checkedById: string | null;

@@ -553,7 +553,7 @@ function NewBookingWizard() {
                     <Field
                       label="ID proof"
                       optional
-                      hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Scan its QR code on the booking at check-in." : "You can also upload a photo of the ID later."}
+                      hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Check the card at check-in and tick it on the booking." : "You can also upload a photo of the ID later."}
                     >
                       <div className="flex gap-2">
                         <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value, idNumber: "" })} className="w-40">

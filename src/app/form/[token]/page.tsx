@@ -152,7 +152,7 @@ function IdUpload({
       )}
       {aadhaar === true ? (
         <p className="rounded-xl bg-white px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200">
-          Nothing to upload. At check-in the front desk scans the QR code on the Aadhaar card, e-Aadhaar or Aadhaar app to confirm it is genuine. Nothing from the Aadhaar is saved.
+          Nothing to upload. Show your Aadhaar card, e-Aadhaar or Aadhaar app at check-in. Nothing from the Aadhaar is saved.
         </p>
       ) : (
         <>

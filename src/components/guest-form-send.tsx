@@ -180,7 +180,7 @@ export function FormDetails({ form }: { form: GuestFormDTO }) {
         {d.email && <Row label="Email">{d.email}</Row>}
         <Row label="Date of birth">{formatDate(d.dateOfBirth)}</Row>
         <Row label="Nationality">{isIndian(d.nationality) ? "Indian" : d.nationality}</Row>
-        {d.aadhaarAtDesk && <Row label="ID">Aadhaar: scan the QR at check-in</Row>}
+        {d.aadhaarAtDesk && <Row label="ID">Aadhaar: shown at check-in</Row>}
         <Row label="Address">
           <span className="text-right">{fullAddress(d)}</span>
         </Row>

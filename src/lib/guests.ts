@@ -43,7 +43,7 @@ export function guestData(body: Partial<GuestInput>) {
     state: text(body.state),
     pinCode: text(body.pinCode),
     idType: text(body.idType),
-    // Nothing from an Aadhaar is saved: it is checked by scanning its QR code at check-in.
+    // Nothing from an Aadhaar is saved: the front desk checks the card at check-in.
     idNumber: body.idType === "aadhar" ? null : text(body.idNumber),
     company: text(body.company),
     gstin: text(body.gstin?.toUpperCase()),
