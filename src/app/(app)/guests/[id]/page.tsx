@@ -228,7 +228,7 @@ export default function GuestProfilePage() {
         <Card>
           <CardHeader
             title="ID documents"
-            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of a driving licence, voter ID or other photo ID. Aadhaar is never saved: scan its QR code on the booking at check-in."}
+            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of a driving licence, voter ID or other photo ID. Aadhaar is never saved: check the card at check-in and tick it on the booking."}
             action={
               <Button size="sm" onClick={() => setUploadOpen(true)}>
                 <Upload className="h-4 w-4" /> Add

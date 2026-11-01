@@ -109,7 +109,7 @@ export function GuestFormDialog({
               </Select>
               {form.idType !== "aadhar" && <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />}
             </div>
-            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Nothing from the Aadhaar is saved. Scan its QR code on the booking at check-in.</p>}
+            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Nothing from the Aadhaar is saved. Check the card at check-in and tick it under “ID check” on the booking.</p>}
           </Field>
           <Field label="Address" optional className="sm:col-span-2" hint="House, street and area">
             <Input value={form.address} onChange={set("address")} />

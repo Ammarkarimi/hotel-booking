@@ -412,16 +412,15 @@ model ActivityLog {
   @@index([hotelId, createdAt])
 }
 
-// An ID checked at the front desk for one adult in a booking. Nothing from the ID itself is
-// saved: an Aadhaar is checked by scanning its QR code on the staff phone (UIDAI's signature
-// and the photo), and only who checked it and when is kept.
+// An ID checked at the front desk for one adult in a booking: the receptionist looks at the
+// original and ticks it. Nothing from the ID itself is saved, only which kind, who and when.
 model IdCheck {
   id            String   @id @default(cuid())
   hotelId       String
   bookingId     String
   person        String? // null = the guest who booked; otherwise the name of another adult in the room
-  method        String // aadhaar_qr, id_seen
-  idType        String? // for id_seen: passport, driving_licence, voter_id, pan, other
+  method        String // id_seen (ticked at the desk); aadhaar_qr for checks made with the earlier QR scanner
+  idType        String? // aadhar, passport, driving_licence, voter_id, pan, other
   checkedById   String?
   checkedByName String
   createdAt     DateTime @default(now())

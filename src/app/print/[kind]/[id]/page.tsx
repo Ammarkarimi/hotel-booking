@@ -255,11 +255,11 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
   );
 }
 
-/** How a person's ID was checked at the desk, e.g. "Aadhaar verified by QR (Pooja Verma, 3 Nov 2026)". */
+/** How a person's ID was checked at the desk, e.g. "Aadhaar card verified (Pooja Verma, 3 Nov 2026)". */
 function idLine(b: SerializedBooking, person: string | null) {
   const c = [...b.idChecks].reverse().find((x) => (x.person ?? null) === person);
   if (!c) return "";
-  const what = c.method === "aadhaar_qr" ? "Aadhaar verified by QR" : `${label(c.idType)} checked`;
+  const what = `${c.method === "aadhaar_qr" ? "Aadhaar card" : label(c.idType)} verified`;
   return `${what} (${c.checkedByName}, ${formatDate(c.createdAt)})`;
 }
 

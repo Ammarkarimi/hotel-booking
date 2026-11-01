@@ -97,7 +97,7 @@ export default function HousekeepingPage() {
                         )}
                         {r.housekeepingNotes && <p className="mt-1 text-sm text-slate-600">Note: {r.housekeepingNotes}</p>}
                         {r.nextBooking && !arrivingToday && <p className="mt-1 text-xs text-slate-500">Next guest {formatDate(r.nextBooking.checkIn)}</p>}
-                        <div className="mt-3 grid grid-cols-2 gap-2">
+                        <div className="mt-3 flex flex-wrap gap-2 [&>button]:whitespace-nowrap">
                           {col.key !== "cleaning" && (
                             <Button
                               size="sm"

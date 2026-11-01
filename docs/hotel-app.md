@@ -105,35 +105,27 @@ Instead of typing a guest's details at the desk, send them a form:
 4. The guest profile, any ID copies (named by person) and the booking's
    journey, vehicle and companions are saved, and they print on the
    registration card.
-5. At check-in, verify each adult's ID under **ID check** on the booking (see
-   below).
+5. At check-in, check each adult's ID and tick it under **ID check** on the
+   booking (see below).
 
 A form can be sent again (another 7 days) or closed. Closing a filled-in form
 deletes the details and ID copies the guest sent. A form can make only one
 booking.
 
-### ID check at check-in (Aadhaar QR)
+### ID check at check-in
 
 **Nothing from an Aadhaar is saved anywhere in the software**: no number, no
-copy, no photo. Instead the front desk checks it is genuine:
+copy, no photo. The receptionist checks every adult's ID by hand:
 
-1. On the booking, **ID check** lists every adult. Press **Scan Aadhaar** and
-   point the phone camera at the QR code on the Aadhaar card, e-Aadhaar or the
-   Aadhaar app (or choose a photo or screenshot of the QR).
-2. The phone checks UIDAI's digital signature in the QR. If it is genuine it
-   shows **Genuine Aadhaar: signed by UIDAI** with the name, photo, date of
-   birth and district from the card, and whether the name matches the booking.
-3. Look at the guest. If the photo is them, press **Photo matches: verified**.
-   Only “Aadhaar verified with its QR code, by Pooja, 3 Nov 4:10 pm” is saved;
-   what was read from the card is forgotten when the screen closes.
-4. For another ID, press **Other ID**, choose which one you saw and press **I
-   checked it**.
+1. On the booking, **ID check** lists every adult (the guest, the others named
+   on the guest form, and any more adults booked).
+2. Look at the person's original ID (Aadhaar card, e-Aadhaar or Aadhaar app,
+   driving licence, voter ID, passport…) and check the photo is them.
+3. Choose which ID they showed and **tick the box**. Only “Aadhaar card
+   verified, by Pooja, 3 Nov 4:10 pm” is saved.
 
-Check-in warns when not every adult has been checked. A QR that is not signed
-by UIDAI (a fake, or an old card printed before 2021 with an older key, or the
-plain QR on letters before 2018) is refused: ask for the Aadhaar app, a newly
-downloaded e-Aadhaar or another photo ID. A check marked by mistake can be
-removed by the owner, or by the same person on the same day.
+Check-in warns when not every adult has been ticked. A tick made by mistake can
+be removed by the owner, or by the same person on the same day.
 
 ### Room calendar
 
@@ -151,7 +143,7 @@ Guest profiles show every stay, nights, total paid and money owed. Each profile 
 
 - ID photo uploads straight from the phone camera, or an existing photo or PDF
   (PAN, passport, visa, driving licence, voter ID). Aadhaar copies are never
-  saved: scan its QR code at check-in instead. Photos are shrunk
+  saved: check the card at check-in and tick it on the booking. Photos are shrunk
   on the phone before sending, so they upload quickly; PDFs must be under 4 MB.
 - passport and visa numbers for foreign guests
 - company name and GSTIN for business invoices

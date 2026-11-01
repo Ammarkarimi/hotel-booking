@@ -158,7 +158,7 @@ export default function ReportsPage() {
               Rooms · {data.rooms} room{data.rooms === 1 ? "" : "s"}
               {data.roomsUnderRepair > 0 && <span className="text-base font-semibold text-slate-500"> · {data.roomsUnderRepair} under repair, not counted from today</span>}
             </h2>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
               <StatCard title="How full (occupancy)" value={`${t.occupancy}%`} subtitle={`${t.roomNightsSold} of ${t.availableRoomNights} room-nights sold`} icon={<Percent className="h-5 w-5" />} tone="sky" />
               <StatCard title="Average price per room sold" value={money(t.adr)} subtitle="ADR: room earnings ÷ rooms sold" icon={<IndianRupee className="h-5 w-5" />} tone="slate" />
               <StatCard title="Earnings per available room" value={money(t.revpar)} subtitle={`RevPAR: room earnings ÷ all ${data.rooms} rooms, sold or not`} icon={<TrendingUp className="h-5 w-5" />} />
@@ -350,7 +350,7 @@ export default function ReportsPage() {
                 description="Stays from booking sites that end in this period. Your bill stays on the full (gross) amount; this is what the sites actually pay you."
               />
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
                   <div className="rounded-xl bg-slate-50 p-3">
                     <p className="text-xs font-semibold text-slate-500">Bills (gross)</p>
                     <p className="text-xl font-bold">{money(data.payouts.totals.gross)}</p>
@@ -525,7 +525,7 @@ export default function ReportsPage() {
 
           <Card className="no-print">
             <CardHeader title="Download for Excel / accountant" description="Files open in Excel, Google Sheets or any spreadsheet app." />
-            <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            <CardContent className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               <Button variant="outline" onClick={() => download("summary")}>
                 <Download className="h-4 w-4" /> Summary {data.groups.length > 1 ? `by ${effectiveGroup}` : ""}
               </Button>

@@ -66,7 +66,7 @@ export function titleCase(s: string): string {
 export const ROOM_TYPES = ["single", "double", "twin", "deluxe", "suite", "family", "dormitory"] as const;
 export const ROOM_STATUSES = ["available", "occupied", "maintenance"] as const;
 export const HOUSEKEEPING_STATUSES = ["clean", "dirty", "cleaning"] as const;
-// ID copies that can be saved. Aadhaar is never saved: its QR code is scanned at check-in instead.
+// ID copies that can be saved. Aadhaar is never saved: the front desk checks the card at check-in instead.
 export const DOCUMENT_TYPES = ["passport", "visa", "driving_licence", "voter_id", "pan", "other"] as const;
 export const PAYMENT_METHODS = ["cash", "upi", "card", "bank_transfer", "other"] as const;
 // Guests can also pay in advance on a booking site, which then pays the hotel after its deductions.

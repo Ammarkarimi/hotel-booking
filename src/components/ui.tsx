@@ -531,7 +531,7 @@ export function Tabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={cn("-mx-1 flex gap-1 overflow-x-auto px-1 pb-1", className)}>
+    <div className={cn("flex flex-wrap gap-1 pb-1", className)}>
       {tabs.map((t) => (
         <button
           key={t.value}

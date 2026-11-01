@@ -9,20 +9,18 @@ import { DOCUMENT_TYPES, label } from "@/lib/utils";
 
 type Params = { params: Promise<{ id: string }> };
 
-// Nothing from the ID is sent here: the Aadhaar QR is checked on the staff phone.
+// The receptionist looks at the original ID and ticks it: only which kind of ID, who and when are saved.
 const schema = z.object({
   person: z.string().trim().max(80).nullable().default(null), // null = the guest who booked
-  method: z.enum(["aadhaar_qr", "id_seen"]),
-  idType: z.enum(DOCUMENT_TYPES).optional(),
+  idType: z.enum(["aadhar", ...DOCUMENT_TYPES], { errorMap: () => ({ message: "Please choose which ID you saw" }) }),
 });
 
-/** Staff record that they checked one adult's ID. */
+/** Staff tick that they checked one adult's original ID. */
 export async function POST(request: NextRequest, { params }: Params) {
   return withAuth(async (user) => {
     await assertOnShift(user);
     const { id } = await params;
     const body = schema.parse(await request.json());
-    if (body.method === "id_seen" && !body.idType) fail("Please choose which ID you saw");
     const booking = await prisma.booking.findUnique({ where: { id }, include: { guest: true, room: true } });
     if (!booking) fail("Booking not found", 404);
     if (booking.status === "cancelled" || booking.status === "no_show") fail("This booking is closed");
@@ -31,18 +29,14 @@ export async function POST(request: NextRequest, { params }: Params) {
         hotelId: currentHotelId(),
         bookingId: id,
         person: body.person || null,
-        method: body.method,
-        idType: body.method === "id_seen" ? body.idType : "aadhar",
+        method: "id_seen",
+        idType: body.idType,
         checkedById: user.id,
         checkedByName: user.name,
       },
     });
     const who = body.person || `${booking.guest.firstName} ${booking.guest.lastName}`.trim();
-    await logActivity(
-      user,
-      body.method === "aadhaar_qr" ? "Aadhaar verified (QR)" : "ID checked",
-      `${bookingLabel(booking)}: ${who}${body.method === "id_seen" ? `, ${label(body.idType)}` : ""}`
-    );
+    await logActivity(user, "ID verified", `${bookingLabel(booking)}: ${who}, ${label(body.idType)}`);
     return NextResponse.json(check, { status: 201 });
   });
 }
@@ -58,7 +52,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     const sameDay = check.checkedById === user.id && Date.now() - check.createdAt.getTime() < 12 * 60 * 60 * 1000;
     if (!isAdmin(user) && !sameDay) fail("Only the owner can remove this", 403);
     await prisma.idCheck.delete({ where: { id: check.id } });
-    await logActivity(user, "ID check removed", check.person ?? "guest");
+    await logActivity(user, "ID tick removed", check.person ?? "guest");
     return NextResponse.json({ ok: true });
   });
 }

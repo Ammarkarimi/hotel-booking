@@ -209,7 +209,7 @@ export default function TodayPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
             {greeting()}, {user.name.split(" ")[0]}
@@ -218,7 +218,7 @@ export default function TodayPage() {
             {formatDate(data.today)} · Here is what needs your attention today.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 [&>button]:whitespace-nowrap">
           <Button size="lg" onClick={() => router.push("/bookings/new")}>
             <CalendarPlus className="h-5 w-5" /> New booking
           </Button>
