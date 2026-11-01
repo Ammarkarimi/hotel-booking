@@ -45,7 +45,7 @@ function splitName(name: string | null) {
   return { firstName: parts[0] ?? "", lastName: parts.slice(1).join(" ") };
 }
 
-type Draft = { f: Record<string, string | boolean>; adults: number; children: number; companions: { name: string; phone: string }[] };
+type Draft = { f: Record<string, string | boolean>; adults: number; children: number; companions: { name: string; phone: string; aadhaarLast4?: string }[] };
 
 function readDraft(token: string): Draft | null {
   try {
@@ -65,6 +65,8 @@ function IdUpload({
   docs,
   onAdded,
   onRemoved,
+  last4,
+  onLast4,
 }: {
   token: string;
   person: string;
@@ -73,6 +75,8 @@ function IdUpload({
   docs: Doc[];
   onAdded: (d: Doc) => void;
   onRemoved: (id: string) => void;
+  last4: string;
+  onLast4: (v: string) => void;
 }) {
   const [type, setType] = useState(foreign ? "passport" : "aadhar");
   const [busy, setBusy] = useState(false);
@@ -138,6 +142,20 @@ function IdUpload({
           ))}
         </ul>
       )}
+      {mine.some((d) => d.type === "aadhar") && (
+        <Field label="Last 4 digits of the Aadhaar number" hint="Only these 4 digits are kept, to recognise you next time." className="mb-3">
+          <Input
+            value={last4}
+            onChange={(e) => onLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            inputMode="numeric"
+            pattern="[0-9]{4}"
+            maxLength={4}
+            placeholder="1234"
+            className="max-w-32 text-center text-lg tracking-widest"
+            required
+          />
+        </Field>
+      )}
       {!full && (
         <>
           <Field label={mine.length ? "Add another page (for example the back side)" : "Which ID?"}>
@@ -201,10 +219,11 @@ export default function GuestFormPage() {
     goingTo: "",
     vehicleNumber: "",
     requests: "",
+    aadhaarLast4: "",
   });
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [companions, setCompanions] = useState<{ name: string; phone: string }[]>([]);
+  const [companions, setCompanions] = useState<{ name: string; phone: string; aadhaarLast4?: string }[]>([]);
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -248,7 +267,7 @@ export default function GuestFormPage() {
 
   // One row for each adult staying with the guest.
   useEffect(() => {
-    setCompanions((old) => (old.length === adults - 1 ? old : Array.from({ length: Math.max(0, adults - 1) }, (_, i) => old[i] ?? { name: "", phone: "" })));
+    setCompanions((old) => (old.length === adults - 1 ? old : Array.from({ length: Math.max(0, adults - 1) }, (_, i) => old[i] ?? { name: "", phone: "", aadhaarLast4: "" })));
   }, [adults]);
 
   if (loadError) {
@@ -342,13 +361,14 @@ export default function GuestFormPage() {
       comingFrom: f.comingFrom,
       goingTo: f.goingTo,
       vehicleNumber: f.vehicleNumber,
+      aadhaarLast4: f.aadhaarLast4,
       companions,
       requests: f.requests,
       consent,
     };
     if (f.foreign && !f.country.trim()) return setError("Please enter your country");
     if (companions.some((c) => !c.name.trim())) return setError("Please enter the name of each adult staying with you");
-    const missing = missingDocuments({ firstName: f.firstName, nationality, companions }, docs);
+    const missing = missingDocuments({ firstName: f.firstName, nationality, aadhaarLast4: f.aadhaarLast4, companions }, docs);
     if (missing.length) return setError(missing[0]);
     setSending(true);
     try {
@@ -531,7 +551,9 @@ export default function GuestFormPage() {
                 <h2 className="text-xl font-bold">ID proof</h2>
                 <p className="text-sm text-slate-500">
                   Upload a photo or PDF of a government photo ID: Aadhaar, passport, driving licence or voter ID.
-                  {f.foreign ? " Foreign guests: your passport and visa page." : " For Aadhaar, add both sides."} You do not need to type the ID number.
+                  {f.foreign
+                    ? " Foreign guests: your passport and visa page."
+                    : " For Aadhaar, add both sides, or the masked Aadhaar from the myAadhaar app or website (it hides the number)."}
                 </p>
               </div>
               <IdUpload
@@ -542,6 +564,8 @@ export default function GuestFormPage() {
                 docs={docs}
                 onAdded={(d) => setDocs((x) => [...x, d])}
                 onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
+                last4={f.aadhaarLast4}
+                onLast4={(v) => setF({ ...f, aadhaarLast4: v })}
               />
               {companions.map((c, i) => (
                 <IdUpload
@@ -553,6 +577,8 @@ export default function GuestFormPage() {
                   docs={docs}
                   onAdded={(d) => setDocs((x) => [...x, d])}
                   onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
+                  last4={c.aadhaarLast4 ?? ""}
+                  onLast4={(v) => setCompanions(companions.map((x, j) => (j === i ? { ...x, aadhaarLast4: v } : x)))}
                 />
               ))}
             </CardContent>

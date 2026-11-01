@@ -228,7 +228,7 @@ export default function GuestProfilePage() {
         <Card>
           <CardHeader
             title="ID documents"
-            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of the Aadhaar, driving licence or any government photo ID. The Aadhaar number is not saved."}
+            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of the Aadhaar, driving licence or any government photo ID. For Aadhaar only the last 4 digits are kept."}
             action={
               <Button size="sm" onClick={() => setUploadOpen(true)}>
                 <Upload className="h-4 w-4" /> Add

@@ -325,6 +325,7 @@ function Registration({
                 <p className="mt-1 border-b border-slate-300 pb-1 font-semibold">
                   {c.name}
                   {c.phone && ` · ${c.phone}`}
+                  {c.aadhaar && ` · Aadhaar ${c.aadhaar}`}
                   {ids.length > 0 && <span className="font-normal text-slate-600"> · {ids.join(", ")} copy saved</span>}
                 </p>
               ) : (

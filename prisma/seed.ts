@@ -91,14 +91,14 @@ async function seedBasics() {
 }
 
 const DEMO_GUESTS = [
-  { firstName: "Rajesh", lastName: "Kumar", phone: "+91 98450 11223", email: "rajesh.kumar@example.com", nationality: "Indian", address: "Indiranagar, Bengaluru", idType: "aadhar", company: "Kumar Traders", gstin: "29AAACK1234M1Z2" },
+  { firstName: "Rajesh", lastName: "Kumar", phone: "+91 98450 11223", email: "rajesh.kumar@example.com", nationality: "Indian", address: "Indiranagar, Bengaluru", idType: "aadhar", idNumber: "XXXX XXXX 4821", company: "Kumar Traders", gstin: "29AAACK1234M1Z2" },
   { firstName: "Priya", lastName: "Sharma", phone: "+91 99001 22334", email: "priya.s@example.com", nationality: "Indian", address: "Andheri West, Mumbai", idType: "driving_licence", idNumber: "MH02 2019 0012345", vip: true },
   { firstName: "John", lastName: "Smith", phone: "+1 555 0123", email: "john.smith@example.com", nationality: "American", address: "456 Oak Ave, New York", idType: "passport", passportNo: "X12345678", visaNo: "IN-E-998877" },
-  { firstName: "Anita", lastName: "Desai", phone: "+91 98111 44556", nationality: "Indian", address: "Koregaon Park, Pune", idType: "aadhar" },
+  { firstName: "Anita", lastName: "Desai", phone: "+91 98111 44556", nationality: "Indian", address: "Koregaon Park, Pune", idType: "aadhar", idNumber: "XXXX XXXX 9932" },
   { firstName: "Mohammed", lastName: "Irfan", phone: "+91 97400 55667", nationality: "Indian", address: "Banjara Hills, Hyderabad", idType: "pan", idNumber: "ABCPI1234K" },
   { firstName: "Sophie", lastName: "Martin", phone: "+33 6 12 34 56 78", email: "sophie.martin@example.com", nationality: "French", idType: "passport", passportNo: "18AB12345", visaNo: "IN-T-554433" },
   { firstName: "Vikram", lastName: "Reddy", phone: "+91 90080 66778", nationality: "Indian", address: "Jayanagar, Bengaluru" },
-  { firstName: "Meera", lastName: "Nair", phone: "+91 94470 77889", email: "meera.nair@example.com", nationality: "Indian", address: "Kochi, Kerala", idType: "aadhar" },
+  { firstName: "Meera", lastName: "Nair", phone: "+91 94470 77889", email: "meera.nair@example.com", nationality: "Indian", address: "Kochi, Kerala", idType: "aadhar", idNumber: "XXXX XXXX 1209" },
   { firstName: "Arjun", lastName: "Mehta", phone: "+91 98200 88990", nationality: "Indian", address: "Ahmedabad, Gujarat" },
   { firstName: "Fatima", lastName: "Khan", phone: "+91 98860 99001", nationality: "Indian", address: "Frazer Town, Bengaluru" },
 ];

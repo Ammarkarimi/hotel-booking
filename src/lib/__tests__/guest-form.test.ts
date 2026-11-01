@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formMessage, formStatus, fullAddress, guestFormSchema, missingDocuments, parseCompanions } from "../guest-form";
+import { aadhaarLast4, formMessage, formStatus, fullAddress, guestFormSchema, maskAadhaar, missingDocuments, parseCompanions } from "../guest-form";
 
 const filled = {
   firstName: "Asha",
@@ -39,7 +39,10 @@ test("the guest form needs every adult's name, a state and PIN for Indian guests
 test("every adult needs an ID copy, and a foreign guest a passport", () => {
   const details = guestFormSchema.parse(filled);
   assert.deepEqual(missingDocuments(details, []), ["Please upload an ID proof for Asha", "Please upload an ID proof for Ravi Rao"]);
-  assert.deepEqual(missingDocuments(details, [{ person: "0", type: "aadhar" }, { person: "1", type: "driving_licence" }]), []);
+  const files = [{ person: "0", type: "aadhar" }, { person: "1", type: "driving_licence" }];
+  assert.deepEqual(missingDocuments(details, files), ["Please enter the last 4 digits of your Aadhaar"]);
+  assert.deepEqual(missingDocuments({ ...details, aadhaarLast4: "9012" }, files), []);
+  assert.deepEqual(missingDocuments({ ...details, aadhaarLast4: "9012" }, [files[0], { person: "1", type: "aadhar" }]), ["Please enter the last 4 digits of Ravi Rao's Aadhaar"]);
   const foreign = { ...details, nationality: "British", companions: [] };
   assert.deepEqual(missingDocuments(foreign, [{ person: "0", type: "visa" }]), ["Please upload a copy of your passport"]);
   assert.deepEqual(missingDocuments(foreign, [{ person: "0", type: "passport" }]), []);
@@ -54,4 +57,15 @@ test("the WhatsApp message carries the link, and an old link expires", () => {
   assert.equal(fullAddress({ address: "12 MG Road", city: "Ahmedabad", state: "Gujarat", pinCode: "380009" }), "12 MG Road, Ahmedabad, Gujarat 380009");
   assert.deepEqual(parseCompanions('[{"name":"Ravi"}]'), [{ name: "Ravi" }]);
   assert.deepEqual(parseCompanions("oops"), []);
+});
+
+test("only the last 4 digits of an Aadhaar are ever kept", () => {
+  assert.equal(maskAadhaar("1234 5678 9012"), "XXXX XXXX 9012");
+  assert.equal(maskAadhaar("9012"), "XXXX XXXX 9012");
+  assert.equal(maskAadhaar("XXXX XXXX 9012"), "XXXX XXXX 9012");
+  assert.equal(maskAadhaar("12"), null);
+  assert.equal(maskAadhaar(null), null);
+  assert.equal(aadhaarLast4("XXXX XXXX 9012"), "9012");
+  const r = guestFormSchema.safeParse({ ...filled, aadhaarLast4: "123456789012" });
+  assert.equal(r.success ? "" : r.error.issues[0].message, "Please enter only the last 4 digits of the Aadhaar");
 });

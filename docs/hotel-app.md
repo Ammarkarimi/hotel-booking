@@ -94,13 +94,15 @@ Instead of typing a guest's details at the desk, send them a form:
    home address (house and street, city, state, PIN code), where they are coming
    from and going next, their vehicle number, and the name of every other adult.
    They upload a photo or PDF of an ID for every adult (Aadhaar front and back,
-   passport and visa for foreign guests, driving licence, voter ID). **Nobody
-   types an ID number.** They tick that they agree and press Send.
+   passport and visa for foreign guests, driving licence, voter ID). For an
+   Aadhaar they type only its last 4 digits; no other ID number is asked. They
+   tick that they agree and press Send.
 3. The front desk gets a pop-up within 30 seconds, a red number on **Guest
    forms** and a card on Today. Press **Choose room & book**: the dates, people
    and special requests are already filled in, and the guest's details and ID
    copies are shown. If the mobile number belongs to a returning guest, choose
-   whether it is the same person. Pick the room, check the price and confirm.
+   whether it is the same person (a matching Aadhaar ending is marked “Same
+   Aadhaar”). Pick the room, check the price and confirm.
 4. The guest profile, the ID copies (named by person) and the booking's journey,
    vehicle and companions are saved, and they print on the registration card.
 
@@ -108,9 +110,13 @@ A form can be sent again (another 7 days) or closed. Closing a filled-in form
 deletes the details and ID copies the guest sent. A form can make only one
 booking.
 
-**Aadhaar numbers are not saved anywhere in the software.** Save a copy of the
-card instead. Numbers of other IDs (passport, driving licence…) can still be
-typed by staff.
+**Only the last 4 digits of an Aadhaar are kept**, shown as `XXXX XXXX 1234`
+(like UIDAI's masked Aadhaar). The copy of the card is the proof; the 4 digits
+help recognise a returning guest. On the form, a guest who uploads an Aadhaar
+types its last 4 digits, and can upload the masked Aadhaar from the myAadhaar
+app instead of the full card. Staff type only the last 4 digits too; if a full
+number is typed, only its last 4 digits are saved. Numbers of other IDs
+(passport, driving licence…) are saved as typed.
 
 ### Room calendar
 

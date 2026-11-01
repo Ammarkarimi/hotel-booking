@@ -1,8 +1,9 @@
 import { z } from "zod";
+import { maskAadhaar } from "./guest-form";
 
 const optionalText = z.string().trim().optional().nullable();
 
-export const guestSchema = z.object({
+const guestFields = z.object({
   firstName: z.string().trim().min(1, "Guest name is required"),
   lastName: z.string().trim().optional().default(""),
   phone: z.string().trim().min(5, "Please enter a valid phone number"),
@@ -24,7 +25,14 @@ export const guestSchema = z.object({
   blacklisted: z.boolean().optional(),
 });
 
-export type GuestInput = z.infer<typeof guestSchema>;
+const aadhaarOk = (g: { idType?: string | null; idNumber?: string | null }) => g.idType !== "aadhar" || !g.idNumber || g.idNumber.replace(/\D/g, "").length >= 4;
+const aadhaarIssue = { message: "For Aadhaar, enter the last 4 digits", path: ["idNumber"] };
+
+export const guestSchema = guestFields.refine(aadhaarOk, aadhaarIssue);
+/** For changing some details of a guest. */
+export const guestUpdateSchema = guestFields.partial().refine(aadhaarOk, aadhaarIssue);
+
+export type GuestInput = z.infer<typeof guestFields>;
 
 export function guestData(body: Partial<GuestInput>) {
   const text = (v: string | null | undefined) => (v === undefined ? undefined : v || null);
@@ -39,8 +47,8 @@ export function guestData(body: Partial<GuestInput>) {
     state: text(body.state),
     pinCode: text(body.pinCode),
     idType: text(body.idType),
-    // Aadhaar numbers are never saved: a copy of the card is kept as proof instead.
-    idNumber: body.idType === "aadhar" ? null : text(body.idNumber),
+    // Only the last 4 digits of an Aadhaar are kept ("XXXX XXXX 1234"); the copy of the card is the proof.
+    idNumber: body.idType === "aadhar" ? (body.idNumber === undefined ? undefined : maskAadhaar(body.idNumber)) : text(body.idNumber),
     company: text(body.company),
     gstin: text(body.gstin?.toUpperCase()),
     passportNo: text(body.passportNo),

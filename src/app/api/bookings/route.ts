@@ -19,7 +19,7 @@ import {
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
-import type { GuestFormDetails } from "@/lib/guest-form";
+import { maskAadhaar, type GuestFormDetails } from "@/lib/guest-form";
 import { parseDetails } from "@/lib/guest-forms-api";
 
 export async function GET(request: NextRequest) {
@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
                 nationality: body.guest.nationality || "Indian",
                 address: body.guest.address || null,
                 idType: body.guest.idType || null,
-                // Aadhaar numbers are never saved: a copy of the card is kept as proof instead.
-                idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
+                // Only the last 4 digits of an Aadhaar are kept; the copy of the card is the proof.
+                idNumber: body.guest.idType === "aadhar" ? maskAadhaar(body.guest.idNumber) : body.guest.idNumber || null,
               },
             })
           ).id;
@@ -179,7 +179,11 @@ export async function POST(request: NextRequest) {
             comingFrom: form.details.comingFrom || null,
             goingTo: form.details.goingTo || null,
             vehicleNumber: form.details.vehicleNumber?.toUpperCase() || null,
-            companions: form.details.companions.length ? JSON.stringify(form.details.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }) }))) : null,
+            companions: form.details.companions.length
+              ? JSON.stringify(
+                  form.details.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }), ...(maskAadhaar(c.aadhaarLast4) && { aadhaar: maskAadhaar(c.aadhaarLast4) }) }))
+                )
+              : null,
           }),
           createdById: user.id,
           status: body.checkInNow ? "checked_in" : "reserved",
@@ -257,15 +261,19 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
     ? await tx.guest.findUnique({ where: { id: chosenId } })
     : await tx.guest.findFirst({ where: { phone: d.phone, firstName: { equals: d.firstName, mode: "insensitive" } } });
   if (chosenId && !existing) fail("Guest not found", 404);
+  // The guest's Aadhaar, as its last 4 digits only, when they uploaded one.
+  const aadhaar = maskAadhaar(d.aadhaarLast4);
   if (existing) {
     const newProof = proof && proof.type !== existing.idType;
     await tx.guest.update({
       where: { id: existing.id },
       // The ID number saved before belongs to the old proof, so it goes when the proof changes.
-      data: { ...data, ...(newProof && { idType: proof.type, idNumber: null }) },
+      data: { ...data, ...(aadhaar ? { idType: "aadhar", idNumber: aadhaar } : newProof && { idType: proof.type, idNumber: null }) },
     });
     return existing.id;
   }
-  const created = await tx.guest.create({ data: { ...data, hotelId: currentHotelId(), idType: proof?.type ?? null } });
+  const created = await tx.guest.create({
+    data: { ...data, hotelId: currentHotelId(), idType: aadhaar ? "aadhar" : (proof?.type ?? null), idNumber: aadhaar },
+  });
   return created.id;
 }

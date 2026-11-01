@@ -59,13 +59,22 @@ export async function POST(request: NextRequest, { params }: Params) {
       const missing = missingDocuments(details, files);
       if (missing.length) fail(missing[0]);
 
+      // The last 4 Aadhaar digits are kept only for people who uploaded an Aadhaar.
+      const hasAadhaar = (person: string) => files.some((f) => f.person === person && f.type === "aadhar");
+      const saved = {
+        ...details,
+        pinCode: details.pinCode.replace(/\s/g, ""),
+        aadhaarLast4: hasAadhaar("0") ? details.aadhaarLast4 : "",
+        companions: details.companions.map((c, i) => ({ ...c, aadhaarLast4: hasAadhaar(String(i + 1)) ? c.aadhaarLast4 || "" : "" })),
+      };
+
       // Copies for people no longer on the form (the guest lowered the number of adults) are deleted.
       const people = details.companions.length;
       const extra = files.filter((f) => Number(f.person) > people);
       const done = await prisma.$transaction(async (tx) => {
         const claimed = await tx.guestForm.updateMany({
           where: { id: form.id, status: "sent" },
-          data: { status: "submitted", submittedAt: new Date(), details: JSON.stringify({ ...details, pinCode: details.pinCode.replace(/\s/g, "") }) },
+          data: { status: "submitted", submittedAt: new Date(), details: JSON.stringify(saved) },
         });
         if (claimed.count !== 1) return false;
         if (extra.length) await tx.guestDocument.deleteMany({ where: { id: { in: extra.map((f) => f.id) } } });
