@@ -31,18 +31,22 @@ export function directDatabaseUrl(url, unpooled) {
   }
 }
 
-/** Runs the migrations, trying again twice if the database is busy (for example a lock still held). */
+/**
+ * Runs the migrations. If they fail (usually Prisma's migration lock is still held by an earlier
+ * connection that never let go), it tries twice more without taking that lock: only one
+ * production build runs at a time, so the lock is not needed to keep migrations apart.
+ */
 function migrate() {
   const url = directDatabaseUrl(process.env.DATABASE_URL ?? "", process.env.DATABASE_URL_UNPOOLED);
-  const env = url ? { ...process.env, DATABASE_URL: url } : process.env;
+  const env = url ? { ...process.env, DATABASE_URL: url } : { ...process.env };
   if (url && url !== process.env.DATABASE_URL) console.log("\n▶ Running migrations on the direct (not pooled) database connection.\n");
   for (let attempt = 1; ; attempt++) {
     try {
-      return run("prisma migrate deploy", env);
+      return run("prisma migrate deploy", attempt === 1 ? env : { ...env, PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK: "1" });
     } catch (error) {
       if (attempt >= 3) throw error;
-      console.log(`\n▶ Migrations failed (try ${attempt} of 3). Trying again in ${attempt * 15} seconds…\n`);
-      execSync(`sleep ${attempt * 15}`);
+      console.log(`\n▶ Migrations failed (try ${attempt} of 3). Trying again in ${attempt * 10} seconds without the migration lock…\n`);
+      execSync(`sleep ${attempt * 10}`);
     }
   }
 }
