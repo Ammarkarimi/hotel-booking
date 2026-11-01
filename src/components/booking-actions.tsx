@@ -12,6 +12,8 @@ import type { BookingDTO } from "@/lib/types";
 type MinimalBooking = Pick<BookingDTO, "id" | "number" | "guestName" | "status" | "checkInDate" | "checkOutDate" | "folio"> & {
   room: { roomNumber: string; housekeeping?: string };
   guest?: { documents?: unknown[] };
+  adults?: number;
+  idChecks?: { person: string | null }[];
 };
 
 export function MethodPicker({
@@ -378,7 +380,11 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
   async function checkIn(b: MinimalBooking) {
     const warnings: string[] = [];
     if (b.room.housekeeping && b.room.housekeeping !== "clean") warnings.push(`Room ${b.room.roomNumber} is marked “${label(b.room.housekeeping)}”.`);
-    if (b.guest?.documents && b.guest.documents.length === 0) warnings.push("No ID proof uploaded yet — remember to collect it.");
+    if (b.idChecks && b.adults) {
+      const checked = new Set(b.idChecks.map((c) => c.person ?? "")).size;
+      if (checked < b.adults)
+        warnings.push(`ID checked for ${checked} of ${b.adults} adult${b.adults > 1 ? "s" : ""}. Scan each Aadhaar QR (or check another ID) under “ID check” on the booking.`);
+    } else if (b.guest?.documents && b.guest.documents.length === 0) warnings.push("No ID proof uploaded yet — remember to collect it.");
     const earlyNights = diffDays(settings.today, b.checkInDate);
     if (earlyNights > 0) {
       warnings.push(

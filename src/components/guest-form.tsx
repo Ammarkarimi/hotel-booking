@@ -5,7 +5,7 @@ import { Button, Field, Input, Modal, Select, Textarea, Toggle } from "@/compone
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { label } from "@/lib/utils";
-import { INDIAN_STATES, aadhaarLast4 } from "@/lib/guest-form";
+import { INDIAN_STATES } from "@/lib/guest-form";
 import type { GuestDTO } from "@/lib/types";
 
 const EMPTY = {
@@ -107,20 +107,9 @@ export function GuestFormDialog({
                   </option>
                 ))}
               </Select>
-              {form.idType === "aadhar" ? (
-                <Input
-                  value={aadhaarLast4(form.idNumber) || form.idNumber.replace(/\D/g, "")}
-                  onChange={(e) => setForm({ ...form, idNumber: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                  inputMode="numeric"
-                  maxLength={4}
-                  placeholder="Last 4 digits"
-                  aria-label="Last 4 digits of the Aadhaar"
-                />
-              ) : (
-                <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />
-              )}
+              {form.idType !== "aadhar" && <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />}
             </div>
-            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Only the last 4 digits are saved. Keep a copy of the card under ID documents.</p>}
+            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Nothing from the Aadhaar is saved. Scan its QR code on the booking at check-in.</p>}
           </Field>
           <Field label="Address" optional className="sm:col-span-2" hint="House, street and area">
             <Input value={form.address} onChange={set("address")} />

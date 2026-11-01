@@ -8,6 +8,7 @@ import { logActivity } from "@/lib/activity";
 import { assertOnShift } from "@/lib/shift-api";
 import { FORM_DAYS } from "@/lib/guest-form";
 import { newFormToken, serializeGuestForm } from "@/lib/guest-forms-api";
+import { drainFileCleanup } from "@/lib/file-cleanup";
 
 /**
  * ?count=1: how many filled-in forms are waiting for a room (for the menu badge).
@@ -17,6 +18,8 @@ export async function GET(request: NextRequest) {
   return withAuth(async () => {
     const { searchParams } = new URL(request.url);
     if (searchParams.get("count") === "1") {
+      // Every signed-in screen asks for this regularly, so it also clears old files in the background.
+      await drainFileCleanup().catch(() => undefined);
       const received = await prisma.guestForm.count({ where: { status: "submitted" } });
       return NextResponse.json({ received });
     }

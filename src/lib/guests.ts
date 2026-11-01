@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { maskAadhaar } from "./guest-form";
 
 const optionalText = z.string().trim().optional().nullable();
 
@@ -25,12 +24,9 @@ const guestFields = z.object({
   blacklisted: z.boolean().optional(),
 });
 
-const aadhaarOk = (g: { idType?: string | null; idNumber?: string | null }) => g.idType !== "aadhar" || !g.idNumber || g.idNumber.replace(/\D/g, "").length >= 4;
-const aadhaarIssue = { message: "For Aadhaar, enter the last 4 digits", path: ["idNumber"] };
-
-export const guestSchema = guestFields.refine(aadhaarOk, aadhaarIssue);
+export const guestSchema = guestFields;
 /** For changing some details of a guest. */
-export const guestUpdateSchema = guestFields.partial().refine(aadhaarOk, aadhaarIssue);
+export const guestUpdateSchema = guestFields.partial();
 
 export type GuestInput = z.infer<typeof guestFields>;
 
@@ -47,8 +43,8 @@ export function guestData(body: Partial<GuestInput>) {
     state: text(body.state),
     pinCode: text(body.pinCode),
     idType: text(body.idType),
-    // Only the last 4 digits of an Aadhaar are kept ("XXXX XXXX 1234"); the copy of the card is the proof.
-    idNumber: body.idType === "aadhar" ? (body.idNumber === undefined ? undefined : maskAadhaar(body.idNumber)) : text(body.idNumber),
+    // Nothing from an Aadhaar is saved: it is checked by scanning its QR code at check-in.
+    idNumber: body.idType === "aadhar" ? null : text(body.idNumber),
     company: text(body.company),
     gstin: text(body.gstin?.toUpperCase()),
     passportNo: text(body.passportNo),

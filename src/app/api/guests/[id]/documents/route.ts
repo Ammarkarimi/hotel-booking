@@ -24,6 +24,7 @@ export async function POST(request: NextRequest, { params }: Params) {
     const file = formData.get("file");
     const type = String(formData.get("type") || "");
     if (!(file instanceof File) || file.size === 0) fail("Please choose a photo or PDF of the document");
+    if (type === "aadhar") fail("Aadhaar copies are not saved. Its QR code is scanned at check-in instead.");
     if (!(DOCUMENT_TYPES as readonly string[]).includes(type)) fail("Please choose the document type");
     if (file.size > MAX_BYTES) fail("The file is too large. Please use a photo, or a PDF under 4 MB.");
     if (file.type && !ALLOWED_MIME.includes(file.type)) fail("Only photos (JPG, PNG) or PDF files can be uploaded");

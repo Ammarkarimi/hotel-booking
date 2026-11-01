@@ -255,6 +255,14 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
   );
 }
 
+/** How a person's ID was checked at the desk, e.g. "Aadhaar verified by QR (Pooja Verma, 3 Nov 2026)". */
+function idLine(b: SerializedBooking, person: string | null) {
+  const c = [...b.idChecks].reverse().find((x) => (x.person ?? null) === person);
+  if (!c) return "";
+  const what = c.method === "aadhaar_qr" ? "Aadhaar verified by QR" : `${label(c.idType)} checked`;
+  return `${what} (${c.checkedByName}, ${formatDate(c.createdAt)})`;
+}
+
 function Registration({
   b,
   s,
@@ -292,7 +300,7 @@ function Registration({
             {b.adults} adult(s){b.children ? `, ${b.children} child(ren)` : ""}
           </Info>
           <Info label="Rate / night">{formatCurrency(b.ratePerNight, s.currency)}</Info>
-          <Info label="ID proof">{g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : ""}</Info>
+          <Info label="ID proof">{idLine(b, null) || (g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : "")}</Info>
           <Info label="Coming from">{b.comingFrom}</Info>
           <Info label="Going to">{b.goingTo}</Info>
           <Info label="Vehicle no.">{b.vehicleNumber}</Info>
@@ -325,8 +333,11 @@ function Registration({
                 <p className="mt-1 border-b border-slate-300 pb-1 font-semibold">
                   {c.name}
                   {c.phone && ` · ${c.phone}`}
-                  {c.aadhaar && ` · Aadhaar ${c.aadhaar}`}
-                  {ids.length > 0 && <span className="font-normal text-slate-600"> · {ids.join(", ")} copy saved</span>}
+                  {idLine(b, c.name) ? (
+                    <span className="font-normal text-slate-600"> · {idLine(b, c.name)}</span>
+                  ) : (
+                    ids.length > 0 && <span className="font-normal text-slate-600"> · {ids.join(", ")} copy saved</span>
+                  )}
                 </p>
               ) : (
                 <div className="mt-6 border-b border-slate-300" />

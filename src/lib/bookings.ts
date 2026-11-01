@@ -15,6 +15,7 @@ export const bookingInclude = {
   payments: { orderBy: { paidAt: "asc" } },
   charges: { orderBy: { date: "asc" } },
   bill: true,
+  idChecks: { orderBy: { createdAt: "asc" } },
 } satisfies Prisma.BookingInclude;
 
 export type FullBooking = Prisma.BookingGetPayload<{ include: typeof bookingInclude }>;

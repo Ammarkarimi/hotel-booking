@@ -45,7 +45,8 @@ function splitName(name: string | null) {
   return { firstName: parts[0] ?? "", lastName: parts.slice(1).join(" ") };
 }
 
-type Draft = { f: Record<string, string | boolean>; adults: number; children: number; companions: { name: string; phone: string; aadhaarLast4?: string }[] };
+type Draft = { f: Record<string, string | boolean>; adults: number; children: number; companions: Person[] };
+type Person = { name: string; phone: string; aadhaarAtDesk?: boolean };
 
 function readDraft(token: string): Draft | null {
   try {
@@ -65,8 +66,8 @@ function IdUpload({
   docs,
   onAdded,
   onRemoved,
-  last4,
-  onLast4,
+  aadhaar,
+  onAadhaar,
 }: {
   token: string;
   person: string;
@@ -75,10 +76,11 @@ function IdUpload({
   docs: Doc[];
   onAdded: (d: Doc) => void;
   onRemoved: (id: string) => void;
-  last4: string;
-  onLast4: (v: string) => void;
+  /** Showing an Aadhaar at check-in instead of uploading an ID. Not offered when null. */
+  aadhaar: boolean | null;
+  onAadhaar: (v: boolean) => void;
 }) {
-  const [type, setType] = useState(foreign ? "passport" : "aadhar");
+  const [type, setType] = useState(foreign ? "passport" : "driving_licence");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   // On phones an input with `capture` only opens the camera, so choosing a saved photo or PDF needs its own input.
@@ -87,7 +89,8 @@ function IdUpload({
   const mine = docs.filter((d) => d.person === person);
   const full = mine.length >= MAX_FILES_PER_PERSON;
 
-  useEffect(() => setType(foreign ? "passport" : "aadhar"), [foreign]);
+  useEffect(() => setType(foreign ? "passport" : "driving_licence"), [foreign]);
+  const done = aadhaar === true || mine.length > 0;
 
   async function upload(chosen: File | undefined) {
     if (!chosen) return;
@@ -119,11 +122,40 @@ function IdUpload({
   }
 
   return (
-    <div className={cn("rounded-2xl border p-4", mine.length ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200")}>
+    <div className={cn("rounded-2xl border p-4", done ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200")}>
       <p className="mb-3 flex items-center gap-2 font-semibold">
-        {mine.length ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <UserRound className="h-5 w-5 text-slate-400" />}
+        {done ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <UserRound className="h-5 w-5 text-slate-400" />}
         ID proof for {title}
       </p>
+      {aadhaar !== null && (
+        <div className="mb-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label={`ID for ${title}`}>
+          {[
+            { v: true, t: "Aadhaar", d: "Show it at check-in" },
+            { v: false, t: "Other ID", d: "Upload a copy" },
+          ].map((o) => (
+            <button
+              key={o.t}
+              type="button"
+              role="radio"
+              aria-checked={aadhaar === o.v}
+              onClick={() => onAadhaar(o.v)}
+              className={cn(
+                "rounded-xl border-2 px-3 py-2 text-left",
+                aadhaar === o.v ? "border-primary-500 bg-primary-50" : "border-slate-200 bg-white hover:border-slate-300"
+              )}
+            >
+              <span className="block font-semibold">{o.t}</span>
+              <span className="block text-xs text-slate-500">{o.d}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {aadhaar === true ? (
+        <p className="rounded-xl bg-white px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200">
+          Nothing to upload. At check-in the front desk scans the QR code on the Aadhaar card, e-Aadhaar or Aadhaar app to confirm it is genuine. Nothing from the Aadhaar is saved.
+        </p>
+      ) : (
+        <>
       {mine.length > 0 && (
         <ul className="mb-3 space-y-2">
           {mine.map((d) => (
@@ -141,20 +173,6 @@ function IdUpload({
             </li>
           ))}
         </ul>
-      )}
-      {mine.some((d) => d.type === "aadhar") && (
-        <Field label="Last 4 digits of the Aadhaar number" hint="Only these 4 digits are kept, to recognise you next time." className="mb-3">
-          <Input
-            value={last4}
-            onChange={(e) => onLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            inputMode="numeric"
-            pattern="[0-9]{4}"
-            maxLength={4}
-            placeholder="1234"
-            className="max-w-32 text-center text-lg tracking-widest"
-            required
-          />
-        </Field>
       )}
       {!full && (
         <>
@@ -191,6 +209,8 @@ function IdUpload({
           </div>
         </>
       )}
+        </>
+      )}
       {error && <p className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
     </div>
   );
@@ -219,11 +239,11 @@ export default function GuestFormPage() {
     goingTo: "",
     vehicleNumber: "",
     requests: "",
-    aadhaarLast4: "",
+    aadhaarAtDesk: true,
   });
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
-  const [companions, setCompanions] = useState<{ name: string; phone: string; aadhaarLast4?: string }[]>([]);
+  const [companions, setCompanions] = useState<Person[]>([]);
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [sending, setSending] = useState(false);
@@ -267,7 +287,7 @@ export default function GuestFormPage() {
 
   // One row for each adult staying with the guest.
   useEffect(() => {
-    setCompanions((old) => (old.length === adults - 1 ? old : Array.from({ length: Math.max(0, adults - 1) }, (_, i) => old[i] ?? { name: "", phone: "", aadhaarLast4: "" })));
+    setCompanions((old) => (old.length === adults - 1 ? old : Array.from({ length: Math.max(0, adults - 1) }, (_, i) => old[i] ?? { name: "", phone: "", aadhaarAtDesk: true })));
   }, [adults]);
 
   if (loadError) {
@@ -361,14 +381,14 @@ export default function GuestFormPage() {
       comingFrom: f.comingFrom,
       goingTo: f.goingTo,
       vehicleNumber: f.vehicleNumber,
-      aadhaarLast4: f.aadhaarLast4,
+      aadhaarAtDesk: !f.foreign && f.aadhaarAtDesk,
       companions,
       requests: f.requests,
       consent,
     };
     if (f.foreign && !f.country.trim()) return setError("Please enter your country");
     if (companions.some((c) => !c.name.trim())) return setError("Please enter the name of each adult staying with you");
-    const missing = missingDocuments({ firstName: f.firstName, nationality, aadhaarLast4: f.aadhaarLast4, companions }, docs);
+    const missing = missingDocuments({ firstName: f.firstName, nationality, aadhaarAtDesk: !f.foreign && f.aadhaarAtDesk, companions }, docs);
     if (missing.length) return setError(missing[0]);
     setSending(true);
     try {
@@ -550,10 +570,9 @@ export default function GuestFormPage() {
               <div>
                 <h2 className="text-xl font-bold">ID proof</h2>
                 <p className="text-sm text-slate-500">
-                  Upload a photo or PDF of a government photo ID: Aadhaar, passport, driving licence or voter ID.
                   {f.foreign
-                    ? " Foreign guests: your passport and visa page."
-                    : " For Aadhaar, add both sides, or the masked Aadhaar from the myAadhaar app or website (it hides the number)."}
+                    ? "Upload a photo or PDF of your passport and visa page."
+                    : "For each adult: choose Aadhaar and show it at check-in (nothing is uploaded or saved), or upload a photo or PDF of another photo ID such as a driving licence or voter ID."}
                 </p>
               </div>
               <IdUpload
@@ -564,8 +583,8 @@ export default function GuestFormPage() {
                 docs={docs}
                 onAdded={(d) => setDocs((x) => [...x, d])}
                 onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
-                last4={f.aadhaarLast4}
-                onLast4={(v) => setF({ ...f, aadhaarLast4: v })}
+                aadhaar={f.foreign ? null : f.aadhaarAtDesk}
+                onAadhaar={(v) => setF({ ...f, aadhaarAtDesk: v })}
               />
               {companions.map((c, i) => (
                 <IdUpload
@@ -577,8 +596,8 @@ export default function GuestFormPage() {
                   docs={docs}
                   onAdded={(d) => setDocs((x) => [...x, d])}
                   onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
-                  last4={c.aadhaarLast4 ?? ""}
-                  onLast4={(v) => setCompanions(companions.map((x, j) => (j === i ? { ...x, aadhaarLast4: v } : x)))}
+                  aadhaar={c.aadhaarAtDesk ?? false}
+                  onAadhaar={(v) => setCompanions(companions.map((x, j) => (j === i ? { ...x, aadhaarAtDesk: v } : x)))}
                 />
               ))}
             </CardContent>

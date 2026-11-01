@@ -46,6 +46,8 @@ src/
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
 │   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
 │   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
+│   ├── aadhaar-qr.ts          # Reads the Aadhaar Secure QR and checks UIDAI's signature (runs on the staff phone)
+│   ├── aadhaar-keys.ts        # UIDAI public keys for that check, with certificate fingerprints
 │   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
 │   ├── expenses.ts            # Expense validation and who may change what
@@ -71,7 +73,9 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings |
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
-| `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. For Aadhaar only the last 4 digits are kept (`idNumber` is always stored masked as `XXXX XXXX 1234` by `maskAadhaar`; migration `20261103000000_aadhaar_last4` cut older numbers down): the copy is the proof. A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it, and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| `IdCheck` | Hotel, Booking | An adult's ID checked at the desk: `person` (null = the guest who booked), `method` `aadhaar_qr` (the Secure QR was scanned and UIDAI's signature checked on the staff phone, `src/lib/aadhaar-qr.ts`, keys in `src/lib/aadhaar-keys.ts`) or `id_seen` with `idType`, who and when. Nothing read from the card is sent to the server |
+| `FileCleanup` | — | Uploaded files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
 | `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest, moves the ID copies to the guest and sets `bookingId`. Closing an unused form deletes its uploads |
 | `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings). `comingFrom`, `goingTo`, `vehicleNumber` and `companions` (JSON names of the other adults) are for police guest registration and usually come from the guest form |
 | `Charge` | Hotel, Booking | Extras on the bill |
@@ -184,6 +188,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/bookings/[id]/payout` | ⓐ PUT: booking site ID, commission, GST on commission, TCS, TDS, net payout, received date and UTR |
 | `/api/activity` | ⓐ GET |
 | `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |
+| `/api/bookings/[id]/id-checks` | POST (`person`, `method`: `aadhaar_qr` or `id_seen` with `idType`), DELETE `?checkId=` (owner, or the same person within 12 hours) |
 | `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it and deletes uploads) |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)
@@ -287,3 +292,8 @@ them into `CHAPTERS` in `src/app/welcome/tour.tsx`.
 - Restaurant POS and GST e-invoicing (IRN).
 - Sending guest details to police portals such as Pathik (Gujarat). The guest
   form already collects what they ask for.
+- UIDAI keys from before 2021 (`uidai_offline_publickey_29032019.cer`,
+  `…26022019.cer`, `uidai_12_06_18_cer.cer`, `uidai_prod_cdup.cer`): add them to
+  `src/lib/aadhaar-keys.ts` so QR codes on older printed cards verify too.
+- The QR reader's WebAssembly file is copied from `zxing-wasm` into `public/` by
+  `scripts/copy-qr-reader.mjs` after `npm install`.

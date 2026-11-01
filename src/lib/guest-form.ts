@@ -10,8 +10,11 @@ export const MAX_FORM_FILES = 24;
 /** Most ID copies for one person. */
 export const MAX_FILES_PER_PERSON = 4;
 
-/** ID proofs a guest can upload. Copies only: the form never asks for the ID number. */
-export const FORM_ID_TYPES = ["aadhar", "passport", "visa", "driving_licence", "voter_id", "pan", "other"] as const;
+/**
+ * ID proofs a guest can upload. Copies only: the form never asks for an ID number. Aadhaar is not
+ * uploaded or saved at all: the hotel scans the Aadhaar QR code at check-in instead.
+ */
+export const FORM_ID_TYPES = ["passport", "visa", "driving_licence", "voter_id", "pan", "other"] as const;
 
 export const INDIAN_STATES = [
   "Andaman and Nicobar Islands",
@@ -52,27 +55,6 @@ export const INDIAN_STATES = [
   "West Bengal",
 ];
 
-/**
- * Only the last 4 digits of an Aadhaar number are ever kept, written like UIDAI's masked
- * Aadhaar: "XXXX XXXX 1234". Anything typed with fewer than 4 digits gives null.
- */
-export function maskAadhaar(value: string | null | undefined): string | null {
-  const digits = (value || "").replace(/\D/g, "");
-  return digits.length >= 4 ? `XXXX XXXX ${digits.slice(-4)}` : null;
-}
-
-/** The 4 digits of a masked (or full) Aadhaar number, for comparing two guests. */
-export function aadhaarLast4(value: string | null | undefined): string {
-  const digits = (value || "").replace(/\D/g, "");
-  return digits.length >= 4 ? digits.slice(-4) : "";
-}
-
-const last4 = z
-  .string()
-  .trim()
-  .regex(/^(\d{4})?$/, "Please enter only the last 4 digits of the Aadhaar")
-  .default("");
-
 export function isIndian(nationality: string | null | undefined) {
   return !nationality || nationality.trim().toLowerCase() === "indian" || nationality.trim().toLowerCase() === "india";
 }
@@ -99,14 +81,14 @@ export const guestFormSchema = z
     comingFrom: z.string().trim().min(2, "Please say which city you are coming from").max(80),
     goingTo: z.string().trim().max(80).default(""),
     vehicleNumber: z.string().trim().max(20).default(""),
-    // Last 4 digits of the Aadhaar, asked when an Aadhaar copy is uploaded, to recognise the same person next time.
-    aadhaarLast4: last4,
+    // The guest will show their Aadhaar at check-in, where its QR code is scanned (nothing is uploaded).
+    aadhaarAtDesk: z.boolean().default(false),
     companions: z
       .array(
         z.object({
           name: name("Please enter the name of each adult staying with you"),
           phone: phone.optional().or(z.literal("")),
-          aadhaarLast4: last4.optional(),
+          aadhaarAtDesk: z.boolean().optional(),
         })
       )
       .max(19)
@@ -134,23 +116,22 @@ export type GuestFormDetails = z.infer<typeof guestFormSchema>;
 export type FormFile = { person: string | null; type: string };
 
 /**
- * What is still missing before the form can be sent: an ID copy for every adult, a passport for a
- * foreign guest, and the last 4 digits of the Aadhaar for each person who uploaded an Aadhaar.
+ * What is still missing before the form can be sent: an ID for every adult (a copy, or their
+ * Aadhaar shown at check-in), and a passport copy for a foreign guest.
  */
 export function missingDocuments(
-  details: Pick<GuestFormDetails, "nationality" | "firstName" | "aadhaarLast4"> & { companions: { name: string; aadhaarLast4?: string }[] },
+  details: Pick<GuestFormDetails, "nationality" | "firstName"> & { aadhaarAtDesk?: boolean; companions: { name: string; aadhaarAtDesk?: boolean }[] },
   files: FormFile[]
 ): string[] {
   const missing: string[] = [];
   const mine = files.filter((f) => f.person === "0");
-  if (mine.length === 0) missing.push(`Please upload an ID proof for ${details.firstName || "yourself"}`);
-  else if (!isIndian(details.nationality) && !mine.some((f) => f.type === "passport")) missing.push("Please upload a copy of your passport");
-  else if (mine.some((f) => f.type === "aadhar") && !/^\d{4}$/.test(details.aadhaarLast4 || "")) missing.push("Please enter the last 4 digits of your Aadhaar");
+  if (!isIndian(details.nationality)) {
+    if (!mine.some((f) => f.type === "passport")) missing.push("Please upload a copy of your passport");
+  } else if (!details.aadhaarAtDesk && mine.length === 0) {
+    missing.push(`Please upload an ID proof for ${details.firstName || "yourself"}, or choose Aadhaar`);
+  }
   details.companions.forEach((c, i) => {
-    const theirs = files.filter((f) => f.person === String(i + 1));
-    const who = c.name || `adult ${i + 2}`;
-    if (theirs.length === 0) missing.push(`Please upload an ID proof for ${who}`);
-    else if (theirs.some((f) => f.type === "aadhar") && !/^\d{4}$/.test(c.aadhaarLast4 || "")) missing.push(`Please enter the last 4 digits of ${who}'s Aadhaar`);
+    if (!c.aadhaarAtDesk && !files.some((f) => f.person === String(i + 1))) missing.push(`Please upload an ID proof for ${c.name || `adult ${i + 2}`}, or choose Aadhaar`);
   });
   return missing;
 }
@@ -180,7 +161,7 @@ export function fullAddress(g: { address?: string | null; city?: string | null; 
   return [g.address, [place, g.pinCode].filter(Boolean).join(" ")].filter(Boolean).join(", ");
 }
 
-export type Companion = { name: string; phone?: string; aadhaar?: string };
+export type Companion = { name: string; phone?: string; aadhaarAtDesk?: boolean };
 
 export function parseCompanions(raw: string | null | undefined): Companion[] {
   if (!raw) return [];

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
 import { GstPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
+import { IdCheckCard } from "@/components/id-checks";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -717,13 +718,19 @@ export default function BookingDetailPage() {
               {b.guest.email && <p className="text-slate-600">{b.guest.email}</p>}
               {b.guest.company && <p className="text-slate-600">{b.guest.company}{b.guest.gstin && ` · GSTIN ${b.guest.gstin}`}</p>}
               <p className="text-slate-600">
-                ID: {b.guest.idType ? `${label(b.guest.idType)} ${b.guest.idNumber ?? ""}` : "not entered"} ·{" "}
-                {b.guest.documents.length > 0 ? (
-                  <span className="text-emerald-700">{b.guest.documents.length} document(s) uploaded</span>
+                {b.guest.idType === "aadhar" ? (
+                  <>ID: Aadhaar · checked by scanning its QR code (see ID check)</>
                 ) : (
-                  <Link href={`/guests/${b.guest.id}`} className="font-semibold text-amber-700 hover:underline">
-                    Upload ID photo
-                  </Link>
+                  <>
+                    ID: {b.guest.idType ? `${label(b.guest.idType)} ${b.guest.idNumber ?? ""}` : "not entered"} ·{" "}
+                    {b.guest.documents.length > 0 ? (
+                      <span className="text-emerald-700">{b.guest.documents.length} document(s) uploaded</span>
+                    ) : (
+                      <Link href={`/guests/${b.guest.id}`} className="font-semibold text-amber-700 hover:underline">
+                        Upload ID photo
+                      </Link>
+                    )}
+                  </>
                 )}
               </p>
               {(b.companions.length > 0 || b.comingFrom || b.goingTo || b.vehicleNumber) && (
@@ -752,6 +759,8 @@ export default function BookingDetailPage() {
               </a>
             </CardContent>
           </Card>
+
+          <IdCheckCard booking={b} onChanged={load} />
 
           <Card>
             <CardHeader
