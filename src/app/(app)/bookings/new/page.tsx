@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, MessageCircle, Printer, Search, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, MessageCircle, Printer, Search, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
+import { FormDetails } from "@/components/guest-form-send";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource } from "@/lib/payouts";
 import { computeFolio, priceNights } from "@/lib/pricing";
 import { BOOKING_SOURCES, cn, formatCurrency, formatDate, label } from "@/lib/utils";
-import type { BookingDTO, GuestDTO, RoomDTO, SettingsDTO } from "@/lib/types";
+import type { BookingDTO, GuestDTO, GuestFormDTO, RoomDTO, SettingsDTO } from "@/lib/types";
 import type { Folio } from "@/lib/pricing";
 
 type AvailableRoom = RoomDTO & { quote: Folio };
@@ -79,7 +80,40 @@ function NewBookingWizard() {
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<BookingDTO | null>(null);
 
+  // Booking from a guest form sent on WhatsApp: the guest's details come from the form.
+  const [guestForm, setGuestForm] = useState<GuestFormDTO | null>(null);
+  const [sameNumber, setSameNumber] = useState<GuestResult[]>([]);
+  const [linkGuestId, setLinkGuestId] = useState(""); // "" = a new guest profile
+
   const nights = Math.max(0, diffDays(checkIn, checkOut));
+
+  useEffect(() => {
+    const id = params.get("form");
+    if (!id) return;
+    api<GuestFormDTO>(`/api/guest-forms/${id}`)
+      .then((f) => {
+        if (f.status !== "submitted" || !f.details) {
+          toast(f.status === "booked" ? "A booking has already been made from this form." : "This form has not been filled in yet.", "error");
+          return;
+        }
+        const d = f.details;
+        setGuestForm(f);
+        setCheckIn(d.checkIn < shell.today ? shell.today : d.checkIn);
+        setCheckOut(d.checkOut > shell.today ? d.checkOut : addDays(shell.today, 1));
+        setAdults(d.adults);
+        setChildren(d.children);
+        if (d.requests) setNotes(d.requests);
+        api<GuestResult[]>(`/api/guests?search=${encodeURIComponent(d.phone)}&limit=5`)
+          .then((list) => {
+            setSameNumber(list);
+            // The same person stayed before: keep one profile for them.
+            const same = list.find((g) => g.firstName.trim().toLowerCase() === d.firstName.trim().toLowerCase());
+            if (same) setLinkGuestId(same.id);
+          })
+          .catch(() => undefined);
+      })
+      .catch((e) => toast(e.message, "error"));
+  }, [params, shell.today, toast]);
 
   useEffect(() => {
     api<SettingsDTO>("/api/settings").then(setSettings).catch(() => undefined);
@@ -166,8 +200,12 @@ function NewBookingWizard() {
     setCheckOut(addDays(checkIn, n));
   }
 
-  const guestReady = !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5);
-  const guestName = guest ? `${guest.firstName} ${guest.lastName}`.trim() : `${newGuest.firstName} ${newGuest.lastName}`.trim();
+  const guestReady = !!guestForm || !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5);
+  const guestName = guestForm?.details
+    ? `${guestForm.details.firstName} ${guestForm.details.lastName}`.trim()
+    : guest
+      ? `${guest.firstName} ${guest.lastName}`.trim()
+      : `${newGuest.firstName} ${newGuest.lastName}`.trim();
 
   async function submit() {
     if (!selectedRoom) return;
@@ -187,13 +225,16 @@ function NewBookingWizard() {
           notes,
           ...(isOtaSource(source) && otaReference.trim() && { otaReference: otaReference.trim() }),
           checkInNow: walkIn,
-          ...(guest
-            ? { guestId: guest.id }
-            : { guest: { ...newGuest, idType: newGuest.idNumber ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
+          ...(guestForm
+            ? { guestFormId: guestForm.id, ...(linkGuestId && { guestId: linkGuestId }) }
+            : guest
+              ? { guestId: guest.id }
+              : { guest: { ...newGuest, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
           ...(Number(advance) > 0 && { advance: { amount: Number(advance), method } }),
         },
       });
       setCreated(booking);
+      if (guestForm) window.dispatchEvent(new Event("guest-forms-changed"));
       toast(walkIn ? `${booking.guestName} checked in to Room ${booking.room.roomNumber}` : `Booking #${booking.number} confirmed`);
     } catch (e) {
       toast((e as Error).message, "error");
@@ -414,7 +455,42 @@ function NewBookingWizard() {
       {step === 2 && (
         <Card>
           <CardContent className="space-y-5 py-5">
-            {guest ? (
+            {guestForm ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border-2 border-primary-200 bg-primary-50 p-4">
+                  <p className="mb-3 flex items-center gap-2 text-lg font-bold">
+                    <ClipboardCheck className="h-5 w-5 text-primary-600" /> {guestName}: from the guest form
+                  </p>
+                  <FormDetails form={guestForm} />
+                </div>
+                {sameNumber.length > 0 && (
+                  <div className="rounded-xl border border-slate-200 p-4">
+                    <p className="mb-2 font-semibold">This mobile number is already saved. Whose profile is this?</p>
+                    <div className="space-y-2">
+                      {sameNumber.map((g) => (
+                        <label key={g.id} className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                          <input type="radio" name="link" className="mt-1 h-4 w-4 accent-primary-600" checked={linkGuestId === g.id} onChange={() => setLinkGuestId(g.id)} />
+                          <span>
+                            <span className="font-semibold">
+                              {g.firstName} {g.lastName}
+                            </span>{" "}
+                            {g.blacklisted && <Badge variant="danger">Do not allow</Badge>}
+                            <span className="block text-sm text-slate-500">Same person: their profile is updated from the form</span>
+                          </span>
+                        </label>
+                      ))}
+                      <label className="flex cursor-pointer items-start gap-3 rounded-lg px-2 py-1.5 hover:bg-slate-50">
+                        <input type="radio" name="link" className="mt-1 h-4 w-4 accent-primary-600" checked={linkGuestId === ""} onChange={() => setLinkGuestId("")} />
+                        <span>
+                          <span className="font-semibold">Someone else</span>
+                          <span className="block text-sm text-slate-500">Add {guestName} as a new guest</span>
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : guest ? (
               <div className="flex flex-col gap-3 rounded-xl border-2 border-primary-200 bg-primary-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-lg font-bold">
@@ -474,7 +550,11 @@ function NewBookingWizard() {
                     <Field label="Nationality">
                       <Input value={newGuest.nationality} onChange={(e) => setNewGuest({ ...newGuest, nationality: e.target.value, idType: e.target.value.toLowerCase() === "indian" ? newGuest.idType : "passport" })} />
                     </Field>
-                    <Field label="ID proof" optional hint="You can also upload a photo of the ID later.">
+                    <Field
+                      label="ID proof"
+                      optional
+                      hint={newGuest.idType === "aadhar" ? "The Aadhaar number is not saved. Upload a copy of the card on the guest's page after booking." : "You can also upload a photo of the ID later."}
+                    >
                       <div className="flex gap-2">
                         <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value })} className="w-40">
                           {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
@@ -483,7 +563,9 @@ function NewBookingWizard() {
                             </option>
                           ))}
                         </Select>
-                        <Input value={newGuest.idNumber} onChange={(e) => setNewGuest({ ...newGuest, idNumber: e.target.value })} placeholder="ID number" />
+                        {newGuest.idType !== "aadhar" && (
+                          <Input value={newGuest.idNumber} onChange={(e) => setNewGuest({ ...newGuest, idNumber: e.target.value })} placeholder="ID number" />
+                        )}
                       </div>
                     </Field>
                     <Field label="Address" optional className="sm:col-span-2">

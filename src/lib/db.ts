@@ -56,6 +56,7 @@ const HOTEL_MODELS = new Set([
   "Expense",
   "Shift",
   "ShiftTransfer",
+  "GuestForm",
 ]);
 
 type Args = Record<string, unknown> & { where?: object; data?: unknown; create?: object };

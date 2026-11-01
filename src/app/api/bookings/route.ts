@@ -19,6 +19,8 @@ import {
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
+import type { GuestFormDetails } from "@/lib/guest-form";
+import { parseDetails } from "@/lib/guest-forms-api";
 
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
@@ -67,6 +69,8 @@ export async function GET(request: NextRequest) {
 
 const createSchema = z.object({
   guestId: z.string().optional(),
+  // A guest form filled in on WhatsApp: the guest's details, ID copies and travel details come from it.
+  guestFormId: z.string().optional(),
   guest: z
     .object({
       firstName: z.string().trim().min(1, "Guest name is required"),
@@ -112,13 +116,15 @@ export async function POST(request: NextRequest) {
     if (body.checkInNow && checkIn !== ctx.today) {
       fail("A guest can only be checked in now if the arrival date is today");
     }
-    if (!body.guestId && !body.guest) fail("Please choose or add a guest");
+    if (!body.guestId && !body.guest && !body.guestFormId) fail("Please choose or add a guest");
 
     const booking = await prisma.$transaction(async (tx) => {
       await lockRooms(tx, [body.roomId]);
       const room = await assertRoomFree({ roomId: body.roomId, checkIn, checkOut, today: ctx.today }, tx);
 
       let guestId = body.guestId;
+      const form = body.guestFormId ? await claimGuestForm(tx, body.guestFormId, user.name) : null;
+      if (form) guestId = await guestFromForm(tx, form, guestId);
       if (!guestId && body.guest) {
         // Reuse the existing guest record for a returning guest with the same phone and name.
         const existing = await tx.guest.findFirst({
@@ -140,7 +146,8 @@ export async function POST(request: NextRequest) {
                 nationality: body.guest.nationality || "Indian",
                 address: body.guest.address || null,
                 idType: body.guest.idType || null,
-                idNumber: body.guest.idNumber || null,
+                // Aadhaar numbers are never saved: a copy of the card is kept as proof instead.
+                idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
               },
             })
           ).id;
@@ -168,6 +175,12 @@ export async function POST(request: NextRequest) {
           gstRate: body.gstRate ?? null,
           notes: body.notes || null,
           otaReference: body.otaReference || null,
+          ...(form && {
+            comingFrom: form.details.comingFrom || null,
+            goingTo: form.details.goingTo || null,
+            vehicleNumber: form.details.vehicleNumber?.toUpperCase() || null,
+            companions: form.details.companions.length ? JSON.stringify(form.details.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }) }))) : null,
+          }),
           createdById: user.id,
           status: body.checkInNow ? "checked_in" : "reserved",
           actualCheckIn: body.checkInNow ? new Date() : null,
@@ -188,6 +201,11 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      if (form) {
+        await tx.guestForm.update({ where: { id: form.id }, data: { bookingId: created.id } });
+        await tx.guestDocument.updateMany({ where: { guestFormId: form.id }, data: { guestId: guest.id } });
+      }
+
       if (body.checkInNow) await syncRoomStatus(room.id, tx);
       return tx.booking.findUniqueOrThrow({ where: { id: created.id }, include: bookingInclude });
     });
@@ -202,4 +220,52 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json(serializeBooking(booking, ctx), { status: 201 });
   });
+}
+
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/** Marks a filled-in guest form as used, so two people can never make two bookings from it. */
+async function claimGuestForm(tx: Tx, id: string, by: string) {
+  const claimed = await tx.guestForm.updateMany({ where: { id, status: "submitted" }, data: { status: "booked", closedAt: new Date(), closedBy: by } });
+  if (claimed.count !== 1) fail("This guest form has already been used or closed. Please refresh the page.", 409);
+  const form = await tx.guestForm.findUniqueOrThrow({ where: { id } });
+  const details = parseDetails(form.details);
+  if (!details) fail("This guest form has no details", 409);
+  return { id: form.id, details };
+}
+
+/**
+ * The guest's profile from the form: the chosen returning guest, or the guest with the same
+ * phone and first name, is updated; otherwise a new guest is added.
+ */
+async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetails }, chosenId?: string) {
+  const d = form.details;
+  const proof = await tx.guestDocument.findFirst({ where: { guestFormId: form.id, person: null }, orderBy: { createdAt: "asc" } });
+  const data = {
+    firstName: d.firstName,
+    lastName: d.lastName || "",
+    phone: d.phone,
+    email: d.email || null,
+    nationality: d.nationality || "Indian",
+    dateOfBirth: dateFromKey(d.dateOfBirth),
+    address: d.address,
+    city: d.city,
+    state: d.state || null,
+    pinCode: d.pinCode || null,
+  };
+  const existing = chosenId
+    ? await tx.guest.findUnique({ where: { id: chosenId } })
+    : await tx.guest.findFirst({ where: { phone: d.phone, firstName: { equals: d.firstName, mode: "insensitive" } } });
+  if (chosenId && !existing) fail("Guest not found", 404);
+  if (existing) {
+    const newProof = proof && proof.type !== existing.idType;
+    await tx.guest.update({
+      where: { id: existing.id },
+      // The ID number saved before belongs to the old proof, so it goes when the proof changes.
+      data: { ...data, ...(newProof && { idType: proof.type, idNumber: null }) },
+    });
+    return existing.id;
+  }
+  const created = await tx.guest.create({ data: { ...data, hotelId: currentHotelId(), idType: proof?.type ?? null } });
+  return created.id;
 }

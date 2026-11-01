@@ -3,6 +3,7 @@ import { currentHotelId, prisma, type Db } from "./db";
 import { addDays, dateFromKey, isDateKey, nightsBetween, rangesOverlap, toDateKey } from "./dates";
 import { computeFolio, priceNights, round2, type Folio } from "./pricing";
 import { payoutSummary } from "./payouts";
+import { parseCompanions } from "./guest-form";
 import type { BillingContext } from "./settings";
 import { fail } from "./api";
 
@@ -169,6 +170,7 @@ export function serializeBooking(booking: FullBooking, ctx: BillingContext) {
     checkInDate: checkIn,
     checkOutDate: checkOut,
     guestName: `${booking.guest.firstName} ${booking.guest.lastName}`.trim(),
+    companions: parseCompanions(booking.companions),
     folio,
     payoutReceivedOn: booking.payoutReceivedOn ? toDateKey(booking.payoutReceivedOn) : null,
     payout: payoutSummary(folio.grandTotal, booking),

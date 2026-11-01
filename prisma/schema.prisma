@@ -38,6 +38,7 @@ model Hotel {
   expenses             Expense[]
   shifts               Shift[]
   shiftTransfers       ShiftTransfer[]
+  guestForms           GuestForm[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -150,7 +151,10 @@ model Guest {
   email       String?
   phone       String
   nationality String          @default("Indian")
-  address     String?
+  address     String? // house, street and area
+  city        String?
+  state       String?
+  pinCode     String?
   idType      String?
   idNumber    String?
   company     String?
@@ -171,18 +175,50 @@ model Guest {
 }
 
 model GuestDocument {
-  id        String   @id @default(cuid())
-  hotelId   String
-  guestId   String
-  type      String // aadhar, pan, passport, driving_licence, voter_id, visa, other
-  fileName  String
-  filePath  String
-  mimeType  String?
-  createdAt DateTime @default(now())
-  guest     Guest    @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  id          String     @id @default(cuid())
+  hotelId     String
+  // A copy uploaded by the guest on a WhatsApp guest form belongs to the form until the
+  // desk makes the booking; then it moves to the guest's profile.
+  guestId     String?
+  guestFormId String?
+  person      String? // null = the guest; otherwise the name of someone staying with them
+  type        String // aadhar, pan, passport, driving_licence, voter_id, visa, other
+  fileName    String
+  filePath    String
+  mimeType    String?
+  createdAt   DateTime   @default(now())
+  guest       Guest?     @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  guestForm   GuestForm? @relation(fields: [guestFormId], references: [id], onDelete: SetNull)
+  hotel       Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId])
+  @@index([guestFormId])
+}
+
+// A form sent to a guest on WhatsApp. The guest fills in their details and uploads ID copies;
+// the front desk then picks the room and the booking is made from what they filled in.
+model GuestForm {
+  id           String          @id @default(cuid())
+  hotelId      String
+  token        String          @unique // the secret part of the link sent to the guest
+  phone        String // the number it was sent to
+  guestName    String? // the name typed by staff, shown to the guest
+  checkInDate  DateTime? // dates suggested by staff, if any
+  checkOutDate DateTime?
+  status       String          @default("sent") // sent, submitted, booked, cancelled
+  details      String? // JSON: everything the guest filled in
+  sentById     String?
+  sentByName   String
+  createdAt    DateTime        @default(now())
+  expiresAt    DateTime // the guest can fill it in until then
+  submittedAt  DateTime?
+  bookingId    String? // the booking made from it
+  closedAt     DateTime?
+  closedBy     String?
+  documents    GuestDocument[]
+  hotel        Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
 }
 
 model Booking {
@@ -206,6 +242,11 @@ model Booking {
   children            Int       @default(0)
   notes               String?
   cancelReason        String?
+  // For police guest registration (Pathik and others), usually filled in by the guest on the WhatsApp form.
+  comingFrom          String?
+  goingTo             String?
+  vehicleNumber       String?
+  companions          String? // JSON: [{ name, phone? }] for the other adults in the room
   createdById         String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

@@ -10,9 +10,11 @@ import {
   CalendarPlus,
   CheckCircle2,
   Circle,
+  ClipboardCheck,
   DoorOpen,
   LogIn,
   LogOut,
+  Send,
   Sparkles,
   UserPlus,
   Users,
@@ -22,9 +24,10 @@ import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatCard, StatusB
 import { useApp } from "@/components/app-provider";
 import { useBookingActions } from "@/components/booking-actions";
 import { HandoverNotes } from "@/components/shift";
+import { SendGuestFormDialog } from "@/components/guest-form-send";
 import { api } from "@/lib/client";
 import { cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
-import type { BookingDTO, CurrentShiftDTO } from "@/lib/types";
+import type { BookingDTO, CurrentShiftDTO, GuestFormDTO } from "@/lib/types";
 
 interface DashboardRoom {
   id: string;
@@ -176,6 +179,8 @@ export default function TodayPage() {
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [shifts, setShifts] = useState<CurrentShiftDTO | null>(null);
+  const [forms, setForms] = useState<GuestFormDTO[]>([]);
+  const [sendOpen, setSendOpen] = useState(false);
 
   const load = useCallback(() => {
     api<Dashboard>("/api/dashboard")
@@ -185,6 +190,7 @@ export default function TodayPage() {
       })
       .catch((e) => setError(e.message));
     api<CurrentShiftDTO>("/api/shifts/current").then(setShifts).catch(() => undefined);
+    api<GuestFormDTO[]>("/api/guest-forms?view=received").then(setForms).catch(() => undefined);
   }, []);
 
   useEffect(() => {
@@ -212,7 +218,7 @@ export default function TodayPage() {
             {formatDate(data.today)} · Here is what needs your attention today.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <Button size="lg" onClick={() => router.push("/bookings/new")}>
             <CalendarPlus className="h-5 w-5" /> New booking
           </Button>
@@ -222,8 +228,50 @@ export default function TodayPage() {
           <Button size="lg" variant="outline" onClick={() => router.push("/calendar")}>
             <CalendarDays className="h-5 w-5" /> Room calendar
           </Button>
+          <Button size="lg" variant="outline" onClick={() => setSendOpen(true)}>
+            <Send className="h-5 w-5" /> Send guest form
+          </Button>
         </div>
       </div>
+      <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />
+
+      {forms.length > 0 && (
+        <Card className="border-primary-200">
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-primary-600" /> Guest forms: choose a room
+              </span>
+            }
+            description="These guests filled in their details on WhatsApp"
+            action={
+              <Link href="/guest-forms" className="text-sm font-semibold text-primary-600 hover:underline">
+                All forms
+              </Link>
+            }
+          />
+          <ul className="divide-y divide-slate-100">
+            {forms.slice(0, 5).map((f) => (
+              <li key={f.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  <span className="block font-semibold">{f.details ? `${f.details.firstName} ${f.details.lastName}`.trim() : f.phone}</span>
+                  {f.details && (
+                    <span className="block text-sm text-slate-500">
+                      {formatDate(f.details.checkIn)} → {formatDate(f.details.checkOut)} · {f.details.adults + f.details.children} guest
+                      {f.details.adults + f.details.children > 1 ? "s" : ""} · {f.documents.length} ID cop{f.documents.length === 1 ? "y" : "ies"}
+                    </span>
+                  )}
+                </span>
+                <Link href={`/bookings/new?form=${f.id}`}>
+                  <Button size="sm">
+                    <BedDouble className="h-4 w-4" /> Choose room & book
+                  </Button>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {isAdmin && <SetupChecklist data={data} />}
 

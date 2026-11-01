@@ -5,6 +5,7 @@ import { Button, Field, Input, Modal, Select, Textarea, Toggle } from "@/compone
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { label } from "@/lib/utils";
+import { INDIAN_STATES } from "@/lib/guest-form";
 import type { GuestDTO } from "@/lib/types";
 
 const EMPTY = {
@@ -14,6 +15,9 @@ const EMPTY = {
   email: "",
   nationality: "Indian",
   address: "",
+  city: "",
+  state: "",
+  pinCode: "",
   idType: "aadhar",
   idNumber: "",
   company: "",
@@ -103,12 +107,29 @@ export function GuestFormDialog({
                   </option>
                 ))}
               </Select>
-              <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />
+              {form.idType !== "aadhar" && <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />}
             </div>
+            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">The Aadhaar number is not saved. Upload a copy of the card under ID documents.</p>}
           </Field>
-          <Field label="Address" optional className="sm:col-span-2">
+          <Field label="Address" optional className="sm:col-span-2" hint="House, street and area">
             <Input value={form.address} onChange={set("address")} />
           </Field>
+          <Field label="City" optional>
+            <Input value={form.city} onChange={set("city")} />
+          </Field>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="State" optional>
+              <Input value={form.state} onChange={set("state")} list="indian-states" />
+            </Field>
+            <Field label="PIN code" optional>
+              <Input value={form.pinCode} onChange={set("pinCode")} inputMode="numeric" maxLength={12} />
+            </Field>
+          </div>
+          <datalist id="indian-states">
+            {INDIAN_STATES.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
           {foreign && (
             <>
               <Field label="Passport number" hint="Needed for foreign guest registration (Form C).">

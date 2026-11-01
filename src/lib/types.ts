@@ -2,6 +2,7 @@
 import type { Folio } from "./pricing";
 import type { PayoutSummary } from "./payouts";
 import type { ShiftSummary } from "./shift-report";
+import type { Companion, GuestFormDetails } from "./guest-form";
 
 export interface GuestDTO {
   id: string;
@@ -11,6 +12,9 @@ export interface GuestDTO {
   email: string | null;
   nationality: string;
   address: string | null;
+  city: string | null;
+  state: string | null;
+  pinCode: string | null;
   idType: string | null;
   idNumber: string | null;
   company: string | null;
@@ -28,6 +32,8 @@ export interface GuestDTO {
 export interface DocumentDTO {
   id: string;
   type: string;
+  /** null = the guest; otherwise the name of someone staying with them. */
+  person: string | null;
   fileName: string;
   filePath: string;
   mimeType: string | null;
@@ -92,6 +98,11 @@ export interface BookingDTO {
   children: number;
   notes: string | null;
   cancelReason: string | null;
+  comingFrom: string | null;
+  goingTo: string | null;
+  vehicleNumber: string | null;
+  /** The other adults in the room. */
+  companions: Companion[];
   createdAt: string;
   guestName: string;
   guest: GuestDTO;
@@ -201,3 +212,23 @@ export interface CurrentShiftDTO {
   onDuty?: number;
 }
 
+
+/** A guest form sent on WhatsApp, as staff see it. */
+export interface GuestFormDTO {
+  id: string;
+  token: string;
+  phone: string;
+  guestName: string | null;
+  checkIn: string | null;
+  checkOut: string | null;
+  status: "sent" | "expired" | "submitted" | "booked" | "cancelled";
+  details: GuestFormDetails | null;
+  sentByName: string;
+  createdAt: string;
+  expiresAt: string;
+  submittedAt: string | null;
+  bookingId: string | null;
+  closedAt: string | null;
+  closedBy: string | null;
+  documents: DocumentDTO[];
+}

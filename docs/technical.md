@@ -44,6 +44,8 @@ src/
 │   ├── reports.ts             # Report numbers; hotelMetrics() holds the occupancy, ADR, RevPAR and per-room maths (pure)
 │   ├── shifts.ts              # Staff shifts: summary of what a person did between two moments (database)
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
+│   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
+│   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
 │   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
 │   ├── expenses.ts            # Expense validation and who may change what
@@ -69,8 +71,9 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings |
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
-| `Guest`, `GuestDocument` | Hotel | Guest profile and ID uploads |
-| `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings) |
+| `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Aadhaar numbers are never saved (`idNumber` is set to null for Aadhaar): the copy is the proof. A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest, moves the ID copies to the guest and sets `bookingId`. Closing an unused form deletes its uploads |
+| `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings). `comingFrom`, `goingTo`, `vehicleNumber` and `companions` (JSON names of the other adults) are for police guest registration and usually come from the guest form |
 | `Charge` | Hotel, Booking | Extras on the bill |
 | `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
@@ -180,6 +183,8 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes\|payouts` | ⓐ GET |
 | `/api/bookings/[id]/payout` | ⓐ PUT: booking site ID, commission, GST on commission, TCS, TDS, net payout, received date and UTR |
 | `/api/activity` | ⓐ GET |
+| `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |
+| `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it and deletes uploads) |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)
 
@@ -189,6 +194,8 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/public/availability?checkIn=&checkOut=&guests=` | GET |
 | `/api/public/bookings` | POST |
 | `/api/public/bookings/[token]` | GET: confirmation (token only, no `hotel` needed) |
+| `/api/public/guest-forms/[token]` | GET: hotel, suggested dates, uploads so far; POST: send the form (locks it) |
+| `/api/public/guest-forms/[token]/documents` | POST (one photo or PDF up to 4 MB; `type`, `person` 0 = the guest, 1… = other adults), DELETE `?docId=` (only before sending) |
 
 ### Owner panel (owner-panel session)
 
@@ -278,3 +285,5 @@ them into `CHAPTERS` in `src/app/welcome/tour.tsx`.
   record those bookings with the matching source.
 - One owner running several hotels from a single sign-in.
 - Restaurant POS and GST e-invoicing (IRN).
+- Sending guest details to police portals such as Pathik (Gujarat). The guest
+  form already collects what they ask for.

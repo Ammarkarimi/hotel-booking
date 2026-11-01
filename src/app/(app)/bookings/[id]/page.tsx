@@ -726,6 +726,25 @@ export default function BookingDetailPage() {
                   </Link>
                 )}
               </p>
+              {(b.companions.length > 0 || b.comingFrom || b.goingTo || b.vehicleNumber) && (
+                <div className="space-y-0.5 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  {b.companions.length > 0 && (
+                    <p>
+                      <b>Staying with:</b> {b.companions.map((c) => c.name).join(", ")}
+                    </p>
+                  )}
+                  {(b.comingFrom || b.goingTo) && (
+                    <p>
+                      <b>Journey:</b> {[b.comingFrom && `from ${b.comingFrom}`, b.goingTo && `going to ${b.goingTo}`].filter(Boolean).join(", ")}
+                    </p>
+                  )}
+                  {b.vehicleNumber && (
+                    <p>
+                      <b>Vehicle:</b> {b.vehicleNumber}
+                    </p>
+                  )}
+                </div>
+              )}
               <a href={whatsappLink(b.guest.phone, shareText)} target="_blank" rel="noopener noreferrer" className="block pt-1">
                 <Button variant="success" size="sm" className="w-full">
                   <MessageCircle className="h-4 w-4" /> Send details on WhatsApp

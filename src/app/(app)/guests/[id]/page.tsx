@@ -9,6 +9,7 @@ import { GuestFormDialog } from "@/components/guest-form";
 import { useApp } from "@/components/app-provider";
 import { api, shrinkPhoto, whatsappLink } from "@/lib/client";
 import { DOCUMENT_TYPES, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
+import { fullAddress } from "@/lib/guest-form";
 import type { BookingDTO, DocumentDTO, GuestDTO } from "@/lib/types";
 
 type GuestDetail = GuestDTO & {
@@ -203,7 +204,11 @@ export default function GuestProfilePage() {
             {foreign && <Row label="Passport">{g.passportNo || "—"}</Row>}
             {foreign && <Row label="Visa">{g.visaNo || "—"}</Row>}
             {g.dateOfBirth && <Row label="Date of birth">{formatDate(g.dateOfBirth.slice(0, 10))}</Row>}
-            {g.address && <Row label="Address">{g.address}</Row>}
+            {(g.address || g.city) && (
+              <Row label="Address">
+                <span className="text-right">{fullAddress(g)}</span>
+              </Row>
+            )}
             {g.company && <Row label="Company">{g.company}</Row>}
             {g.gstin && <Row label="GSTIN">{g.gstin}</Row>}
             {g.notes && !g.blacklisted && <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{g.notes}</p>}
@@ -223,7 +228,7 @@ export default function GuestProfilePage() {
         <Card>
           <CardHeader
             title="ID documents"
-            description={foreign ? "Passport and visa are required for foreign guests." : "Aadhaar, driving licence or any government photo ID."}
+            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of the Aadhaar, driving licence or any government photo ID. The Aadhaar number is not saved."}
             action={
               <Button size="sm" onClick={() => setUploadOpen(true)}>
                 <Upload className="h-4 w-4" /> Add
@@ -244,7 +249,10 @@ export default function GuestProfilePage() {
                   <a href={`/api/uploads?path=${encodeURIComponent(d.filePath)}`} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-2 hover:underline">
                     <FileText className="h-5 w-5 shrink-0 text-primary-600" />
                     <span className="min-w-0">
-                      <span className="block font-semibold">{label(d.type)}</span>
+                      <span className="block font-semibold">
+                        {label(d.type)}
+                        {d.person && <span className="font-normal text-slate-500"> · {d.person}</span>}
+                      </span>
                       <span className="block truncate text-xs text-slate-500">
                         {d.fileName} · {formatDateTime(d.createdAt)}
                       </span>
