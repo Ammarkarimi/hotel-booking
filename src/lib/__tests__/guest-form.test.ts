@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { formMessage, formStatus, fullAddress, guestFormSchema, missingDocuments, parseCompanions } from "../guest-form";
+import { cleanDetails, formMessage, formStatus, fullAddress, guestFormSchema, missingDocuments, parseCompanions, staffFormSchema } from "../guest-form";
 
 const filled = {
   firstName: "Asha",
@@ -56,4 +56,17 @@ test("the WhatsApp message carries the link, and an old link expires", () => {
   assert.equal(fullAddress({ address: "12 MG Road", city: "Ahmedabad", state: "Gujarat", pinCode: "380009" }), "12 MG Road, Ahmedabad, Gujarat 380009");
   assert.deepEqual(parseCompanions('[{"name":"Ravi"}]'), [{ name: "Ravi" }]);
   assert.deepEqual(parseCompanions("oops"), []);
+});
+
+test("the front desk can correct the details with the same checks, without the agreement box", () => {
+  const { consent: _consent, ...details } = filled;
+  assert.equal(staffFormSchema.safeParse(details).success, true);
+  const r = staffFormSchema.safeParse({ ...details, adults: 3, companions: [{ name: "Ravi Rao" }, { name: "ravi rao " }] });
+  assert.equal(r.success, false);
+  assert.match(r.success ? "" : r.error.issues[0].message, /same name/);
+  assert.equal(staffFormSchema.safeParse({ ...details, adults: 1 }).success, false);
+  // Saved without spaces in the PIN, and a foreign guest never "shows Aadhaar".
+  const saved = cleanDetails(staffFormSchema.parse({ ...details, nationality: "British", state: "", aadhaarAtDesk: true }));
+  assert.equal(saved.pinCode, "380009");
+  assert.equal(saved.aadhaarAtDesk, false);
 });

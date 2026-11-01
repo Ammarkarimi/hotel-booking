@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { currentHotelId, prisma } from "@/lib/db";
+import { currentHotelId, prisma, type Db } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { dateFromKey, toDateKey } from "@/lib/dates";
@@ -18,6 +18,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
+import { parseCompanions } from "@/lib/guest-form";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 
@@ -58,6 +59,21 @@ const editSchema = z.object({
   source: z.enum(BOOKING_SOURCES).optional(),
   notes: z.string().optional(),
   otaReference: z.string().trim().max(60).optional(),
+  comingFrom: z.string().trim().max(80).optional(),
+  goingTo: z.string().trim().max(80).optional(),
+  vehicleNumber: z.string().trim().max(20).optional(),
+  // The other adults in the room. `was` is the name before this change, so their ID ticks and copies follow a corrected name.
+  companions: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1, "Please enter the name of each adult staying").max(80),
+        phone: z.string().trim().max(20).optional(),
+        aadhaarAtDesk: z.boolean().optional(),
+        was: z.string().optional(),
+      })
+    )
+    .max(49)
+    .optional(),
 });
 
 export async function PATCH(request: NextRequest, { params }: Params) {
@@ -78,6 +94,11 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         fail("The guest has already arrived, so the arrival date cannot be changed");
       }
       validateStay(checkIn, checkOut);
+      if (body.companions) {
+        const names = body.companions.map((c) => c.name.toLowerCase());
+        if (new Set(names).size !== names.length) fail("Two adults have the same name. Please add a surname so they can be told apart");
+        if (body.companions.length > (body.adults ?? booking.adults) - 1) fail("There are more names than adults. Please change the number of adults first");
+      }
       const roomId = body.roomId || booking.roomId;
       const roomChanged = roomId !== booking.roomId;
       const datesChanged = checkIn !== toDateKey(booking.checkInDate) || checkOut !== toDateKey(booking.checkOutDate);
@@ -114,8 +135,18 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(body.source && { source: body.source }),
           ...(body.notes !== undefined && { notes: body.notes || null }),
           ...(body.otaReference !== undefined && { otaReference: body.otaReference || null }),
+          ...(body.comingFrom !== undefined && { comingFrom: body.comingFrom || null }),
+          ...(body.goingTo !== undefined && { goingTo: body.goingTo || null }),
+          ...(body.vehicleNumber !== undefined && { vehicleNumber: body.vehicleNumber.toUpperCase() || null }),
+          ...(body.companions && {
+            companions: body.companions.length
+              ? JSON.stringify(body.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }), ...(c.aadhaarAtDesk && { aadhaarAtDesk: true }) })))
+              : null,
+          }),
         },
       });
+
+      if (body.companions) await followRenamedPeople(tx, booking, body.companions);
 
       if (roomChanged && booking.status === "checked_in") {
         await tx.room.update({ where: { id: booking.roomId }, data: { housekeeping: "dirty" } });
@@ -129,6 +160,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     await logActivity(user, "Booking changed", `${bookingLabel(updated)}: ${changes}`);
     return NextResponse.json(serializeBooking(updated, ctx));
   });
+}
+
+/**
+ * ID ticks and ID copies say whose they are by name. When a name is corrected they follow it; the
+ * ticks of an adult taken off the booking are removed (their copies stay on the guest's profile).
+ */
+async function followRenamedPeople(
+  tx: Db,
+  booking: { id: string; guestId: string; companions: string | null },
+  people: { name: string; was?: string }[]
+) {
+  const before = parseCompanions(booking.companions).map((c) => c.name);
+  const renamed = people.filter((p) => p.was && before.includes(p.was) && p.was !== p.name);
+  const kept = new Set(people.map((p) => p.was).filter(Boolean));
+  const gone = before.filter((n) => !kept.has(n));
+  // Look everything up first, so swapping two names does not mix their records up.
+  const moves = await Promise.all(
+    renamed.map(async (p) => ({
+      name: p.name,
+      checks: (await tx.idCheck.findMany({ where: { bookingId: booking.id, person: p.was }, select: { id: true } })).map((c) => c.id),
+      copies: (await tx.guestDocument.findMany({ where: { guestId: booking.guestId, person: p.was }, select: { id: true } })).map((d) => d.id),
+    }))
+  );
+  if (gone.length) await tx.idCheck.deleteMany({ where: { bookingId: booking.id, person: { in: gone } } });
+  for (const m of moves) {
+    if (m.checks.length) await tx.idCheck.updateMany({ where: { id: { in: m.checks } }, data: { person: m.name } });
+    if (m.copies.length) await tx.guestDocument.updateMany({ where: { id: { in: m.copies } }, data: { person: m.name } });
+  }
 }
 
 const actionSchema = z.object({

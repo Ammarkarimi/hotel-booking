@@ -94,6 +94,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
       "The guest fills in their details. For each adult they choose Aadhaar (shown at check-in) or upload a photo of another ID.",
       "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
+      "Something wrong in what the guest filled in? Press “Edit details” on the form and correct it. After booking, use “Change” on the booking for the journey, vehicle and other adults' names, and “Edit” on the guest's profile for their own details.",
     ],
     link: { href: "/guest-forms", text: "Open guest forms" },
   },

@@ -18,8 +18,10 @@ import {
   RotateCcw,
   Trash2,
   Undo2,
+  UserPlus,
   UserX,
   Wallet,
+  X,
   XCircle,
 } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
@@ -115,6 +117,16 @@ function AddChargeDialog({ booking, open, onClose, onDone }: { booking: BookingD
   );
 }
 
+/** Journey and the other adults' names, as the Change booking form edits them. */
+function travelOf(b: BookingDetailDTO) {
+  return {
+    comingFrom: b.comingFrom ?? "",
+    goingTo: b.goingTo ?? "",
+    vehicleNumber: b.vehicleNumber ?? "",
+    companions: b.companions.map((c) => ({ name: c.name, phone: c.phone ?? "", aadhaarAtDesk: !!c.aadhaarAtDesk, was: c.name })),
+  };
+}
+
 function EditBookingDialog({ booking, open, onClose, onDone }: { booking: BookingDetailDTO; open: boolean; onClose: () => void; onDone: () => void }) {
   const { toast, settings } = useApp();
   const [form, setForm] = useState({
@@ -129,6 +141,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
     source: booking.source,
     notes: booking.notes || "",
     otaReference: booking.otaReference || "",
+    ...travelOf(booking),
   });
   const [rooms, setRooms] = useState<RoomDTO[] | null>(null);
   const [saving, setSaving] = useState(false);
@@ -148,6 +161,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
       source: booking.source,
       notes: booking.notes || "",
       otaReference: booking.otaReference || "",
+      ...travelOf(booking),
     });
   }, [open, booking]);
 
@@ -175,6 +189,10 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         source: form.source,
         notes: form.notes,
         otaReference: form.otaReference,
+        comingFrom: form.comingFrom,
+        goingTo: form.goingTo,
+        vehicleNumber: form.vehicleNumber,
+        companions: form.companions.map((c) => ({ ...c, name: c.name.trim() })),
       };
       if (!started) body.checkInDate = form.checkInDate;
       if (Number(form.ratePerNight) !== booking.ratePerNight) body.ratePerNight = Number(form.ratePerNight);
@@ -191,7 +209,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Change booking" description="Change dates, extend the stay, move to another room, or change the price." size="lg">
+    <Modal open={open} onClose={onClose} title="Change booking" description="Change dates, extend the stay, move to another room, change the price, or correct the travel details and names." size="lg">
       <form onSubmit={save} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Arrival date" hint={started ? "The guest has already arrived." : undefined}>
@@ -260,11 +278,56 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         <Field label="Notes" optional>
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
         </Field>
+        <div className="space-y-3 border-t border-slate-100 pt-4">
+          <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Travel and other adults</p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Coming from" optional>
+              <Input maxLength={80} value={form.comingFrom} onChange={(e) => setForm({ ...form, comingFrom: e.target.value })} />
+            </Field>
+            <Field label="Going to next" optional>
+              <Input maxLength={80} value={form.goingTo} onChange={(e) => setForm({ ...form, goingTo: e.target.value })} />
+            </Field>
+            <Field label="Vehicle number" optional>
+              <Input maxLength={20} value={form.vehicleNumber} onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })} />
+            </Field>
+          </div>
+          {form.companions.map((c, i) => (
+            <div key={i} className="flex items-end gap-2">
+              <Field label={`Adult ${i + 2}: name`} className="min-w-0 flex-1">
+                <Input
+                  required
+                  maxLength={80}
+                  value={c.name}
+                  onChange={(e) => setForm({ ...form, companions: form.companions.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })}
+                />
+              </Field>
+              <Button
+                variant="ghost"
+                aria-label={`Take ${c.name || `adult ${i + 2}`} off the booking`}
+                onClick={() => setForm({ ...form, companions: form.companions.filter((_, j) => j !== i) })}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          {form.companions.length < form.adults - 1 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setForm({ ...form, companions: [...form.companions, { name: "", phone: "", aadhaarAtDesk: false, was: "" }] })}
+            >
+              <UserPlus className="h-4 w-4" /> Add the name of adult {form.companions.length + 2}
+            </Button>
+          )}
+          {form.companions.length > form.adults - 1 && (
+            <Tip tone="danger">There are more names than adults. Take a name off, or raise the number of adults.</Tip>
+          )}
+        </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" loading={saving} disabled={nights < 1 || !roomFree}>
+          <Button type="submit" loading={saving} disabled={nights < 1 || !roomFree || form.companions.length > form.adults - 1}>
             Save changes
           </Button>
         </div>

@@ -62,52 +62,70 @@ export function isIndian(nationality: string | null | undefined) {
 const name = (msg: string) => z.string().trim().min(1, msg).max(80);
 const phone = z.string().trim().max(20).regex(/^[+\d][\d\s-]*$/, "Please check the mobile number");
 
-export const guestFormSchema = z
-  .object({
-    firstName: name("Please enter your first name"),
-    lastName: z.string().trim().max(80).default(""),
-    phone: phone.min(6, "Please enter your mobile number"),
-    email: z.string().trim().email("Please check the email address").max(120).optional().or(z.literal("")),
-    dateOfBirth: z.string().refine(isDateKey, "Please enter your date of birth"),
-    nationality: z.string().trim().min(2, "Please enter your nationality").max(40).default("Indian"),
-    address: z.string().trim().min(3, "Please enter your house and street").max(200),
-    city: z.string().trim().min(2, "Please enter your city").max(60),
-    state: z.string().trim().max(60).default(""),
-    pinCode: z.string().trim().max(12).default(""),
-    checkIn: z.string().refine(isDateKey, "Please choose your arrival date"),
-    checkOut: z.string().refine(isDateKey, "Please choose your leaving date"),
-    adults: z.coerce.number().int().min(1, "At least one adult").max(20),
-    children: z.coerce.number().int().min(0).max(20).default(0),
-    comingFrom: z.string().trim().min(2, "Please say which city you are coming from").max(80),
-    goingTo: z.string().trim().max(80).default(""),
-    vehicleNumber: z.string().trim().max(20).default(""),
-    // The guest will show their Aadhaar at check-in, where the front desk checks it (nothing is uploaded).
-    aadhaarAtDesk: z.boolean().default(false),
-    companions: z
-      .array(
-        z.object({
-          name: name("Please enter the name of each adult staying with you"),
-          phone: phone.optional().or(z.literal("")),
-          aadhaarAtDesk: z.boolean().optional(),
-        })
-      )
-      .max(19)
-      .default([]),
-    requests: z.string().trim().max(500).default(""),
-    consent: z.literal(true, { errorMap: () => ({ message: "Please tick the box to agree" }) }),
-  })
-  .superRefine((d, ctx) => {
-    const issue = (message: string, path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
-    if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) < 1) issue("The leaving date must be after the arrival date", "checkOut");
-    if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) > 60) issue("For stays longer than 60 nights please call the hotel", "checkOut");
-    if (d.companions.length !== d.adults - 1) issue("Please enter the name of each adult staying with you", "companions");
-    if (isIndian(d.nationality)) {
-      if (!d.state) issue("Please choose your state", "state");
-      if (!/^\d{6}$/.test(d.pinCode.replace(/\s/g, ""))) issue("Please enter your 6-digit PIN code", "pinCode");
-    }
-  });
+/** Everything on the form, without the guest's agreement (staff use this when they correct the details). */
+const formFields = z.object({
+  firstName: name("Please enter your first name"),
+  lastName: z.string().trim().max(80).default(""),
+  phone: phone.min(6, "Please enter your mobile number"),
+  email: z.string().trim().email("Please check the email address").max(120).optional().or(z.literal("")),
+  dateOfBirth: z.string().refine(isDateKey, "Please enter your date of birth"),
+  nationality: z.string().trim().min(2, "Please enter your nationality").max(40).default("Indian"),
+  address: z.string().trim().min(3, "Please enter your house and street").max(200),
+  city: z.string().trim().min(2, "Please enter your city").max(60),
+  state: z.string().trim().max(60).default(""),
+  pinCode: z.string().trim().max(12).default(""),
+  checkIn: z.string().refine(isDateKey, "Please choose your arrival date"),
+  checkOut: z.string().refine(isDateKey, "Please choose your leaving date"),
+  adults: z.coerce.number().int().min(1, "At least one adult").max(20),
+  children: z.coerce.number().int().min(0).max(20).default(0),
+  comingFrom: z.string().trim().min(2, "Please say which city you are coming from").max(80),
+  goingTo: z.string().trim().max(80).default(""),
+  vehicleNumber: z.string().trim().max(20).default(""),
+  // The guest will show their Aadhaar at check-in, where the front desk checks it (nothing is uploaded).
+  aadhaarAtDesk: z.boolean().default(false),
+  companions: z
+    .array(
+      z.object({
+        name: name("Please enter the name of each adult staying with you"),
+        phone: phone.optional().or(z.literal("")),
+        aadhaarAtDesk: z.boolean().optional(),
+      })
+    )
+    .max(19)
+    .default([]),
+  requests: z.string().trim().max(500).default(""),
+});
 
-export type GuestFormDetails = z.infer<typeof guestFormSchema>;
+type FormFields = z.infer<typeof formFields>;
+
+function checkForm(d: FormFields, ctx: z.RefinementCtx) {
+  const issue = (message: string, path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
+  if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) < 1) issue("The leaving date must be after the arrival date", "checkOut");
+  if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) > 60) issue("For stays longer than 60 nights please call the hotel", "checkOut");
+  if (d.companions.length !== d.adults - 1) issue("Please enter the name of each adult staying with you", "companions");
+  // ID copies and ID ticks say whose they are by name, so two adults cannot have the same name.
+  const names = d.companions.map((c) => c.name.trim().toLowerCase());
+  if (new Set(names).size !== names.length) issue("Two adults have the same name. Please add a surname so they can be told apart", "companions");
+  if (isIndian(d.nationality)) {
+    if (!d.state) issue("Please choose your state", "state");
+    if (!/^\d{6}$/.test(d.pinCode.replace(/\s/g, ""))) issue("Please enter your 6-digit PIN code", "pinCode");
+  }
+}
+
+/** What the guest sends. */
+export const guestFormSchema = formFields
+  .extend({ consent: z.literal(true, { errorMap: () => ({ message: "Please tick the box to agree" }) }) })
+  .superRefine(checkForm);
+
+/** The same details when the front desk corrects them: the same checks, no agreement box. */
+export const staffFormSchema = formFields.superRefine(checkForm);
+
+export type GuestFormDetails = z.infer<typeof formFields> & { consent?: true };
+
+/** Details as saved: PIN without spaces, and no Aadhaar for a foreign guest (they show a passport). */
+export function cleanDetails<T extends FormFields>(d: T): T {
+  return { ...d, pinCode: d.pinCode.replace(/\s/g, ""), aadhaarAtDesk: isIndian(d.nationality) && d.aadhaarAtDesk };
+}
 
 /**
  * While the guest is filling in the form, each copy says whose it is by number:

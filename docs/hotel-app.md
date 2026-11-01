@@ -108,6 +108,19 @@ Instead of typing a guest's details at the desk, send them a form:
 5. At check-in, check each adult's ID and tick it under **ID check** on the
    booking (see below).
 
+**Correcting the details:** if the guest made a mistake (a spelling, the wrong
+city, a missing vehicle number, the wrong number of adults), press **Edit
+details** on the form, either on **Guest forms** or on the booking screen when
+you choose the room. Everything the guest filled in can be changed. Renaming an
+adult keeps their ID copies with them; taking an adult off the form deletes the
+copies they uploaded (you are asked first). Changing the dates or people from
+the booking screen updates the booking too, so check the room again.
+
+After the booking is made, change the guest's name, mobile, address and date of
+birth on their profile (**Edit**), and the journey, vehicle and other adults'
+names on the booking (**Stay → Change → Travel and other adults**). A corrected
+name keeps its ID tick and ID copies.
+
 A form can be sent again (another 7 days) or closed. Closing a filled-in form
 deletes the details and ID copies the guest sent. A form can make only one
 booking.

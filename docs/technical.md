@@ -171,7 +171,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/password` | POST, POST, GET, POST |
 | `/api/dashboard`, `/api/calendar`, `/api/search`, `/api/availability` | GET |
 | `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST |
-| `/api/bookings/[id]` | GET, PATCH (change stay), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
+| `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks and copies follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
 | `/api/bookings/[id]/charges` | POST, DELETE |
 | `/api/payments` | GET, POST, DELETE ⓐ |
 | `/api/guests`, `/api/guests/[id]` | GET, POST / GET, PUT, DELETE ⓐ |
@@ -188,7 +188,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/activity` | ⓐ GET |
 | `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |
 | `/api/bookings/[id]/id-checks` | POST (`person`, `idType`): tick an adult's ID as verified; DELETE `?checkId=` (owner, or the same person within 12 hours) |
-| `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it and deletes uploads) |
+| `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it and deletes uploads, `edit` with `details` lets the desk correct a filled-in form before booking, checked by `staffFormSchema`; renamed adults keep their ID copies, removed adults lose them) |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)
 

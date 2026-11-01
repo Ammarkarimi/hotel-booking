@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BedDouble, ClipboardCheck, MessageCircle, RefreshCw, Send, X } from "lucide-react";
+import { BedDouble, ClipboardCheck, MessageCircle, Pencil, RefreshCw, Send, X } from "lucide-react";
 import { Badge, Button, Card, CardContent, EmptyState, Loading, Modal, PageHeader, Tabs } from "@/components/ui";
 import { FormDetails, SendGuestFormDialog, SendLink } from "@/components/guest-form-send";
+import { EditGuestFormDialog } from "@/components/guest-form-edit";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { formatDate, formatDateTime } from "@/lib/utils";
@@ -23,6 +24,7 @@ export default function GuestFormsPage() {
   const [counts, setCounts] = useState<{ received: number } | null>(null);
   const [sendOpen, setSendOpen] = useState(false);
   const [resent, setResent] = useState<GuestFormDTO | null>(null);
+  const [editing, setEditing] = useState<GuestFormDTO | null>(null);
 
   const load = useCallback(() => {
     api<GuestFormDTO[]>(`/api/guest-forms?view=${view}`)
@@ -131,6 +133,11 @@ export default function GuestFormsPage() {
                         </Button>
                       </Link>
                     )}
+                    {f.status === "submitted" && (
+                      <Button variant="outline" onClick={() => setEditing(f)}>
+                        <Pencil className="h-4 w-4" /> Edit details
+                      </Button>
+                    )}
                     {(f.status === "sent" || f.status === "expired") && (
                       <Button variant="success" onClick={() => resend(f)}>
                         {f.status === "expired" ? <RefreshCw className="h-4 w-4" /> : <MessageCircle className="h-4 w-4" />} Send again
@@ -165,6 +172,7 @@ export default function GuestFormsPage() {
           if (view === "waiting") load();
         }}
       />
+      {editing && <EditGuestFormDialog form={editing} open onClose={() => setEditing(null)} onSaved={load} />}
       <Modal open={!!resent} onClose={() => setResent(null)} title="Send the form again">
         {resent && <SendLink form={resent} onDone={() => setResent(null)} />}
       </Modal>
