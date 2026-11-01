@@ -10,7 +10,42 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 
-const run = (cmd) => execSync(cmd, { stdio: "inherit" });
+const run = (cmd, env = process.env) => execSync(cmd, { stdio: "inherit", env });
+
+/**
+ * Migrations hold a Postgres lock for their whole run, which a connection pooler (PgBouncer, Neon's
+ * "-pooler" address) cannot do reliably: the lock can be left stuck and the next build times out.
+ * So migrations use the direct database address: DATABASE_URL_UNPOOLED if it is set, otherwise the
+ * Neon pooled address with "-pooler" taken out of the host name.
+ */
+export function directDatabaseUrl(url, unpooled) {
+  if (unpooled) return unpooled;
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes("-pooler.")) return url;
+    u.hostname = u.hostname.replace("-pooler.", ".");
+    u.searchParams.delete("pgbouncer");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+/** Runs the migrations, trying again twice if the database is busy (for example a lock still held). */
+function migrate() {
+  const url = directDatabaseUrl(process.env.DATABASE_URL ?? "", process.env.DATABASE_URL_UNPOOLED);
+  const env = url ? { ...process.env, DATABASE_URL: url } : process.env;
+  if (url && url !== process.env.DATABASE_URL) console.log("\n▶ Running migrations on the direct (not pooled) database connection.\n");
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return run("prisma migrate deploy", env);
+    } catch (error) {
+      if (attempt >= 3) throw error;
+      console.log(`\n▶ Migrations failed (try ${attempt} of 3). Trying again in ${attempt * 15} seconds…\n`);
+      execSync(`sleep ${attempt * 15}`);
+    }
+  }
+}
 
 const vercelEnv = process.env.VERCEL_ENV; // "production" | "preview" | "development" | undefined (not on Vercel)
 const isPreview = vercelEnv === "preview" || vercelEnv === "development";
@@ -24,7 +59,7 @@ run("prisma generate");
 if (isPreview) {
   console.log(`\n▶ Vercel ${vercelEnv} build: skipping database migrations.\n`);
 } else if (hasDatabase) {
-  run("prisma migrate deploy");
+  migrate();
 } else {
   console.error(`
 ✖ DATABASE_URL is not set, so the database cannot be prepared.
