@@ -91,16 +91,13 @@ function PersonRow({ b, p, onChanged }: { b: BookingDTO; p: Person; onChanged: (
                     : "Not verified yet."}
               </p>
               {!closed && (
-                <div className="mt-2 flex items-center gap-2">
-                  <Select value={idType} onChange={(e) => setIdType(e.target.value)} className="h-10 w-48 py-1.5 text-sm" aria-label={`Which ID ${p.name} showed`}>
-                    {CHECK_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {label(t)}
-                      </option>
-                    ))}
-                  </Select>
-                  <span className="text-xs text-slate-500">then tick the box</span>
-                </div>
+                <Select value={idType} onChange={(e) => setIdType(e.target.value)} className="mt-2 h-10 w-full max-w-56 py-1.5 text-sm" aria-label={`Which ID ${p.name} showed`}>
+                  {CHECK_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {label(t)}
+                    </option>
+                  ))}
+                </Select>
               )}
             </>
           )}
@@ -134,7 +131,7 @@ export function IdCheckCard({ booking: b, onChanged }: { booking: BookingDTO; on
           <PersonRow key={p.key ?? "guest"} b={b} p={p} onChanged={onChanged} />
         ))}
       </ul>
-      <p className="px-5 pb-4 text-xs text-slate-500">Look at the original ID and check the photo is the guest, then tick. Nothing from an Aadhaar is saved: only who verified it and when.</p>
+      <p className="px-5 pb-4 text-xs text-slate-500">Look at the original ID and check the photo is the guest, choose which ID it is, then tick the box. Nothing from an Aadhaar is saved: only who verified it and when.</p>
     </Card>
   );
 }

@@ -246,7 +246,7 @@ export default function ShiftsPage() {
         <>
           <Card className="overflow-x-auto">
             <CardHeader title="Attendance" description="Hours on shift and work done, per person" />
-            <table className="w-full min-w-[560px] text-sm">
+            <table className="w-full min-w-[560px] text-sm [&_th]:whitespace-nowrap">
               <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
                 <tr>
                   <th className="px-5 py-2">Staff</th>

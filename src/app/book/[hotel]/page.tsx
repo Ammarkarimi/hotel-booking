@@ -162,7 +162,7 @@ export default function PublicBookingPage() {
         ) : (
           <Card className="shadow-xl">
             <CardContent className="py-5">
-              <form onSubmit={search} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+              <form onSubmit={search} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_10rem_10rem_auto] lg:items-end">
                 <Field label="Arrival">
                   <Input
                     type="date"
@@ -194,7 +194,7 @@ export default function PublicBookingPage() {
                 <Field label="Children">
                   <CountInput min={0} max={20} value={children} onChange={setChildren} aria-label="children" />
                 </Field>
-                <Button type="submit" size="lg" loading={searching} disabled={nights < 1}>
+                <Button type="submit" size="lg" loading={searching} disabled={nights < 1} className="whitespace-nowrap sm:col-span-2 lg:col-span-1">
                   <CalendarDays className="h-5 w-5" /> Check prices
                 </Button>
               </form>

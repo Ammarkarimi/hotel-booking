@@ -546,7 +546,7 @@ export default function BookingDetailPage() {
         <Link href="/bookings" className="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800">
           <ArrowLeft className="h-4 w-4" /> All bookings
         </Link>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold sm:text-3xl">Booking #{b.number}</h1>
@@ -582,8 +582,8 @@ export default function BookingDetailPage() {
       {b.flags.lateArrival && <Tip tone="warning">This guest was due on {formatDate(b.checkInDate)} and has not checked in. Check them in, or mark “Did not come”.</Tip>}
       {b.flags.overstay && <Tip tone="warning">This guest was due to leave on {formatDate(b.checkOutDate)}. Extend the stay with “Change booking”, or check them out.</Tip>}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-6 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
           <Card>
             <CardHeader
               title="Bill"

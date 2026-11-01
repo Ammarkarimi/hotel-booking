@@ -617,7 +617,7 @@ export default function GuestFormPage() {
               </label>
               {error && <Tip tone="danger">{error}</Tip>}
               <Button type="submit" size="lg" className="w-full" loading={sending} disabled={!consent}>
-                <ShieldCheck className="h-5 w-5" /> Send my details to the hotel
+                <ShieldCheck className="h-5 w-5" /> Send my details
               </Button>
               <p className="text-center text-xs text-slate-500">Your details go only to {hotel.name}. This link works until {formatDate(info.expiresAt.slice(0, 10))}.</p>
             </CardContent>
