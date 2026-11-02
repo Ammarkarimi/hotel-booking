@@ -162,6 +162,11 @@ export interface SettingsDTO {
   msgBooking: string | null;
   msgCheckIn: string | null;
   msgCheckOut: string | null;
+  rateTips: boolean;
+  rateTipsFrom: string;
+  rateTipsMaxDiscount: number;
+  rateTipsFloors: Record<string, number>;
+  rateTipsStaff: boolean;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 
@@ -248,4 +253,19 @@ export interface IdCheckDTO {
   checkedById: string | null;
   checkedByName: string;
   createdAt: string;
+}
+
+export type { RateTip, TypeTonight } from "./rate-tips";
+
+/** GET /api/rate-tips */
+export interface RateTipsDTO {
+  enabled: boolean;
+  visible: boolean;
+  from: string;
+  date: string;
+  started: boolean;
+  types: import("./rate-tips").TypeTonight[];
+  unseen: import("./rate-tips").RateTip[];
+  seenBy: Array<{ tipKey: string; staffName: string; createdAt: string }>;
+  insights?: ReturnType<typeof import("./rate-tips").salesInsights>;
 }

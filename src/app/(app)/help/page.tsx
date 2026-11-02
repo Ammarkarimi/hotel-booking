@@ -99,6 +99,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/guest-forms", text: "Open guest forms" },
   },
   {
+    q: "What is the rate tip pop-up?",
+    steps: [
+      "From 1 pm (you can change the time in Settings → Rate tips), the software checks which rooms are still free for tonight and how many usually still get booked this late on the same weekday.",
+      "For rooms that will probably stay empty it suggests a lower price per room type, a little lower as the evening goes on, never below the lowest price the owner set.",
+      "Read it and type “I have seen” to close it. Offer the price to walk-ins and callers; in New booking the tip shows under the price with a “Use” button. Prices never change by themselves.",
+    ],
+    link: { href: "/rate-tips", text: "Open rate tips" },
+  },
+  {
     q: "Can I change the WhatsApp messages sent to guests?",
     steps: [
       "Yes. Open Settings → WhatsApp messages (owner / manager).",

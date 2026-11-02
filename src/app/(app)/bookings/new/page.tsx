@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, MessageCircle, Pencil, Printer, Search, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, Lightbulb, MessageCircle, Pencil, Printer, Search, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { FormDetails } from "@/components/guest-form-send";
@@ -15,7 +15,7 @@ import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource } from "@/lib/payouts";
 import { computeFolio, priceNights } from "@/lib/pricing";
 import { BOOKING_SOURCES, cn, formatCurrency, formatDate, label } from "@/lib/utils";
-import type { BookingDTO, GuestDTO, GuestFormDTO, RoomDTO, SettingsDTO } from "@/lib/types";
+import type { BookingDTO, GuestDTO, GuestFormDTO, RateTip, RateTipsDTO, RoomDTO, SettingsDTO } from "@/lib/types";
 import type { Folio } from "@/lib/pricing";
 
 type AvailableRoom = RoomDTO & { quote: Folio };
@@ -89,6 +89,8 @@ function NewBookingWizard() {
   const [linkGuestId, setLinkGuestId] = useState(""); // "" = a new guest profile
 
   const [editForm, setEditForm] = useState(false);
+  // Tonight's rate tips by room type (Rate tips), shown next to the price for a stay starting today.
+  const [tips, setTips] = useState<Record<string, RateTip>>({});
 
   const nights = Math.max(0, diffDays(checkIn, checkOut));
 
@@ -132,6 +134,13 @@ function NewBookingWizard() {
   useEffect(() => {
     api<SettingsDTO>("/api/settings").then(setSettings).catch(() => undefined);
   }, []);
+
+  useEffect(() => {
+    if (checkIn !== shell.today) return setTips({});
+    api<RateTipsDTO>("/api/rate-tips")
+      .then((d) => setTips(Object.fromEntries(d.types.flatMap((t) => (t.tip ? [[t.type, t.tip]] : [])))))
+      .catch(() => undefined);
+  }, [checkIn, shell.today]);
 
   useEffect(() => {
     const id = params.get("guestId");
@@ -617,8 +626,24 @@ function NewBookingWizard() {
           <Card className="lg:col-span-3">
             <CardContent className="space-y-4 py-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Price per night" hint={`Normal price: ${formatCurrency(selectedRoom.pricePerNight)}. Change only for a special deal.`}>
-                  <Input type="number" min={0} inputMode="decimal" placeholder={String(selectedRoom.pricePerNight)} value={customRate} onChange={(e) => setCustomRate(e.target.value)} />
+                <Field label="Price per night" htmlFor="price-per-night" hint={`Normal price: ${formatCurrency(selectedRoom.pricePerNight)}. Change only for a special deal.`}>
+                  <Input id="price-per-night" type="number" min={0} inputMode="decimal" placeholder={String(selectedRoom.pricePerNight)} value={customRate} onChange={(e) => setCustomRate(e.target.value)} />
+                  {tips[selectedRoom.type] && tips[selectedRoom.type].price < selectedRoom.pricePerNight && (
+                    <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                      <p className="flex items-center gap-1.5 font-semibold">
+                        <Lightbulb className="h-4 w-4" /> Rate tip for tonight: {formatCurrency(tips[selectedRoom.type].price)}
+                      </p>
+                      <p className="text-xs">
+                        {tips[selectedRoom.type].free} {label(selectedRoom.type)} room{tips[selectedRoom.type].free === 1 ? " is" : "s are"} still free.
+                        {nights > 1 && " The tip is for tonight; the same price will apply to every night."}
+                      </p>
+                      {customRate !== String(tips[selectedRoom.type].price) && (
+                        <Button size="sm" variant="outline" className="mt-1.5" onClick={() => setCustomRate(String(tips[selectedRoom.type].price))}>
+                          Use {formatCurrency(tips[selectedRoom.type].price)}
+                        </Button>
+                      )}
+                    </div>
+                  )}
                 </Field>
                 <Field label="Discount (amount)" optional>
                   <Input type="number" min={0} inputMode="decimal" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />

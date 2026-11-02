@@ -5,13 +5,14 @@ import { withAuth, withAdmin } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { logActivity } from "@/lib/activity";
 import { parseGstSlabs } from "@/lib/pricing";
+import { parseFloors } from "@/lib/rate-tips";
 
 export async function GET() {
   return withAuth(async () => {
     const settings = await getSettings();
     const seasonalRates = await prisma.seasonalRate.findMany({ orderBy: { startDate: "asc" } });
     const hotel = await prisma.hotel.findUniqueOrThrow({ where: { id: currentHotelId() }, select: { slug: true } });
-    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), seasonalRates, bookingSlug: hotel.slug });
+    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors), seasonalRates, bookingSlug: hotel.slug });
   });
 }
 
@@ -46,6 +47,12 @@ const settingsSchema = z.object({
   msgBooking: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
   msgCheckIn: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
   msgCheckOut: z.string().max(2000, "Please keep each message under 2,000 characters").optional().nullable(),
+  // Rate tips for rooms still empty for tonight.
+  rateTips: z.boolean(),
+  rateTipsFrom: time,
+  rateTipsMaxDiscount: z.coerce.number().min(0, "The biggest cut must be between 0 and 60%").max(60, "The biggest cut must be between 0 and 60%"),
+  rateTipsFloors: z.record(z.string(), z.coerce.number().min(0, "A lowest price cannot be less than 0")),
+  rateTipsStaff: z.boolean(),
 });
 
 export async function PUT(request: NextRequest) {
@@ -58,7 +65,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Unknown timezone" }, { status: 400 });
       }
     }
-    const { gstSlabs, ...rest } = body;
+    const { gstSlabs, rateTipsFloors, ...rest } = body;
     for (const k of ["msgBooking", "msgCheckIn", "msgCheckOut"] as const) {
       if (rest[k] !== undefined) rest[k] = rest[k]?.trim() ? rest[k] : null;
     }
@@ -67,11 +74,12 @@ export async function PUT(request: NextRequest) {
       ...(rest.currency && { currency: rest.currency.toUpperCase() }),
       ...(rest.gstin !== undefined && { gstin: rest.gstin ? rest.gstin.toUpperCase() : null }),
       ...(gstSlabs && { gstSlabs: JSON.stringify(gstSlabs) }),
+      ...(rateTipsFloors && { rateTipsFloors: JSON.stringify(Object.fromEntries(Object.entries(rateTipsFloors).filter(([, n]) => n > 0))) }),
     };
     const current = await getSettings();
     const settings = await prisma.hotelSettings.update({ where: { id: current.id }, data });
     if (body.hotelName) await prisma.hotel.update({ where: { id: currentHotelId() }, data: { name: body.hotelName } });
     await logActivity(user, "Settings changed", Object.keys(body).join(", "));
-    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs) });
+    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors) });
   });
 }

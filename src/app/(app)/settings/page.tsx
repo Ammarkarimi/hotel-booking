@@ -9,8 +9,9 @@ import { api } from "@/lib/client";
 import { ROOM_TYPES, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { SettingsDTO } from "@/lib/types";
 import { MessageSettings } from "@/components/message-settings";
+import { RateTipSettings } from "@/components/rate-tips";
 
-type Tab = "hotel" | "prices" | "website" | "messages" | "staff" | "activity";
+type Tab = "hotel" | "prices" | "tips" | "website" | "messages" | "staff" | "activity";
 
 const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Kathmandu", "Asia/Dhaka", "Asia/Colombo", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 
@@ -534,7 +535,7 @@ function SettingsView() {
 
   return (
     <div>
-      <PageHeader title="Settings" description="Your hotel details, prices, tax, website, WhatsApp messages and staff." />
+      <PageHeader title="Settings" description="Your hotel details, prices, rate tips, tax, website, WhatsApp messages and staff." />
       <Tabs
         className="mb-6"
         value={tab}
@@ -542,6 +543,7 @@ function SettingsView() {
         tabs={[
           { value: "hotel", label: "Hotel details" },
           { value: "prices", label: "Prices & tax" },
+          { value: "tips", label: "Rate tips" },
           { value: "website", label: "Online booking" },
           { value: "messages", label: "WhatsApp messages" },
           { value: "staff", label: "Staff" },
@@ -550,6 +552,7 @@ function SettingsView() {
       />
       {tab === "hotel" && <HotelTab s={s} set={set} />}
       {tab === "prices" && <PricesTab s={s} set={set} reload={load} />}
+      {tab === "tips" && <RateTipSettings s={s} set={set} />}
       {tab === "website" && <WebsiteTab s={s} set={set} />}
       {tab === "messages" && <MessageSettings s={s} set={set} today={shell.today} />}
       {tab === "staff" && (
@@ -559,7 +562,7 @@ function SettingsView() {
         </>
       )}
       {tab === "activity" && <ActivityTab />}
-      {(tab === "hotel" || tab === "prices" || tab === "website" || tab === "messages" || tab === "staff") && <SaveBar saving={saving} onSave={save} />}
+      {(tab === "hotel" || tab === "prices" || tab === "tips" || tab === "website" || tab === "messages" || tab === "staff") && <SaveBar saving={saving} onSave={save} />}
     </div>
   );
 }
