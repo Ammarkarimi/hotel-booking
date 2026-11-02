@@ -282,9 +282,51 @@ received date and UTR, to tick off against the site's own statement).
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
+| Rate tips | Rate tips on or off, the time tips start (1 pm by default), the biggest cut a tip may suggest (20% by default), whether front-desk staff see tips, and the lowest price you accept for each room type (see below) |
 | WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
+
+## Rate tips: fill tonight's empty rooms
+
+Rooms left empty tonight earn nothing, so later in the day the software suggests a
+lower price for them, room type by room type. It uses the hotel's own bookings; no
+outside service or AI is involved.
+
+**How a tip is worked out**, for each room type, for tonight only:
+
+1. **What is free:** the rooms of that type minus the ones booked for tonight (rooms
+   marked under maintenance are left out).
+2. **What usually still sells:** over the last 90 days, how many rooms of that type
+   were booked on the day itself, from this time of day on, for the same night. It
+   compares with the same weekday once there are 4 of them (a Saturday is not a
+   Tuesday). Rooms that usually still sell keep the usual price.
+3. **The price:** for the rooms that will probably stay empty, a cut that grows
+   through the day: half the biggest cut from the start time (1 pm), three quarters
+   4 hours later (5 pm), all of it 7 hours later (8 pm). When half or more of a type
+   is still free the cut is one step bigger. Prices are rounded up to ₹50, never go
+   past the biggest cut, and never below the lowest price you set for the type.
+   Weekend and festival prices are counted in the usual price.
+
+Mornings sell at the usual price: no tips before the start time.
+
+**The pop-up:** when there is a new tip, a pop-up shows each room type with the
+free rooms, the usual price crossed out, the suggested price, and why ("On a usual
+Monday hardly any Deluxe room gets booked for the same night this late"; "In the
+last 90 days, 6 rooms of this type were booked after 1 pm, at ₹4,100 on average").
+It cannot be closed until the person types **I have seen**. A lower price later in
+the day is a new tip and pops up again. The owner sees who confirmed each tip and
+when, on the Rate tips page; it is also in Activity history.
+
+**Using a tip:** nothing changes by itself. In **New booking**, for a stay starting
+today, the tip shows under the price with a **Use ₹…** button. Offer the price to
+walk-ins and callers, and change it on booking sites yourself if you sell there.
+
+**The Rate tips page** (menu → Rate tips) shows tonight's rooms by type: sold, free,
+the tip or why there is none. The owner also sees, for the last 30, 60 or 90 days:
+how full each room type was, how many room-nights stayed empty, the usual price and
+the average price it really sold for, and at what time of day bookings come in
+(same-night bookings and all bookings), to choose a good start time.
 
 ## WhatsApp messages to guests
 

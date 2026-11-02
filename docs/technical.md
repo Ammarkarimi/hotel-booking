@@ -46,6 +46,7 @@ src/
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
 │   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
 │   ├── messages.ts            # WhatsApp messages to guests: default wording, {fields} and filling them in (pure)
+│   ├── rate-tips.ts           # Rate tips: free rooms per type tonight, what usually still sells, the suggested price, sales insights (pure)
 │   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
 │   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
@@ -69,10 +70,11 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `Hotel` | — | One per customer hotel. `slug` is the booking-page address, `status` is `active` or `suspended`, plus `monthlyFee`, `billingStart` (`YYYY-MM`), and `bookingSeq` (last booking number used) |
 | `SubscriptionPayment` | Hotel | Money the hotel paid you. `month` is `YYYY-MM`; `clearsMonth = false` means a part payment |
 | `Staff` | Hotel | Sign-ins. `email` is unique across **all** hotels. `role` is `admin` (owner / manager) or `staff` (front desk). Also `active` and `lastLoginAt` |
-| `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings. `msgBooking`, `msgCheckIn`, `msgCheckOut`: the owner's wording for the guest WhatsApp messages (null = the default in `src/lib/messages.ts`) |
+| `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings. `msgBooking`, `msgCheckIn`, `msgCheckOut`: the owner's wording for the guest WhatsApp messages (null = the default in `src/lib/messages.ts`). `rateTips`, `rateTipsFrom` (HH:MM), `rateTipsMaxDiscount` (%), `rateTipsFloors` (JSON: lowest price per room type), `rateTipsStaff` (front desk sees tips) |
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
 | `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`), and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| `RateTipSeen` | Hotel | Someone typed "I have seen" on a rate tip: `staffId`, `staffName`, `tipKey` (`date\|roomType\|price`, so a lower price later is a new tip), when. Unique per person and tip |
 | `IdCheck` | Hotel, Booking | An adult's ID ticked as verified at the desk after the receptionist looked at the original: `person` (null = the guest who booked), `idType` (aadhar, passport, driving_licence, voter_id, pan, other), who and when. `method` is `id_seen`; rows marked `aadhaar_qr` come from the earlier QR scanner. Nothing from the ID itself is stored |
 | `FileCleanup` | — | Uploaded files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
 | `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest, moves the ID copies to the guest and sets `bookingId`. Closing an unused form deletes its uploads |
@@ -179,6 +181,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/rooms`, `/api/rooms/[id]` | GET, POST ⓐ / GET, PUT ⓐ, DELETE ⓐ |
 | `/api/rooms/[id]/housekeeping` | POST |
 | `/api/settings` | GET, PUT ⓐ |
+| `/api/rate-tips` | GET: tonight's rooms by type with tips (`tonightByType` in `src/lib/rate-tips.ts`), the tips this person has not confirmed (`unseen`), who confirmed today's tips (owner), `?insights=30` adds sales by type and booking times (owner). POST `{ keys, text }`: `text` must be "I have seen" |
 | `/api/settings/seasonal-rates` | POST ⓐ, DELETE ⓐ |
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
 | `/api/expenses`, `/api/expenses/[id]` | GET (front desk: own entries; `?summary=cash` for everyone), POST / PATCH, DELETE (owner, or the person who added it on the same day) |

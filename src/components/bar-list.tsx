@@ -8,23 +8,25 @@ export function BarList({
   format = formatCurrency,
   empty = "No data",
   tone = "primary",
+  inOrder = false,
 }: {
   data: Array<{ key: string; value: number; sub?: string }>;
   format?: (n: number) => string;
   empty?: string;
   tone?: "primary" | "amber";
+  /** Keep the order given (for example times of day) and show the keys as written. */
+  inOrder?: boolean;
 }) {
   const max = Math.max(...data.map((d) => Math.abs(d.value)), 1);
   if (data.length === 0) return <p className="py-4 text-center text-sm text-slate-500">{empty}</p>;
   return (
     <ul className="space-y-3">
-      {[...data]
-        .sort((a, b) => b.value - a.value)
+      {(inOrder ? data : [...data].sort((a, b) => b.value - a.value))
         .map((d) => (
           <li key={d.key}>
             <div className="mb-1 flex justify-between gap-3 text-sm">
               <span className="font-medium text-slate-700">
-                {label(d.key)} {d.sub && <span className="text-xs text-slate-500">· {d.sub}</span>}
+                {inOrder ? d.key : label(d.key)} {d.sub && <span className="text-xs text-slate-500">· {d.sub}</span>}
               </span>
               <span className="shrink-0 font-semibold text-slate-900">{format(d.value)}</span>
             </div>

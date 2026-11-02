@@ -25,12 +25,14 @@ import {
   Wallet,
   X,
   Hotel,
+  Lightbulb,
 } from "lucide-react";
 import { cn, label } from "@/lib/utils";
 import { api } from "@/lib/client";
 import { AppProvider, useApp, type ShellSettings } from "@/components/app-provider";
 import { Button, StatusBadge } from "@/components/ui";
 import { ShiftControl } from "@/components/shift";
+import { RateTipPopup } from "@/components/rate-tips";
 import type { SessionUser } from "@/lib/session";
 
 const NAV = [
@@ -43,6 +45,7 @@ const NAV = [
   { href: "/payments", label: "Payments", icon: Wallet, hint: "Money received" },
   { href: "/expenses", label: "Expenses", icon: Receipt, hint: "Money spent" },
   { href: "/rooms", label: "Rooms", icon: BedDouble, hint: "Your rooms & prices" },
+  { href: "/rate-tips", label: "Rate tips", icon: Lightbulb, hint: "Fill tonight's empty rooms" },
   { href: "/reports", label: "Reports", icon: BarChart3, hint: "Business summary", admin: true },
   { href: "/shifts", label: "Staff shifts", icon: Timer, hint: "Attendance & handover notes", admin: true },
   { href: "/settings", label: "Settings", icon: Settings, hint: "Hotel details & staff", admin: true },
@@ -350,6 +353,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
         )}
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        <RateTipPopup />
       </div>
     </div>
   );

@@ -40,6 +40,7 @@ model Hotel {
   shiftTransfers       ShiftTransfer[]
   guestForms           GuestForm[]
   idChecks             IdCheck[]
+  rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
 }
 
@@ -80,37 +81,43 @@ model Staff {
 
 // One row per hotel holding its profile and preferences.
 model HotelSettings {
-  id               String   @id @default(cuid())
-  hotelId          String   @unique
-  hotelName        String   @default("My Hotel")
-  tagline          String?
-  address          String?
-  city             String?
-  phone            String?
-  email            String?
-  gstin            String?
-  currency         String   @default("INR")
-  timezone         String   @default("Asia/Kolkata")
-  taxMode          String   @default("flat") // flat, india_gst
-  taxRate          Float    @default(12) // used when taxMode = flat
-  gstSlabs         String   @default("[{\"upTo\":1000,\"rate\":0},{\"upTo\":7500,\"rate\":5},{\"upTo\":null,\"rate\":18}]")
-  extrasTaxRate    Float    @default(5) // tax on food, laundry and other extras
-  weekendSurcharge Float    @default(0) // % change on Friday & Saturday nights
-  checkInTime      String   @default("12:00")
-  checkOutTime     String   @default("11:00")
-  invoicePrefix    String   @default("INV")
-  bookingTerms     String?
-  websiteEnabled   Boolean  @default(true)
-  websiteAbout     String?
-  staffShifts      Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
-  ownerWhatsapp    String? // where staff send their shift report
-  frontDeskStaff   Int      @default(1) // how many people can be on shift at the same time
+  id                  String   @id @default(cuid())
+  hotelId             String   @unique
+  hotelName           String   @default("My Hotel")
+  tagline             String?
+  address             String?
+  city                String?
+  phone               String?
+  email               String?
+  gstin               String?
+  currency            String   @default("INR")
+  timezone            String   @default("Asia/Kolkata")
+  taxMode             String   @default("flat") // flat, india_gst
+  taxRate             Float    @default(12) // used when taxMode = flat
+  gstSlabs            String   @default("[{\"upTo\":1000,\"rate\":0},{\"upTo\":7500,\"rate\":5},{\"upTo\":null,\"rate\":18}]")
+  extrasTaxRate       Float    @default(5) // tax on food, laundry and other extras
+  weekendSurcharge    Float    @default(0) // % change on Friday & Saturday nights
+  checkInTime         String   @default("12:00")
+  checkOutTime        String   @default("11:00")
+  invoicePrefix       String   @default("INV")
+  bookingTerms        String?
+  websiteEnabled      Boolean  @default(true)
+  websiteAbout        String?
+  staffShifts         Boolean  @default(true) // front-desk staff start and end a shift, with a handover note
+  ownerWhatsapp       String? // where staff send their shift report
+  frontDeskStaff      Int      @default(1) // how many people can be on shift at the same time
   // WhatsApp messages to guests in the owner's own words; null = the default wording (src/lib/messages.ts)
-  msgBooking       String?
-  msgCheckIn       String?
-  msgCheckOut      String?
-  updatedAt        DateTime @updatedAt
-  hotel            Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  msgBooking          String?
+  msgCheckIn          String?
+  msgCheckOut         String?
+  // Rate tips: suggest a lower price for rooms still empty for tonight (src/lib/rate-tips.ts)
+  rateTips            Boolean  @default(true)
+  rateTipsFrom        String   @default("13:00") // no tips before this time: mornings sell at the usual price
+  rateTipsMaxDiscount Float    @default(20) // the biggest cut a tip may suggest, in %
+  rateTipsFloors      String   @default("{}") // JSON { roomType: lowest price per night the owner accepts }
+  rateTipsStaff       Boolean  @default(true) // front-desk staff see the tips too, not only the owner
+  updatedAt           DateTime @updatedAt
+  hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
 
 // Date ranges where room prices go up or down (festivals, holidays, off-season).
@@ -439,4 +446,19 @@ model IdCheck {
 model FileCleanup {
   filePath  String   @id
   createdAt DateTime @default(now())
+}
+
+// Someone signed in typed "I have seen" on a rate tip. A tip is one price for one room type on one
+// night (tipKey = "2026-11-02|deluxe|2400"); a lower price later in the day is a new tip.
+model RateTipSeen {
+  id        String   @id @default(cuid())
+  hotelId   String
+  staffId   String
+  staffName String
+  tipKey    String
+  createdAt DateTime @default(now())
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, staffId, tipKey])
+  @@index([hotelId, createdAt])
 }
