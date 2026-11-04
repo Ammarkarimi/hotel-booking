@@ -14,7 +14,7 @@ of hotel jargon, big buttons, one obvious next step on every screen, friendly
 confirmations, and it works on a phone.
 
 Visitors who are not signed in see a **landing page** at `/` with every feature and
-a 3-minute video tour recorded from the real app, so hotel owners can see how it
+a 5-minute video tour recorded from the real app, so hotel owners can see how it
 works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from it.
 
 > **Full reference guide:** [docs/](docs/README.md) covers the owner panel, the hotel

@@ -233,7 +233,7 @@ function ContactButtons({ dark = false }: { dark?: boolean }) {
   if (!whatsappHref && !emailHref) {
     return (
       <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-base font-bold text-white shadow-lg hover:bg-primary-700">
-        <Play className="h-5 w-5" fill="currentColor" /> Watch the 3-minute tour
+        <Play className="h-5 w-5" fill="currentColor" /> Watch the 5-minute tour
       </PlayTourButton>
     );
   }
@@ -351,7 +351,7 @@ export default function WelcomePage() {
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-base font-bold text-white shadow-lg hover:bg-primary-700">
-                  <Play className="h-5 w-5" fill="currentColor" /> Watch the 3-minute tour
+                  <Play className="h-5 w-5" fill="currentColor" /> Watch the 5-minute tour
                 </PlayTourButton>
                 {whatsappHref && (
                   <a
@@ -387,10 +387,12 @@ export default function WelcomePage() {
         <section id="tour" className="scroll-mt-16 bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
             <p className="text-sm font-semibold uppercase tracking-widest text-primary-300">Video tour</p>
-            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in about 3 minutes</h2>
+            <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in about 5 minutes</h2>
             <p className="mt-3 max-w-2xl text-lg text-slate-300">
-              A guest books direct, the front desk welcomes them and checks them out, the bill and GST invoice come together, rooms are turned around,
-              expenses are written down and the owner sees the profit. Tap a chapter to jump to it.
+              A guest books direct, another fills in their details and ID on WhatsApp, the front desk ticks each ID, checks guests in and out, and hands
+              over at the end of the shift. The bill and GST invoice come together, rooms are turned around and expenses are written down. Later the
+              owner sees rate tips for empty rooms, writes the guest messages, records booking-site payouts and checks the profit and staff reports.
+              Tap a chapter to jump to it.
             </p>
             <div className="mt-10">
               <TourPlayer />
@@ -590,7 +592,7 @@ export default function WelcomePage() {
             <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-300">
               {whatsappHref || emailHref
                 ? "Message us for a private demo. We'll set up your property, add your rooms with you and send your sign-in the same day."
-                : "Watch the 3-minute tour to see a full day at a premium property, from the first booking to the owner's reports."}
+                : "Watch the 5-minute tour to see a full day at a premium property, from the first booking to the owner's reports."}
             </p>
             <div className="mt-8 flex justify-center">
               <ContactButtons dark />
