@@ -15,7 +15,9 @@ const EMPTY = {
   email: "",
   nationality: "Indian",
   address: "",
+  locality: "",
   city: "",
+  district: "",
   state: "",
   pinCode: "",
   idType: "aadhar",
@@ -111,11 +113,17 @@ export function GuestFormDialog({
             </div>
             {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Nothing from the Aadhaar is saved. Check the card at check-in and tick it under “ID check” on the booking.</p>}
           </Field>
-          <Field label="Address" optional className="sm:col-span-2" hint="House, street and area">
+          <Field label="Address" optional className="sm:col-span-2" hint="House and street">
             <Input value={form.address} onChange={set("address")} />
+          </Field>
+          <Field label="Area / locality" optional>
+            <Input value={form.locality} onChange={set("locality")} />
           </Field>
           <Field label="City" optional>
             <Input value={form.city} onChange={set("city")} />
+          </Field>
+          <Field label="District" optional hint="Asked by the police form (Pathik)">
+            <Input value={form.district} onChange={set("district")} />
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label="State" optional>

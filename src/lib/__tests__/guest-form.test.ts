@@ -10,6 +10,7 @@ const filled = {
   nationality: "Indian",
   address: "12 MG Road, Navrangpura",
   city: "Ahmedabad",
+  district: "Ahmedabad",
   state: "Gujarat",
   pinCode: "380 009",
   checkIn: "2026-11-03",
@@ -30,6 +31,7 @@ test("the guest form needs every adult's name, a state and PIN for Indian guests
   assert.match(fail({ companions: [] }), /each adult staying with you/);
   assert.match(fail({ pinCode: "3800" }), /6-digit PIN/);
   assert.match(fail({ state: "" }), /state/);
+  assert.match(fail({ district: "" }), /district/);
   assert.match(fail({ checkOut: "2026-11-03" }), /after the arrival date/);
   assert.match(fail({ consent: false }), /agree/);
   // A foreign guest has no Indian state or PIN code.

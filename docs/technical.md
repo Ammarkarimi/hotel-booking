@@ -46,6 +46,7 @@ src/
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
 │   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
 │   ├── messages.ts            # WhatsApp messages to guests: default wording, {fields} and filling them in (pure)
+│   ├── pathik.ts              # Pathik (Gujarat police guest register): a booking or guest as Pathik's Add Guest form (pure)
 │   ├── rate-tips.ts           # Rate tips: free rooms per type tonight, what usually still sells, the suggested price, sales insights (pure)
 │   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
 │   ├── shift-api.ts           # Shared by the shift API routes
@@ -74,6 +75,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
 | `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`), and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| Pathik fields | — | `Guest.locality`, `Guest.district`; `Booking.vehicleType` (two_wheeler, four_wheeler, other), `Booking.pathikAt` and `pathikByName` (marked as entered in Pathik); `HotelSettings.pathik` shows "Fill in Pathik" |
 | `RateTipSeen` | Hotel | Someone typed "I have seen" on a rate tip: `staffId`, `staffName`, `tipKey` (`date\|roomType\|price`, so a lower price later is a new tip), when. Unique per person and tip |
 | `IdCheck` | Hotel, Booking | An adult's ID ticked as verified at the desk after the receptionist looked at the original: `person` (null = the guest who booked), `idType` (aadhar, passport, driving_licence, voter_id, pan, other), who and when. `method` is `id_seen`; rows marked `aadhaar_qr` come from the earlier QR scanner. Nothing from the ID itself is stored |
 | `FileCleanup` | — | Uploaded files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
@@ -181,6 +183,8 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/rooms`, `/api/rooms/[id]` | GET, POST ⓐ / GET, PUT ⓐ, DELETE ⓐ |
 | `/api/rooms/[id]/housekeeping` | POST |
 | `/api/settings` | GET, PUT ⓐ |
+| `/api/pathik` | GET `?bookingId=` (or `?guestId=`: their stay now, else the next arrival, else the guest only): the values of Pathik's Add Guest form (`pathikRecord` in `src/lib/pathik.ts`), the other adults, ID copies to attach (never Aadhaar), `missing` and `byHand` |
+| `/api/bookings/[id]/pathik` | POST `{ entered }`: mark the stay as entered in Pathik (or take the mark off) |
 | `/api/rate-tips` | GET: tonight's rooms by type with tips (`tonightByType` in `src/lib/rate-tips.ts`), the tips this person has not confirmed (`unseen`), who confirmed today's tips (owner), `?insights=30` adds sales by type and booking times (owner). POST `{ keys, text }`: `text` must be "I have seen" |
 | `/api/settings/seasonal-rates` | POST ⓐ, DELETE ⓐ |
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
@@ -273,6 +277,25 @@ node scripts/tour/record-tour.mjs http://localhost:3000       # needs ffmpeg
 The recording changes the demo data (it books, checks in and checks out guests), so
 start from a freshly seeded database each time. It prints new chapter times: paste
 them into `CHAPTERS` in `src/app/welcome/tour.tsx`.
+
+## Pathik helper (Chrome add-on)
+
+`pathik-helper/` is a Manifest V3 Chrome add-on, packed into `public/pathik-helper.zip`
+by `scripts/build-pathik-zip.mjs` at every build (the zip is not in git; the build adds
+this deployment's own address from `VERCEL_PROJECT_PRODUCTION_URL` to the pages it runs on).
+
+- `app-bridge.js` runs on the software's pages: it marks the page
+  (`data-pathik-helper`) so "Fill in Pathik" shows the fill button, takes the record the
+  page posts (`window.postMessage`, same origin only), fetches the ID copies with the
+  page's sign-in and makes each a JPEG under 250 KB, then hands everything to the
+  background worker.
+- `background.js` keeps it in `chrome.storage.session` for 30 minutes, opens
+  `pathik.guru/dashboard/add`, and refreshes jQuery select plug-ins in the page.
+- `pathik-fill.js` runs on pathik.guru. When the Add Guest form is there it fills each
+  field found by its **label text** (so it does not depend on Pathik's field names),
+  sets the number of adults and fills the blocks Pathik adds for them (grouped where a
+  label repeats), attaches the copies, outlines filled (green) and empty required
+  (amber) fields and shows a panel. It never presses Submit.
 
 ## Changing the database schema
 

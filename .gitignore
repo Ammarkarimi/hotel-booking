@@ -48,3 +48,6 @@ prisma/dev.db-journal
 # uploads
 /uploads
 /public/uploads
+
+# built from pathik-helper/ at every build
+/public/pathik-helper.zip

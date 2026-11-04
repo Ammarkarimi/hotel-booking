@@ -7,7 +7,7 @@ import { Button, Card, CardContent, CountInput, Field, Input, Loading, Select, T
 import { addDays, diffDays } from "@/lib/dates";
 import { shrinkPhoto } from "@/lib/client";
 import { cn, formatDate, label } from "@/lib/utils";
-import { FORM_ID_TYPES, INDIAN_STATES, MAX_FILES_PER_PERSON, isIndian, missingDocuments } from "@/lib/guest-form";
+import { FORM_ID_TYPES, INDIAN_STATES, MAX_FILES_PER_PERSON, VEHICLE_LABELS, VEHICLE_TYPES, isIndian, missingDocuments } from "@/lib/guest-form";
 
 interface FormInfo {
   hotel: { name: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string };
@@ -230,7 +230,9 @@ export default function GuestFormPage() {
     foreign: false,
     country: "",
     address: "",
+    locality: "",
     city: "",
+    district: "",
     state: "",
     pinCode: "",
     checkIn: "",
@@ -238,6 +240,7 @@ export default function GuestFormPage() {
     comingFrom: "",
     goingTo: "",
     vehicleNumber: "",
+    vehicleType: "",
     requests: "",
     aadhaarAtDesk: true,
   });
@@ -371,7 +374,9 @@ export default function GuestFormPage() {
       dateOfBirth: f.dateOfBirth,
       nationality: nationality || "",
       address: f.address,
+      locality: f.locality,
       city: f.city,
+      district: f.district,
       state: f.state,
       pinCode: f.pinCode,
       checkIn: f.checkIn,
@@ -381,6 +386,7 @@ export default function GuestFormPage() {
       comingFrom: f.comingFrom,
       goingTo: f.goingTo,
       vehicleNumber: f.vehicleNumber,
+      vehicleType: f.vehicleNumber.trim() ? f.vehicleType : "",
       aadhaarAtDesk: !f.foreign && f.aadhaarAtDesk,
       companions,
       requests: f.requests,
@@ -481,11 +487,17 @@ export default function GuestFormPage() {
               <div className="border-t border-slate-100 pt-4">
                 <p className="mb-3 font-semibold">Home address</p>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="House, street and area" className="sm:col-span-2">
-                    <Input value={f.address} onChange={set("address")} required autoComplete="street-address" maxLength={200} />
+                  <Field label="House and street" className="sm:col-span-2">
+                    <Input value={f.address} onChange={set("address")} required autoComplete="address-line1" maxLength={200} />
+                  </Field>
+                  <Field label="Area / locality" optional>
+                    <Input value={f.locality} onChange={set("locality")} autoComplete="address-line2" maxLength={80} />
                   </Field>
                   <Field label="City">
                     <Input value={f.city} onChange={set("city")} required autoComplete="address-level2" maxLength={60} />
+                  </Field>
+                  <Field label="District" optional={!indian}>
+                    <Input value={f.district} onChange={set("district")} required={indian} maxLength={60} />
                   </Field>
                   {indian ? (
                     <Field label="State">
@@ -528,6 +540,18 @@ export default function GuestFormPage() {
                   <Field label="Vehicle number" optional hint="If you are coming in your own vehicle.">
                     <Input value={f.vehicleNumber} onChange={set("vehicleNumber")} className="uppercase" maxLength={20} />
                   </Field>
+                  {f.vehicleNumber.trim() && (
+                    <Field label="Type of vehicle">
+                      <Select value={f.vehicleType} onChange={set("vehicleType")} required>
+                        <option value="">Choose</option>
+                        {VEHICLE_TYPES.map((v) => (
+                          <option key={v} value={v}>
+                            {VEHICLE_LABELS[v]}
+                          </option>
+                        ))}
+                      </Select>
+                    </Field>
+                  )}
                 </div>
               </div>
             </CardContent>

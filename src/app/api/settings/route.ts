@@ -53,6 +53,7 @@ const settingsSchema = z.object({
   rateTipsMaxDiscount: z.coerce.number().min(0, "The biggest cut must be between 0 and 60%").max(60, "The biggest cut must be between 0 and 60%"),
   rateTipsFloors: z.record(z.string(), z.coerce.number().min(0, "A lowest price cannot be less than 0")),
   rateTipsStaff: z.boolean(),
+  pathik: z.boolean(),
 });
 
 export async function PUT(request: NextRequest) {

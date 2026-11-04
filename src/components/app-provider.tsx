@@ -20,6 +20,8 @@ export interface ShellSettings {
   checkOutTime: string;
   phone: string | null;
   address: string | null;
+  /** Show "Fill in Pathik" for the police guest register (Gujarat). */
+  pathik: boolean;
   /** The owner's wording for each message; null = the default. */
   messages: { booking: string | null; checkIn: string | null; checkOut: string | null };
 }

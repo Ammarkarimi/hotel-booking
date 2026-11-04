@@ -10,6 +10,7 @@ import { ROOM_TYPES, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { SettingsDTO } from "@/lib/types";
 import { MessageSettings } from "@/components/message-settings";
 import { RateTipSettings } from "@/components/rate-tips";
+import { PathikSettings } from "@/components/pathik";
 
 type Tab = "hotel" | "prices" | "tips" | "website" | "messages" | "staff" | "activity";
 
@@ -550,7 +551,12 @@ function SettingsView() {
           { value: "activity", label: "Activity history" },
         ]}
       />
-      {tab === "hotel" && <HotelTab s={s} set={set} />}
+      {tab === "hotel" && (
+        <>
+          <HotelTab s={s} set={set} />
+          <PathikSettings s={s} set={set} />
+        </>
+      )}
       {tab === "prices" && <PricesTab s={s} set={set} reload={load} />}
       {tab === "tips" && <RateTipSettings s={s} set={set} />}
       {tab === "website" && <WebsiteTab s={s} set={set} />}
