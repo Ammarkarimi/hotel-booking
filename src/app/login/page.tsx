@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Hotel } from "lucide-react";
@@ -15,6 +15,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Sent here because the account was switched off or the hotel was paused while signed in.
+  useEffect(() => {
+    const reason = new URLSearchParams(window.location.search).get("reason");
+    if (reason === "paused") setError("This hotel's account is paused. Please contact your software provider to switch it back on.");
+    else if (reason === "ended") setError("You have been signed out. Please sign in again, or ask the owner if your account was switched off.");
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

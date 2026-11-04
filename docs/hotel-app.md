@@ -375,8 +375,9 @@ Limits:
 
 - Bookings can be made from today up to one year ahead.
 - A stay can be at most 30 nights.
-- Each internet connection can make 5 bookings per hour. A hidden spam trap
-  stops bots.
+- Each internet connection can make 20 bookings per hour, so a busy hour is
+  never blocked, even when many guests share one mobile network. Typing
+  mistakes do not count. A hidden spam trap stops bots.
 
 Online booking stops if the hotel switches it off, or if you pause the hotel.
 

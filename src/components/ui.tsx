@@ -448,6 +448,7 @@ export function StatCard({
     slate: "bg-slate-100 text-slate-600",
   };
   const Comp = onClick ? "button" : "div";
+  const long = typeof value === "string" && value.length > 9;
   return (
     <Comp
       onClick={onClick}
@@ -458,10 +459,11 @@ export function StatCard({
     >
       <div className="min-w-0">
         <p className="text-sm font-medium text-slate-500">{title}</p>
-        <p className="mt-1 break-words text-xl font-bold text-slate-900 sm:text-2xl">{value}</p>
+        {/* Long amounts get the full width on phones so a number is not split over two lines. */}
+        <p className={cn("mt-1 break-words font-bold text-slate-900 sm:text-2xl", long ? "text-lg" : "text-xl")}>{value}</p>
         {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
       </div>
-      {icon && <div className={cn("shrink-0 rounded-xl p-2.5", tones[tone])}>{icon}</div>}
+      {icon && <div className={cn("shrink-0 rounded-xl p-2.5", long && "hidden min-[440px]:block", tones[tone])}>{icon}</div>}
     </Comp>
   );
 }

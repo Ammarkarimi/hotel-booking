@@ -160,7 +160,7 @@ export function formMessage(o: { hotelName: string; guestName?: string | null; u
   return [
     `${hello} thank you for choosing ${o.hotelName}.`,
     "",
-    "Please fill in your details and upload a copy of your ID proof (Aadhaar, passport, driving licence or any photo ID) for everyone staying. It takes about 2 minutes and saves time at check-in:",
+    "Please fill in your details for everyone staying, and upload a copy of a passport, driving licence or other photo ID. If you have an Aadhaar card, just show it at check-in: nothing from it is saved. It takes about 2 minutes and saves time at check-in:",
     o.url,
     "",
     `The link works for ${o.days ?? FORM_DAYS} days.`,

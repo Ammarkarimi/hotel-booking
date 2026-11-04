@@ -100,7 +100,7 @@ export function GuestFormDialog({
           </Field>
           <Field label="ID proof" optional>
             <div className="flex gap-2">
-              <Select value={form.idType} onChange={(e) => setForm({ ...form, idType: e.target.value, idNumber: "" })} className="w-40">
+              <Select value={form.idType} onChange={(e) => setForm({ ...form, idType: e.target.value, idNumber: "" })} className="w-44 shrink-0">
                 {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
                   <option key={t} value={t}>
                     {label(t)}

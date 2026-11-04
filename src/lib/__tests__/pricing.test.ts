@@ -61,6 +61,8 @@ test("parseGstSlabs sorts, handles open-ended slab and falls back to defaults", 
     { upTo: 1000, rate: 0 },
     { upTo: null, rate: 18 },
   ]);
+  // Slabs saved while the top one was stored as "up to 0" read back with no limit on top.
+  assert.deepEqual(parseGstSlabs('[{"upTo":1000,"rate":0},{"upTo":7500,"rate":5},{"upTo":0,"rate":18}]'), DEFAULT_GST_SLABS);
   assert.deepEqual(parseGstSlabs("not json"), DEFAULT_GST_SLABS);
   assert.deepEqual(parseGstSlabs("[]"), DEFAULT_GST_SLABS);
 });

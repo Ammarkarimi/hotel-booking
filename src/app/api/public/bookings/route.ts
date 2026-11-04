@@ -6,7 +6,7 @@ import { getBillingContext } from "@/lib/settings";
 import { dateFromKey } from "@/lib/dates";
 import { findAvailableRooms, findConflicts, lockRooms, nextBookingNumber, parseStayDate, validateStay } from "@/lib/bookings";
 import { assertWebsiteOpen, noStore, validatePublicStay, withPublicHotel } from "@/lib/public";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, overLimit, rateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity";
 
 const schema = z.object({
@@ -25,12 +25,19 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    if (!rateLimit(`public-booking:${clientIp(request.headers)}`, 5, 60 * 60 * 1000)) {
+    // Spam guard only. Many real guests can share one internet address (mobile networks put
+    // whole neighbourhoods behind one), so the cap is far above what one hotel gets in an hour.
+    // Mistakes count towards a separate, looser cap on tries.
+    const ip = clientIp(request.headers);
+    const booked = `public-booking:${ip}`;
+    if (overLimit(booked, 20) || !rateLimit(`public-booking-try:${ip}`, 60, 60 * 60 * 1000)) {
       fail("Too many bookings from this device. Please call the hotel.", 429);
     }
     const body = schema.parse(await request.json());
     if (body.website) fail("Could not complete the booking");
-    return await withPublicHotel(request, () => createBooking(body));
+    const response = await withPublicHotel(request, () => createBooking(body));
+    if (response.ok) rateLimit(booked, 20, 60 * 60 * 1000);
+    return response;
   } catch (error) {
     return handleError(error);
   }

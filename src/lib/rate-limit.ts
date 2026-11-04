@@ -16,6 +16,17 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
   return entry.count <= limit;
 }
 
+/** True while `key` has already used up `limit` in its window, without counting a new hit. */
+export function overLimit(key: string, limit: number): boolean {
+  const entry = hits.get(key);
+  return !!entry && entry.resetAt >= Date.now() && entry.count >= limit;
+}
+
+/** Forget the hits for `key`, for example after a successful sign-in. */
+export function clearRateLimit(key: string) {
+  hits.delete(key);
+}
+
 export function clientIp(headers: Headers): string {
   return headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip") || "unknown";
 }
