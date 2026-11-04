@@ -25,17 +25,18 @@ const schema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // 5 bookings an hour from one device, and a looser cap on tries, so a guest who
-    // mistypes their phone a few times can still book.
+    // Spam guard only. Many real guests can share one internet address (mobile networks put
+    // whole neighbourhoods behind one), so the cap is far above what one hotel gets in an hour.
+    // Mistakes count towards a separate, looser cap on tries.
     const ip = clientIp(request.headers);
     const booked = `public-booking:${ip}`;
-    if (overLimit(booked, 5) || !rateLimit(`public-booking-try:${ip}`, 30, 60 * 60 * 1000)) {
+    if (overLimit(booked, 20) || !rateLimit(`public-booking-try:${ip}`, 60, 60 * 60 * 1000)) {
       fail("Too many bookings from this device. Please call the hotel.", 429);
     }
     const body = schema.parse(await request.json());
     if (body.website) fail("Could not complete the booking");
     const response = await withPublicHotel(request, () => createBooking(body));
-    if (response.ok) rateLimit(booked, 5, 60 * 60 * 1000);
+    if (response.ok) rateLimit(booked, 20, 60 * 60 * 1000);
     return response;
   } catch (error) {
     return handleError(error);
