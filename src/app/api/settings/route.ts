@@ -31,7 +31,7 @@ const settingsSchema = z.object({
   timezone: z.string().trim().min(1),
   taxMode: z.enum(["flat", "india_gst"]),
   taxRate: z.coerce.number().min(0, "The room tax rate must be between 0 and 100%").max(100, "The room tax rate must be between 0 and 100%"),
-  gstSlabs: z.array(z.object({ upTo: z.union([z.coerce.number().min(0), z.null()]), rate: z.coerce.number().min(0, "GST rates must be between 0 and 100%").max(100, "GST rates must be between 0 and 100%") })).min(1),
+  gstSlabs: z.array(z.object({ upTo: z.union([z.null(), z.literal("").transform(() => null), z.coerce.number().min(0)]), rate: z.coerce.number().min(0, "GST rates must be between 0 and 100%").max(100, "GST rates must be between 0 and 100%") })).min(1),
   extrasTaxRate: z.coerce.number().min(0, "The tax on extras must be between 0 and 100%").max(100, "The tax on extras must be between 0 and 100%"),
   weekendSurcharge: z.coerce.number().min(-90, "The weekend price change must be between -90% and 500%").max(500, "The weekend price change must be between -90% and 500%"),
   checkInTime: time,
@@ -79,7 +79,9 @@ export async function PUT(request: NextRequest) {
     const current = await getSettings();
     const settings = await prisma.hotelSettings.update({ where: { id: current.id }, data });
     if (body.hotelName) await prisma.hotel.update({ where: { id: currentHotelId() }, data: { name: body.hotelName } });
-    await logActivity(user, "Settings changed", Object.keys(body).join(", "));
+    // The screen sends every setting on each save: write down only the ones that changed.
+    const changed = Object.keys(data).filter((k) => JSON.stringify(current[k as keyof typeof current]) !== JSON.stringify(settings[k as keyof typeof settings]));
+    if (changed.length) await logActivity(user, "Settings changed", changed.join(", "));
     return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors) });
   });
 }

@@ -35,7 +35,8 @@ function MessageEditor({ kind, s, set, today }: { kind: MessageKind; s: Settings
   const custom = s[field];
   const text = custom ?? DEFAULT_MESSAGES[kind];
   // Wording that matches the default is saved as "default", so later improvements reach this hotel too.
-  const change = (v: string) => set({ [field]: v.trim() === DEFAULT_MESSAGES[kind].trim() ? null : v });
+  // Compared as typed, so a new line added at the end is not thrown away while typing.
+  const change = (v: string) => set({ [field]: v === DEFAULT_MESSAGES[kind] ? null : v });
 
   function insert(key: string) {
     const el = box.current;
@@ -61,6 +62,10 @@ function MessageEditor({ kind, s, set, today }: { kind: MessageKind; s: Settings
     timezone: s.timezone,
     messages: { [kind]: text },
   });
+
+  // Details typed by hand that the software does not know, e.g. {room} instead of {room_no}.
+  const known = new Set(MESSAGE_FIELDS.map((f) => f.key));
+  const unknown = [...new Set([...text.matchAll(/\{([^{}\s]+)\}/g)].map((m) => m[1]))].filter((k) => !known.has(k));
 
   return (
     <Card className="mb-6">
@@ -90,6 +95,12 @@ function MessageEditor({ kind, s, set, today }: { kind: MessageKind; s: Settings
             maxLength={2000}
             className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 font-mono text-sm leading-relaxed text-slate-900 outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-100"
           />
+          {unknown.length > 0 && (
+            <p role="alert" className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              {unknown.map((k) => `{${k}}`).join(", ")} {unknown.length === 1 ? "is not a detail" : "are not details"} the software knows, so the guest will see{" "}
+              {unknown.length === 1 ? "it" : "them"} as typed. Use the buttons below to add a detail.
+            </p>
+          )}
           <div>
             <p className="mb-1.5 text-xs font-semibold text-slate-500">Tap to add a detail where the cursor is:</p>
             <div className="flex flex-wrap gap-1.5">

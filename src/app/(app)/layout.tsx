@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 export default async function SignedInLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  // A valid cookie for an account that was switched off, or a paused hotel: clear it first,
+  // or the sign-in page would send them straight back here.
+  if (!session) redirect("/api/auth/expired");
 
   const { settings, hotel } = await runForHotel(session.hotelId, async () => ({
     settings: await getSettings(),

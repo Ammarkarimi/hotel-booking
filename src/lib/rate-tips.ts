@@ -202,7 +202,8 @@ export function tonightByType(o: {
       discount: Math.round((1 - price / usualPrice) * 100),
       stage: stage.key,
       floor,
-      lateSales: { count: late.count, averageRate: late.averageRate },
+      // The reason says "booked after <start time>", so count from the start time, not from now.
+      lateSales: (({ count, averageRate }) => ({ count, averageRate }))(lateBookings(history, type, date, from, o.timeZone)),
       historyDays: late.historyDays,
     };
     return { ...base, tip, note: "" };

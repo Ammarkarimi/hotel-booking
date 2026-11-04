@@ -34,9 +34,13 @@ export function parseGstSlabs(raw: string | null | undefined): GstSlab[] {
   try {
     const parsed = JSON.parse(raw || "");
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed
-        .map((s) => ({ upTo: s.upTo === null || s.upTo === "" ? null : Number(s.upTo), rate: Number(s.rate) || 0 }))
-        .sort((a, b) => (a.upTo ?? Infinity) - (b.upTo ?? Infinity));
+      const slabs: GstSlab[] = parsed.map((s) => ({ upTo: s.upTo === null || s.upTo === "" ? null : Number(s.upTo), rate: Number(s.rate) || 0 }));
+      // Saving settings used to store the "Above that" slab as "up to ₹0". Read it as no limit again.
+      if (slabs.length > 1 && !slabs.some((s) => s.upTo === null)) {
+        const zero = slabs.findIndex((s) => s.upTo === 0);
+        if (zero >= 0) slabs[zero] = { ...slabs[zero], upTo: null };
+      }
+      return slabs.sort((a, b) => (a.upTo ?? Infinity) - (b.upTo ?? Infinity));
     }
   } catch {
     // fall through to defaults

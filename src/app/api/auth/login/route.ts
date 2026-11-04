@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { login, createSession, COOKIE_NAME, SESSION_DURATION, SUSPENDED_MESSAGE } from "@/lib/auth";
 import { badRequest } from "@/lib/api";
 import { runForHotel } from "@/lib/db";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clearRateLimit, clientIp, rateLimit } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
     if (!email || !password) {
       return badRequest("Please enter your email and password");
     }
-    if (!rateLimit(`login:${clientIp(request.headers)}:${email}`, 10, 15 * 60 * 1000)) {
+    const limitKey = `login:${clientIp(request.headers)}:${email}`;
+    if (!rateLimit(limitKey, 10, 15 * 60 * 1000)) {
       return NextResponse.json({ error: "Too many attempts. Please wait 15 minutes and try again." }, { status: 429 });
     }
 
@@ -25,6 +26,8 @@ export async function POST(request: NextRequest) {
         : NextResponse.json({ error: "Email or password is not correct" }, { status: 401 });
     }
     const { user } = result;
+    // Only wrong passwords count towards the limit.
+    clearRateLimit(limitKey);
 
     const token = await createSession(user);
     await runForHotel(user.hotelId, () => logActivity(user, "Signed in"));

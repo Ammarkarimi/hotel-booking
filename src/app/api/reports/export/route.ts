@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
       return csvResponse(`payments_${suffix}`, [
         ["Date", "Booking #", "Guest", "Room", "Type", "Method", "Amount", "Reference", "Received by"],
         ...report.payments.map((p) => [
-          new Date(p.paidAt).toLocaleString("en-IN", { timeZone: ctx.settings.timezone }), p.bookingNumber, p.guestName, p.room,
+          // "2026-11-03 21:17": the hotel's own time, in a form Excel reads as a date.
+          new Date(p.paidAt).toLocaleString("sv-SE", { timeZone: ctx.settings.timezone }).slice(0, 16), p.bookingNumber, p.guestName, p.room,
           label(p.type), label(p.method), p.type === "refund" ? -p.amount : p.amount, p.reference, p.receivedBy,
         ]),
       ]);

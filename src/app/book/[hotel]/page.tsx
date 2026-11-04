@@ -232,7 +232,7 @@ export default function PublicBookingPage() {
                         <h3 className="text-xl font-bold">{label(o.type)} room</h3>
                         {o.description && <p className="text-slate-600">{o.description}</p>}
                         <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
-                          <Users className="h-4 w-4" /> Up to {o.capacity} guests
+                          <Users className="h-4 w-4" /> Up to {o.capacity} {o.capacity === 1 ? "guest" : "guests"}
                           {o.available <= 2 && <span className="ml-2 font-semibold text-red-600">Only {o.available} left!</span>}
                         </p>
                         {o.amenities.length > 0 && (
@@ -353,7 +353,7 @@ export default function PublicBookingPage() {
                   <CardContent className="py-5">
                     <p className="text-lg font-bold">{label(t.type)} room</p>
                     {t.description && <p className="mt-1 text-sm text-slate-600">{t.description}</p>}
-                    <p className="mt-2 text-sm text-slate-500">Up to {t.capacity} guests</p>
+                    <p className="mt-2 text-sm text-slate-500">Up to {t.capacity} {t.capacity === 1 ? "guest" : "guests"}</p>
                     <p className="mt-3 text-sm text-slate-500">
                       From <span className="text-xl font-bold text-slate-900">{fmt(t.fromPrice)}</span> / night
                     </p>

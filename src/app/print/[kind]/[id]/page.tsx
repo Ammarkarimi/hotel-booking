@@ -363,7 +363,7 @@ function Registration({
 
 export default async function PrintPage({ params }: Params) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session) redirect("/api/auth/expired");
   const { kind, id } = await params;
   if (!["invoice", "confirmation", "registration"].includes(kind)) notFound();
 

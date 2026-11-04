@@ -66,6 +66,11 @@ test("no tips in the morning; in the afternoon a lower price for rooms that will
   assert.equal(deluxe.tip?.stage, "evening");
   assert.deepEqual(deluxe.tip?.lateSales, { count: 4, averageRate: 2400 });
 
+  // At 4 pm nothing more usually comes in, but the reason still counts the 4 rooms booked after 1 pm.
+  const four = tonightByType({ now: at("16:00"), timeZone: tz, rooms, bookings, rules, settings }).types.find((t) => t.type === "deluxe")!;
+  assert.equal(four.expected, 0);
+  assert.deepEqual(four.tip?.lateSales, { count: 4, averageRate: 2400 });
+
   // Later at night the cut is the biggest allowed (20%), so the tip is new.
   const night = tonightByType({ now: at("21:00"), timeZone: tz, rooms, bookings, rules, settings });
   assert.equal(night.types.find((t) => t.type === "deluxe")!.tip?.price, 2250);

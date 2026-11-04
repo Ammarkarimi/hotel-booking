@@ -610,7 +610,8 @@ export default function BookingDetailPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-bold sm:text-3xl">Booking #{b.number}</h1>
               <StatusBadge status={b.status} className="text-sm" />
-              <Badge variant={pState}>{label(pState)}</Badge>
+              {/* "Not paid" means nothing for a booking that was cancelled or never came. */}
+              {(open || b.status === "checked_out" || f.netPaid > 0) && <Badge variant={pState}>{label(pState)}</Badge>}
               {b.flags.overstay && <Badge variant="danger">Past leaving date</Badge>}
             </div>
             <p className="mt-1 text-[15px] text-slate-500">
@@ -811,16 +812,19 @@ export default function BookingDetailPage() {
                   )}
                 </div>
               )}
-              <a href={whatsappLink(b.guest.phone, shareText)} target="_blank" rel="noopener noreferrer" className="block pt-1">
-                <Button variant="success" size="sm" className="w-full">
-                  <MessageCircle className="h-4 w-4" />{" "}
-                  {shareKind === "checkIn" ? "Send welcome message" : shareKind === "checkOut" ? "Send thank-you message" : "Send booking details"}
-                </Button>
-              </a>
+              {/* No "your booking is confirmed" for a booking that was cancelled or never came. */}
+              {b.status !== "cancelled" && b.status !== "no_show" && (
+                <a href={whatsappLink(b.guest.phone, shareText)} target="_blank" rel="noopener noreferrer" className="block pt-1">
+                  <Button variant="success" size="sm" className="w-full">
+                    <MessageCircle className="h-4 w-4" />{" "}
+                    {shareKind === "checkIn" ? "Send welcome message" : shareKind === "checkOut" ? "Send thank-you message" : "Send booking details"}
+                  </Button>
+                </a>
+              )}
             </CardContent>
           </Card>
 
-          <IdCheckCard booking={b} onChanged={load} />
+          {b.status !== "cancelled" && b.status !== "no_show" && <IdCheckCard booking={b} onChanged={load} />}
 
           <Card>
             <CardHeader

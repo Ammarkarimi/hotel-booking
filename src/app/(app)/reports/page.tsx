@@ -45,13 +45,18 @@ export default function ReportsPage() {
   const effectiveGroup = choices.includes(groupBy) ? groupBy : choices[0] ?? "day";
 
   useEffect(() => {
-    if (!period.from || !to || to < period.from) return;
+    if (!isAdmin || !period.from || !to || to < period.from) return;
     setData(null);
     setError("");
+    // Only the latest range counts: an older request that answers late must not replace it.
+    let current = true;
     api<Report>(`/api/reports?from=${period.from}&to=${to}&groupBy=${effectiveGroup}`)
-      .then(setData)
-      .catch((e) => setError(e.message));
-  }, [period.from, to, effectiveGroup]);
+      .then((d) => current && setData(d))
+      .catch((e) => current && setError(e.message));
+    return () => {
+      current = false;
+    };
+  }, [isAdmin, period.from, to, effectiveGroup]);
 
   if (!isAdmin) return <EmptyState title="Reports are for the owner / manager" description="Ask the hotel owner if you need this information." />;
 
