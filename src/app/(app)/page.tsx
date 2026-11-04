@@ -19,8 +19,10 @@ import {
   UserPlus,
   Users,
   Wallet,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatCard, StatusBadge } from "@/components/ui";
+import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
 import { useBookingActions } from "@/components/booking-actions";
 import { HandoverNotes } from "@/components/shift";
@@ -206,6 +208,7 @@ export default function TodayPage() {
 
   const { stats } = data;
   const stayingNotLeaving = data.inHouse.filter((b) => b.checkOutDate > data.today);
+  const notInPathik = data.inHouse.filter((b) => !b.pathikAt);
 
   return (
     <div className="space-y-6">
@@ -306,6 +309,24 @@ export default function TodayPage() {
         />
         <StatCard title="Money to collect" value={formatCurrency(stats.owed)} subtitle="From guests staying or left" icon={<Wallet className="h-5 w-5" />} tone={stats.owed > 0 ? "amber" : "green"} onClick={() => router.push("/bookings?view=unpaid")} />
       </div>
+
+      {settings.pathik && notInPathik.length > 0 && (
+        <Card className="border-amber-200">
+          <CardHeader
+            title={
+              <span className="flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-amber-600" /> Not entered in Pathik yet ({notInPathik.length})
+              </span>
+            }
+            description="Guests staying now who are not marked as entered in the police guest register."
+          />
+          {notInPathik.map((b) => (
+            <BookingLine key={b.id} b={b}>
+              <PathikButton bookingId={b.id} onChanged={load} />
+            </BookingLine>
+          ))}
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

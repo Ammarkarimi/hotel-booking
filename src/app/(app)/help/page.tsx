@@ -99,6 +99,14 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/guest-forms", text: "Open guest forms" },
   },
   {
+    q: "How do I enter a guest in Pathik?",
+    steps: [
+      "Once: in Settings → Hotel details, download the Pathik helper, unzip it, open chrome://extensions in Chrome, turn on Developer mode and press Load unpacked to choose the pathik-helper folder.",
+      "On the booking (or the guest's page, or Today → Not entered in Pathik yet) press “Fill in Pathik”, then “Open Pathik and fill the form”. Pathik opens and the Add Guest form is filled in, with every other adult.",
+      "Type the Aadhaar number and photo by hand (nothing from an Aadhaar is saved here), check the form, press Submit in Pathik, then press “Entered in Pathik” in this software.",
+    ],
+  },
+  {
     q: "What is the rate tip pop-up?",
     steps: [
       "From 1 pm (you can change the time in Settings → Rate tips), the software checks which rooms are still free for tonight and how many usually still get booked this late on the same weekday.",

@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
             comingFrom: form.details.comingFrom || null,
             goingTo: form.details.goingTo || null,
             vehicleNumber: form.details.vehicleNumber?.toUpperCase() || null,
+            vehicleType: form.details.vehicleType || null,
             companions: form.details.companions.length
               ? JSON.stringify(
                   form.details.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }), ...(c.aadhaarAtDesk && { aadhaarAtDesk: true }) }))
@@ -253,7 +254,9 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
     nationality: d.nationality || "Indian",
     dateOfBirth: dateFromKey(d.dateOfBirth),
     address: d.address,
+    locality: d.locality || null,
     city: d.city,
+    district: d.district || null,
     state: d.state || null,
     pinCode: d.pinCode || null,
   };

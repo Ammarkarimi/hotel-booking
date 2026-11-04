@@ -18,7 +18,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
-import { parseCompanions } from "@/lib/guest-form";
+import { VEHICLE_TYPES, parseCompanions } from "@/lib/guest-form";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS, formatCurrency } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 
@@ -62,6 +62,7 @@ const editSchema = z.object({
   comingFrom: z.string().trim().max(80).optional(),
   goingTo: z.string().trim().max(80).optional(),
   vehicleNumber: z.string().trim().max(20).optional(),
+  vehicleType: z.enum(["", ...VEHICLE_TYPES]).optional(),
   // The other adults in the room. `was` is the name before this change, so their ID ticks and copies follow a corrected name.
   companions: z
     .array(
@@ -138,6 +139,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           ...(body.comingFrom !== undefined && { comingFrom: body.comingFrom || null }),
           ...(body.goingTo !== undefined && { goingTo: body.goingTo || null }),
           ...(body.vehicleNumber !== undefined && { vehicleNumber: body.vehicleNumber.toUpperCase() || null }),
+          ...(body.vehicleType !== undefined && { vehicleType: body.vehicleType || null }),
           ...(body.companions && {
             companions: body.companions.length
               ? JSON.stringify(body.companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }), ...(c.aadhaarAtDesk && { aadhaarAtDesk: true }) })))

@@ -55,6 +55,10 @@ export const INDIAN_STATES = [
   "West Bengal",
 ];
 
+/** Vehicle types, as the police guest register (Pathik) asks for them. */
+export const VEHICLE_TYPES = ["two_wheeler", "four_wheeler", "other"] as const;
+export const VEHICLE_LABELS: Record<(typeof VEHICLE_TYPES)[number], string> = { two_wheeler: "Two-wheeler", four_wheeler: "Car / four-wheeler", other: "Other" };
+
 export function isIndian(nationality: string | null | undefined) {
   return !nationality || nationality.trim().toLowerCase() === "indian" || nationality.trim().toLowerCase() === "india";
 }
@@ -71,7 +75,9 @@ const formFields = z.object({
   dateOfBirth: z.string().refine(isDateKey, "Please enter your date of birth"),
   nationality: z.string().trim().min(2, "Please enter your nationality").max(40).default("Indian"),
   address: z.string().trim().min(3, "Please enter your house and street").max(200),
+  locality: z.string().trim().max(80).default(""),
   city: z.string().trim().min(2, "Please enter your city").max(60),
+  district: z.string().trim().max(60).default(""),
   state: z.string().trim().max(60).default(""),
   pinCode: z.string().trim().max(12).default(""),
   checkIn: z.string().refine(isDateKey, "Please choose your arrival date"),
@@ -81,6 +87,7 @@ const formFields = z.object({
   comingFrom: z.string().trim().min(2, "Please say which city you are coming from").max(80),
   goingTo: z.string().trim().max(80).default(""),
   vehicleNumber: z.string().trim().max(20).default(""),
+  vehicleType: z.enum(["", ...VEHICLE_TYPES]).default(""),
   // The guest will show their Aadhaar at check-in, where the front desk checks it (nothing is uploaded).
   aadhaarAtDesk: z.boolean().default(false),
   companions: z
@@ -112,10 +119,13 @@ function checkForm(d: FormFields, ctx: z.RefinementCtx) {
   }
 }
 
-/** What the guest sends. */
+/** What the guest sends. The police form (Pathik) also needs the district of an Indian address. */
 export const guestFormSchema = formFields
   .extend({ consent: z.literal(true, { errorMap: () => ({ message: "Please tick the box to agree" }) }) })
-  .superRefine(checkForm);
+  .superRefine(checkForm)
+  .superRefine((d, ctx) => {
+    if (isIndian(d.nationality) && !d.district) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please enter your district", path: ["district"] });
+  });
 
 /** The same details when the front desk corrects them: the same checks, no agreement box. */
 export const staffFormSchema = formFields.superRefine(checkForm);

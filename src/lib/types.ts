@@ -12,7 +12,9 @@ export interface GuestDTO {
   email: string | null;
   nationality: string;
   address: string | null;
+  locality: string | null;
   city: string | null;
+  district: string | null;
   state: string | null;
   pinCode: string | null;
   idType: string | null;
@@ -101,6 +103,10 @@ export interface BookingDTO {
   comingFrom: string | null;
   goingTo: string | null;
   vehicleNumber: string | null;
+  vehicleType: string | null;
+  /** When the stay was marked as entered in the police guest register (Pathik), and by whom. */
+  pathikAt: string | null;
+  pathikByName: string | null;
   /** The other adults in the room. */
   companions: Companion[];
   /** IDs ticked as verified at the desk (nothing from the ID itself is kept). */
@@ -167,6 +173,7 @@ export interface SettingsDTO {
   rateTipsMaxDiscount: number;
   rateTipsFloors: Record<string, number>;
   rateTipsStaff: boolean;
+  pathik: boolean;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 

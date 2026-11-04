@@ -29,6 +29,8 @@ import { GstPicker, PaymentDialog, useBookingActions } from "@/components/bookin
 import { IdCheckCard } from "@/components/id-checks";
 import { useGuestMessage } from "@/components/guest-message";
 import { messageKindFor } from "@/lib/messages";
+import { VEHICLE_LABELS, VEHICLE_TYPES } from "@/lib/guest-form";
+import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -123,6 +125,7 @@ function travelOf(b: BookingDetailDTO) {
     comingFrom: b.comingFrom ?? "",
     goingTo: b.goingTo ?? "",
     vehicleNumber: b.vehicleNumber ?? "",
+    vehicleType: b.vehicleType ?? "",
     companions: b.companions.map((c) => ({ name: c.name, phone: c.phone ?? "", aadhaarAtDesk: !!c.aadhaarAtDesk, was: c.name })),
   };
 }
@@ -192,6 +195,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
         comingFrom: form.comingFrom,
         goingTo: form.goingTo,
         vehicleNumber: form.vehicleNumber,
+        vehicleType: form.vehicleType,
         companions: form.companions.map((c) => ({ ...c, name: c.name.trim() })),
       };
       if (!started) body.checkInDate = form.checkInDate;
@@ -289,6 +293,16 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
             </Field>
             <Field label="Vehicle number" optional>
               <Input maxLength={20} value={form.vehicleNumber} onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })} />
+            </Field>
+            <Field label="Type of vehicle" optional>
+              <Select value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}>
+                <option value="">None</option>
+                {VEHICLE_TYPES.map((v) => (
+                  <option key={v} value={v}>
+                    {VEHICLE_LABELS[v]}
+                  </option>
+                ))}
+              </Select>
             </Field>
           </div>
           {form.companions.map((c, i) => (
@@ -825,6 +839,17 @@ export default function BookingDetailPage() {
           </Card>
 
           {b.status !== "cancelled" && b.status !== "no_show" && <IdCheckCard booking={b} onChanged={load} />}
+          {b.status !== "cancelled" && b.status !== "no_show" && shell.pathik && (
+            <Card>
+              <CardHeader
+                title="Police register (Pathik)"
+                description={b.pathikAt ? `Entered${b.pathikByName ? ` by ${b.pathikByName}` : ""}, ${formatDateTime(b.pathikAt, shell.timezone)}` : "Not entered in Pathik yet"}
+              />
+              <CardContent>
+                <PathikButton bookingId={b.id} entered={!!b.pathikAt} onChanged={load} className="w-full" />
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader

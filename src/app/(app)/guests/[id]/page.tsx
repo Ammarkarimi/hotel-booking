@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, Camera, CalendarPlus, FileText, MessageCircle, Pencil, Phone, Trash2, Upload } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Loading, Modal, Row, Select, StatCard, StatusBadge, Tip } from "@/components/ui";
 import { GuestFormDialog } from "@/components/guest-form";
+import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
 import { api, shrinkPhoto, whatsappLink } from "@/lib/client";
 import { DOCUMENT_TYPES, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
@@ -176,6 +177,7 @@ export default function GuestProfilePage() {
             <Button variant="outline" onClick={() => setEditOpen(true)}>
               <Pencil className="h-5 w-5" /> Edit
             </Button>
+            <PathikButton guestId={g.id} size="md" />
           </div>
         </div>
       </div>

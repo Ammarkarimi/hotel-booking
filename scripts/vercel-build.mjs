@@ -75,4 +75,7 @@ if (isPreview) {
   process.exit(1);
 }
 
+// The Chrome add-on that fills Pathik, as a download for Settings and "Fill in Pathik".
+run("node scripts/build-pathik-zip.mjs");
+
 run("next build");

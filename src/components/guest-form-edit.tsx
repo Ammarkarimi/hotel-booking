@@ -6,7 +6,7 @@ import { Button, CountInput, Field, Input, Modal, Select, Textarea, Tip } from "
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { addDays } from "@/lib/dates";
-import { INDIAN_STATES, isIndian, type GuestFormDetails } from "@/lib/guest-form";
+import { INDIAN_STATES, VEHICLE_LABELS, VEHICLE_TYPES, isIndian, type GuestFormDetails } from "@/lib/guest-form";
 import type { GuestFormDTO } from "@/lib/types";
 
 type Person = { name: string; phone: string; aadhaarAtDesk: boolean };
@@ -160,8 +160,14 @@ export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: Gu
             <Input required maxLength={200} value={d.address} onChange={(e) => set({ address: e.target.value })} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Area / locality" optional>
+              <Input maxLength={80} value={d.locality ?? ""} onChange={(e) => set({ locality: e.target.value })} />
+            </Field>
             <Field label="City">
               <Input required maxLength={60} value={d.city} onChange={(e) => set({ city: e.target.value })} />
+            </Field>
+            <Field label="District" optional>
+              <Input maxLength={60} value={d.district ?? ""} onChange={(e) => set({ district: e.target.value })} />
             </Field>
             <Field label="State" optional={!indian}>
               {indian ? (
@@ -193,6 +199,16 @@ export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: Gu
             </Field>
             <Field label="Vehicle number" optional>
               <Input maxLength={20} value={d.vehicleNumber} onChange={(e) => set({ vehicleNumber: e.target.value.toUpperCase() })} />
+            </Field>
+            <Field label="Type of vehicle" optional>
+              <Select value={d.vehicleType ?? ""} onChange={(e) => set({ vehicleType: e.target.value as GuestFormDetails["vehicleType"] })}>
+                <option value="">None</option>
+                {VEHICLE_TYPES.map((v) => (
+                  <option key={v} value={v}>
+                    {VEHICLE_LABELS[v]}
+                  </option>
+                ))}
+              </Select>
             </Field>
           </div>
         </Section>

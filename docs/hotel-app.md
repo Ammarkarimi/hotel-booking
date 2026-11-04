@@ -328,6 +328,43 @@ how full each room type was, how many room-nights stayed empty, the usual price 
 the average price it really sold for, and at what time of day bookings come in
 (same-night bookings and all bookings), to choose a good start time.
 
+## Pathik: the police guest register (Gujarat)
+
+Hotels in Gujarat enter every stay in **Pathik** (pathik.guru). The software fills
+Pathik's **Add Guest** form for you, including every other adult in the room.
+
+**Once, on the front-desk computer (Google Chrome):** install the **Pathik helper**.
+Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it, open
+`chrome://extensions`, turn on *Developer mode*, press *Load unpacked* and choose the
+`pathik-helper` folder.
+
+**For each stay:**
+
+1. On the booking (card **Police register (Pathik)**), on the guest's page, or from
+   **Today → Not entered in Pathik yet**, press **Fill in Pathik**.
+2. The window says what Pathik needs that is not in the software yet (for example
+   the district or email). Add it on the booking or guest first, or type it in Pathik.
+3. Press **Open Pathik and fill the form**. Pathik opens in a new tab (sign in if it
+   asks, then open Add Guest) and the form is filled in: name, company, address,
+   locality, city, district, PIN, country and state, date of birth, mobile and phone,
+   email, coming from and going to, ID type and number, the ID copies (made smaller
+   than 250 KB, at most 6), room, check-in and check-out dates and times, adults and
+   children, vehicle type and number. When there are more adults, Pathik's extra
+   blocks are filled with each one's name, mobile and ID type.
+4. Filled boxes get a green border, boxes still empty an amber one, and a small panel
+   lists what is left. **Aadhaar is always typed by hand** (number and photo): nothing
+   from an Aadhaar is saved in the software.
+5. Check the form and press **Submit** in Pathik. Back in the software press
+   **Entered in Pathik**: the booking shows who entered it and when.
+
+If dates or times come out in the wrong format, choose the format in the panel and
+press *Fill again*. Without the helper, the window still lists every detail with a
+copy button.
+
+The guest form on WhatsApp asks for the area/locality, district and type of vehicle
+too, so most stays need nothing typed. Hotels outside Gujarat can switch Pathik off
+in Settings → Hotel details.
+
 ## WhatsApp messages to guests
 
 Staff send three messages to guests on WhatsApp (they tap the button, WhatsApp
