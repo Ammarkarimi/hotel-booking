@@ -265,6 +265,7 @@ model Booking {
   pathikAt            DateTime? // when the front desk marked the stay as entered in Pathik
   pathikByName        String?
   companions          String? // JSON: [{ name, phone? }] for the other adults in the room
+  originalPrice       String? // JSON: the price first agreed, saved on the first Edit bill: { ratePerNight, fixedRate, discount, gstRate }; null = bill never edited
   createdById         String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

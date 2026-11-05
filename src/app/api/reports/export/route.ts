@@ -2,11 +2,14 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAdmin, csvResponse, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
-import { addDays, dateFromKey, diffDays, isDateKey } from "@/lib/dates";
+import { addDays, dateFromKey, diffDays, isDateKey, todayKey } from "@/lib/dates";
 import { defaultGroupBy, type GroupBy } from "@/lib/periods";
 import { buildReport } from "@/lib/reports";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
+import { round2 } from "@/lib/pricing";
 import { label } from "@/lib/utils";
+
+const sum = (values: number[]) => round2(values.reduce((s, v) => s + v, 0));
 
 /** Downloads a spreadsheet (CSV) that opens in Excel or Google Sheets. */
 export async function GET(request: NextRequest) {
@@ -26,13 +29,54 @@ export async function GET(request: NextRequest) {
         orderBy: { checkInDate: "asc" },
       });
       const rows = bookings.map((b) => serializeBooking(b, ctx));
+      // First total = at the price first agreed; Final total = after Edit bill; Difference = final - first.
       return csvResponse(`bookings_${suffix}`, [
-        ["Booking #", "Guest", "Phone", "Room", "Arrival", "Leaving", "Nights", "Status", "Source", "Room total", "Discount", "Extras", "Tax", "Total", "Paid", "Balance"],
+        [
+          "Booking #", "Guest", "Phone", "Room", "Arrival", "Leaving", "Nights", "Status", "Source", "Room total", "Discount", "Extras", "Tax",
+          "First total (as first agreed)", "Final total (after edit)", "Difference", "Paid", "Balance",
+        ],
         ...rows.map((b) => [
           b.number, b.guestName, b.guest.phone, b.room.roomNumber, b.checkInDate, b.checkOutDate, b.folio.nightCount,
           label(b.status), label(b.source), b.folio.roomTotal, b.folio.discount, b.folio.extrasTotal, b.folio.taxTotal,
-          b.folio.grandTotal, b.folio.netPaid, b.folio.balance,
+          b.firstTotal, b.folio.grandTotal, round2(b.folio.grandTotal - b.firstTotal), b.folio.netPaid, b.folio.balance,
         ]),
+        [
+          "Total", "", "", "", "", "", "", "", "", "", "", "", "",
+          sum(rows.map((b) => b.firstTotal)), sum(rows.map((b) => b.folio.grandTotal)), sum(rows.map((b) => b.folio.grandTotal - b.firstTotal)), "", "",
+        ],
+      ]);
+    }
+
+    if (type === "gst") {
+      // GST based report: one row per stay with the final amounts, after any Edit bill.
+      const bookings = await prisma.booking.findMany({
+        where: { checkInDate: { gte: dateFromKey(from), lt: dateFromKey(addDays(to, 1)) }, status: { notIn: ["cancelled", "no_show"] } },
+        include: bookingInclude,
+        orderBy: { checkInDate: "asc" },
+      });
+      const rows = bookings.map((b) => serializeBooking(b, ctx));
+      const half = (n: number) => round2(n / 2);
+      const taxable = (b: (typeof rows)[number]) => round2(b.folio.roomAfterDiscount + b.folio.extrasTotal);
+      return csvResponse(`gst_report_${suffix}`, [
+        [
+          "Booking #", "Invoice #", "Invoice date", "Guest", "Guest GSTIN", "Room", "Arrival", "Leaving", "Nights", "Status",
+          "Price per night", "Room charges", "Discount", "Extras", "Taxable value", "GST % on room", "GST on room", "GST on extras",
+          "CGST", "SGST", "Total GST", "Bill total", "Bill edited",
+        ],
+        ...rows.map((b) => [
+          b.number, b.bill?.invoiceNumber ?? "", b.bill ? todayKey(ctx.settings.timezone, b.bill.generatedAt) : "", b.guestName, b.guest.gstin,
+          b.room.roomNumber, b.checkInDate, b.checkOutDate, b.folio.nightCount, label(b.status),
+          b.ratePerNight || b.room.pricePerNight, b.folio.roomTotal, b.folio.discount, b.folio.extrasTotal, taxable(b),
+          b.folio.roomTaxRate, b.folio.roomTax, b.folio.extrasTax, half(b.folio.taxTotal), half(b.folio.taxTotal), b.folio.taxTotal,
+          b.folio.grandTotal, b.billEdited ? "Yes" : "No",
+        ]),
+        [
+          "Total", "", "", "", "", "", "", "", sum(rows.map((b) => b.folio.nightCount)), "", "",
+          sum(rows.map((b) => b.folio.roomTotal)), sum(rows.map((b) => b.folio.discount)), sum(rows.map((b) => b.folio.extrasTotal)), sum(rows.map(taxable)), "",
+          sum(rows.map((b) => b.folio.roomTax)), sum(rows.map((b) => b.folio.extrasTax)), sum(rows.map((b) => half(b.folio.taxTotal))),
+          sum(rows.map((b) => half(b.folio.taxTotal))), sum(rows.map((b) => b.folio.taxTotal)), sum(rows.map((b) => b.folio.grandTotal)),
+          `${rows.filter((b) => b.billEdited).length} edited`,
+        ],
       ]);
     }
 
