@@ -113,4 +113,8 @@ test("what is missing is listed, and a guest without a booking fills only their 
   const ticked = pathikRecord(base({ guest: { ...guest, idType: null, idNumber: null, passportNo: "X1234567" }, idChecks: [{ person: null, idType: "passport" }] }));
   assert.equal(ticked.guest.docType, "passport");
   assert.equal(ticked.guest.docNumber, "X1234567");
+  // Only the kind of ID was ticked at the desk: its number is typed in Pathik, and nothing is "missing".
+  const noNumber = pathikRecord(base({ guest: { ...guest, idType: "driving_licence", idNumber: null }, documents: [] }));
+  assert.ok(!noNumber.missing.some((m) => /number|copy/i.test(m)));
+  assert.deepEqual(noNumber.byHand, ["Aadhaar number and photo for Ravi", "Rajesh Kumar's ID number and photo"]);
 });

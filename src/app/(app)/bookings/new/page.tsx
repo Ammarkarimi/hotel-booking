@@ -3,15 +3,15 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, Lightbulb, MessageCircle, Pencil, Printer, Search, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, BedDouble, Check, CheckCircle2, ClipboardCheck, Lightbulb, MessageCircle, Pencil, Printer, Search, ShieldCheck, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, CardContent, CountInput, EmptyState, Field, Input, Loading, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
 import { GstPicker, MethodPicker } from "@/components/booking-actions";
 import { FormDetails } from "@/components/guest-form-send";
 import { EditGuestFormDialog } from "@/components/guest-form-edit";
 import { useGuestMessage } from "@/components/guest-message";
 import { useApp } from "@/components/app-provider";
-import { AddressFields, TravelFields, emptyAddress, emptyTravel, sizeCompanions } from "@/components/pathik-details";
-import type { DeskAddress, DeskTravel } from "@/components/pathik-details";
+import { AddressFields, ID_CHECK_TYPES, IdCheckFields, TravelFields, emptyAddress, emptyTravel, sizeCompanions } from "@/components/pathik-details";
+import type { DeskAddress, DeskIdCheck, DeskTravel } from "@/components/pathik-details";
 import { deskPathikMissing, isIndian } from "@/lib/guest-form";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
@@ -72,13 +72,15 @@ function NewBookingWizard() {
   const [guestQuery, setGuestQuery] = useState("");
   const [guestResults, setGuestResults] = useState<GuestResult[]>([]);
   const [guest, setGuest] = useState<GuestResult | null>(null);
-  const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", phone: "", email: "", nationality: "Indian", idType: "aadhar", idNumber: "", address: "" });
+  const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", phone: "", email: "", nationality: "Indian", address: "" });
 
   // For the police register (Pathik): the guest's full address, the journey and the other adults.
   const [address, setAddress] = useState<DeskAddress>(emptyAddress);
   const [travel, setTravel] = useState<DeskTravel>(emptyTravel);
   // A returning guest whose profile has no surname or email yet.
   const [profileFix, setProfileFix] = useState({ lastName: "", email: "" });
+  // The ID of every adult, ticked once staff have seen the original (index 0 = the guest).
+  const [idChecks, setIdChecks] = useState<DeskIdCheck[]>([]);
 
   const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [customRate, setCustomRate] = useState("");
@@ -265,17 +267,37 @@ function NewBookingWizard() {
           ...address,
           ...(guest
             ? { lastName: guest.lastName || profileFix.lastName, email: guest.email || profileFix.email, phone: guest.phone, nationality: guest.nationality }
-            : { lastName: newGuest.lastName, email: newGuest.email, phone: newGuest.phone, nationality: newGuest.nationality, idType: newGuest.idType, idNumber: newGuest.idNumber }),
+            : { lastName: newGuest.lastName, email: newGuest.email, phone: newGuest.phone, nationality: newGuest.nationality }),
           ...travel,
           adults,
         });
-  const guestReady = (!!guestForm || !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5)) && pathikMissing.length === 0;
   const guestName = guestForm?.details
     ? `${guestForm.details.firstName} ${guestForm.details.lastName}`.trim()
     : guest
       ? `${guest.firstName} ${guest.lastName}`.trim()
       : `${newGuest.firstName} ${newGuest.lastName}`.trim();
-
+  // Everyone in the room, for the ID check: the guest, then the other adults by name.
+  const formDetails = guestForm?.details;
+  const nationality = formDetails?.nationality ?? guest?.nationality ?? newGuest.nationality;
+  const firstId = isIndian(nationality) ? "aadhar" : "passport";
+  const docOf = (keys: (string | null)[]) => guestForm?.documents.find((d) => keys.includes(d.person ?? null) && ID_CHECK_TYPES.includes(d.type as never))?.type;
+  const idPeople = formDetails
+    ? [
+        { name: guestName || "Guest", defaultType: formDetails.aadhaarAtDesk ? "aadhar" : (docOf([null, "0"]) ?? firstId) },
+        ...formDetails.companions.map((c, i) => ({ name: c.name, defaultType: c.aadhaarAtDesk ? "aadhar" : (docOf([c.name, String(i + 1)]) ?? firstId) })),
+      ]
+    : [
+        { name: guestName || "Guest", defaultType: guest?.idType && ID_CHECK_TYPES.includes(guest.idType as never) ? guest.idType : firstId },
+        ...travel.companions.map((c, i) => ({ name: c.name.trim() || `Adult ${i + 2}`, defaultType: "aadhar" })),
+      ];
+  const idRows = idPeople.map((p, i) => idChecks[i] ?? { idType: p.defaultType, seen: false });
+  const idsDone = idRows.every((r) => r.seen);
+  /** The ticked IDs as the server keeps them: null = the guest, otherwise the adult's name. */
+  const idCheckBody = idRows
+    .map((r, i) => ({ ...r, person: i === 0 ? null : formDetails ? formDetails.companions[i - 1].name : travel.companions[i - 1].name.trim() || `Adult ${i + 1}` }))
+    .filter((r) => r.seen)
+    .map(({ person, idType }) => ({ person, idType }));
+  const guestReady = (!!guestForm || !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5)) && pathikMissing.length === 0 && (!walkIn || idsDone);
   async function submit() {
     if (!selectedRoom) return;
     setSaving(true);
@@ -294,12 +316,13 @@ function NewBookingWizard() {
           notes,
           ...(isOtaSource(source) && otaReference.trim() && { otaReference: otaReference.trim() }),
           checkInNow: walkIn,
+          idChecks: idCheckBody,
           ...(guestForm
             ? { guestFormId: guestForm.id, ...(linkGuestId && { guestId: linkGuestId }) }
             : {
                 ...(guest
                   ? { guestId: guest.id, guestDetails: { ...address, ...(!guest.lastName && { lastName: profileFix.lastName.trim() }), ...(!guest.email && { email: profileFix.email.trim() }) } }
-                  : { guest: { ...newGuest, ...address, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
+                  : { guest: { ...newGuest, ...address, idType: idRows[0]?.seen ? idRows[0].idType : undefined } }),
                 comingFrom: travel.comingFrom,
                 goingTo: travel.goingTo,
                 vehicleType: travel.vehicleType,
@@ -653,25 +676,7 @@ function NewBookingWizard() {
                       <Input type="email" value={newGuest.email} onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })} />
                     </Field>
                     <Field label="Nationality">
-                      <Input value={newGuest.nationality} onChange={(e) => setNewGuest({ ...newGuest, nationality: e.target.value, idType: e.target.value.toLowerCase() === "indian" ? newGuest.idType : "passport" })} />
-                    </Field>
-                    <Field
-                      label="ID proof"
-                      optional={!shell.pathik}
-                      hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Check the card at check-in and tick it on the booking." : "You can also upload a photo of the ID later."}
-                    >
-                      <div className="flex gap-2">
-                        <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value, idNumber: "" })} className="w-48 shrink-0">
-                          {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
-                            <option key={t} value={t}>
-                              {label(t)}
-                            </option>
-                          ))}
-                        </Select>
-                        {newGuest.idType !== "aadhar" && (
-                          <Input value={newGuest.idNumber} onChange={(e) => setNewGuest({ ...newGuest, idNumber: e.target.value })} placeholder="ID number" />
-                        )}
-                      </div>
+                      <Input value={newGuest.nationality} onChange={(e) => setNewGuest({ ...newGuest, nationality: e.target.value })} />
                     </Field>
                   </div>
                   <div className="mt-4">
@@ -691,8 +696,10 @@ function NewBookingWizard() {
                   onChange={setTravel}
                   adults={adults}
                   required={shell.pathik}
-                  onAdults={(n, companions) => {
+                  onAdults={(n, companions, removed) => {
                     setTravel({ ...travel, companions });
+                    // The ID tick of the adult taken off goes with them (row 0 is the guest).
+                    if (removed !== undefined) setIdChecks(idRows.filter((_, j) => j !== removed + 1));
                     setAdults(Math.max(1, n));
                   }}
                 />
@@ -705,9 +712,22 @@ function NewBookingWizard() {
                 )}
               </div>
             )}
+            <div className={cn("rounded-xl border-2 p-4", idsDone ? "border-emerald-200" : walkIn ? "border-amber-300" : "border-slate-200")}>
+              <p className="mb-1 flex items-center gap-2 font-semibold text-slate-800">
+                <ShieldCheck className={cn("h-5 w-5", idsDone ? "text-emerald-600" : "text-amber-600")} /> ID check
+                {walkIn ? "" : <span className="text-sm font-normal text-slate-500">(optional for a booking in advance)</span>}
+              </p>
+              <p className="mb-3 text-sm text-slate-500">Choose which ID each adult has and tick it once you have seen the original.</p>
+              <IdCheckFields people={idPeople} value={idRows} onChange={setIdChecks} required={walkIn} />
+            </div>
             {pathikMissing.length > 0 && (
               <Tip tone="warning">
                 <b>Still needed for Pathik:</b> {pathikMissing.join(", ")}.
+              </Tip>
+            )}
+            {walkIn && !idsDone && (
+              <Tip tone="warning">
+                <b>Verify the ID of every adult</b> to go on to price & payment.
               </Tip>
             )}
             <div className="flex justify-between">

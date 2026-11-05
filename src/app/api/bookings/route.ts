@@ -17,7 +17,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
-import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
+import { BOOKING_SOURCES, DOCUMENT_TYPES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 import { VEHICLE_TYPES, deskPathikMissing, hasOwnVehicle, type GuestFormDetails } from "@/lib/guest-form";
 import { parseDetails } from "@/lib/guest-forms-api";
@@ -130,6 +130,12 @@ const createSchema = z.object({
   notes: z.string().trim().optional(),
   otaReference: z.string().trim().max(60).optional(),
   checkInNow: z.boolean().optional(),
+  // The original IDs the front desk looked at: which kind of ID, per adult (null = the guest who
+  // booked). No number or copy is saved. Every adult needs one for a walk-in checked in now.
+  idChecks: z
+    .array(z.object({ person: z.string().trim().max(80).nullable(), idType: z.enum(["aadhar", ...DOCUMENT_TYPES], { errorMap: () => ({ message: "Please choose which ID you saw" }) }) }))
+    .max(50)
+    .default([]),
   advance: z
     .object({
       amount: z.coerce.number().min(0),
@@ -162,6 +168,12 @@ export async function POST(request: NextRequest) {
 
       let guestId = body.guestId;
       const form = body.guestFormId ? await claimGuestForm(tx, body.guestFormId, user.name) : null;
+      if (body.checkInNow) {
+        const seen = new Set(body.idChecks.map((c) => c.person ?? ""));
+        const names = form ? form.details.companions.map((c) => c.name) : companions.map((c) => c.name);
+        const unchecked = ["", ...names].filter((n) => !seen.has(n));
+        if (unchecked.length || seen.size < body.adults) fail("Please verify the ID of every adult before checking them in");
+      }
       if (form) guestId = await guestFromForm(tx, form, guestId);
       if (!guestId && body.guest) {
         // Reuse the existing guest record for a returning guest with the same phone and name.
@@ -192,7 +204,13 @@ export async function POST(request: NextRequest) {
           ).id;
       }
       // Details typed at the desk for a returning guest fill in their profile.
+      const mainCheck = body.idChecks.find((c) => c.person === null);
       const extra = form ? {} : addressData(body.guestId ? body.guestDetails : body.guest);
+      if (body.guestId && mainCheck) {
+        // The ID seen now: the number saved before belongs to another ID, so it goes when the kind changes.
+        const before = await tx.guest.findUnique({ where: { id: guestId! }, select: { idType: true } });
+        if (before && before.idType !== mainCheck.idType) Object.assign(extra, { idType: mainCheck.idType, idNumber: null });
+      }
       const guest = Object.keys(extra).length
         ? await tx.guest.update({ where: { id: guestId! }, data: extra }).catch(() => null)
         : await tx.guest.findUnique({ where: { id: guestId! } });
@@ -201,7 +219,6 @@ export async function POST(request: NextRequest) {
       if (!form && ctx.settings.pathik) {
         const missing = deskPathikMissing({
           ...guest,
-          ...(!body.guestId && body.guest && { idType: body.guest.idType ?? "aadhar", idNumber: body.guest.idNumber }),
           comingFrom: body.comingFrom,
           goingTo: body.goingTo,
           vehicleType: body.vehicleType,
@@ -266,6 +283,20 @@ export async function POST(request: NextRequest) {
             reference: body.advance.reference || null,
             receivedBy: user.name,
           },
+        });
+      }
+
+      if (body.idChecks.length) {
+        await tx.idCheck.createMany({
+          data: body.idChecks.map((c) => ({
+            hotelId: currentHotelId(),
+            bookingId: created.id,
+            person: c.person,
+            method: "id_seen",
+            idType: c.idType,
+            checkedById: user.id,
+            checkedByName: user.name,
+          })),
         });
       }
 

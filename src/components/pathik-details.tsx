@@ -85,7 +85,7 @@ export function TravelFields({
   onChange: (v: DeskTravel) => void;
   adults: number;
   /** Adds or takes off an adult (the number of adults on the booking changes with it). */
-  onAdults: (n: number, companions: DeskTravel["companions"]) => void;
+  onAdults: (n: number, companions: DeskTravel["companions"], removed?: number) => void;
   required: boolean;
 }) {
   const set = (k: "comingFrom" | "goingTo" | "vehicleType") => (e: { target: { value: string } }) => onChange({ ...value, [k]: e.target.value });
@@ -134,7 +134,7 @@ export function TravelFields({
             <Button
               variant="ghost"
               aria-label={`Take adult ${i + 2} off the booking`}
-              onClick={() => onAdults(adults - 1, value.companions.filter((_, j) => j !== i))}
+              onClick={() => onAdults(adults - 1, value.companions.filter((_, j) => j !== i), i)}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -146,6 +146,71 @@ export function TravelFields({
           </Button>
         )}
       </div>
+    </div>
+  );
+}
+
+/** IDs the desk can tick as seen: Aadhaar (never saved) and the other photo IDs. */
+export const ID_CHECK_TYPES = ["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"] as const;
+const ID_LABELS: Record<(typeof ID_CHECK_TYPES)[number], string> = {
+  aadhar: "Aadhaar card",
+  passport: "Passport",
+  driving_licence: "Driving licence",
+  voter_id: "Voter ID",
+  pan: "PAN card",
+  other: "Other photo ID",
+};
+
+/** One adult's ID at the desk: which kind of ID, and whether staff have seen the original. */
+export type DeskIdCheck = { idType: string; seen: boolean };
+
+/**
+ * "ID check" on New booking: for every adult, the kind of ID and a tick once the original has been
+ * seen. Nothing is typed: no number or copy is saved. Required (every adult ticked) for a walk-in.
+ */
+export function IdCheckFields({
+  people,
+  value,
+  onChange,
+  required,
+}: {
+  people: { name: string; defaultType: string }[];
+  value: DeskIdCheck[];
+  onChange: (v: DeskIdCheck[]) => void;
+  required: boolean;
+}) {
+  const row = (i: number): DeskIdCheck => value[i] ?? { idType: people[i].defaultType, seen: false };
+  const set = (i: number, change: Partial<DeskIdCheck>) => onChange(people.map((_, j) => (j === i ? { ...row(j), ...change } : row(j))));
+  return (
+    <div className="space-y-2">
+      {people.map((p, i) => {
+        const r = row(i);
+        return (
+          <div
+            key={i}
+            className={`flex flex-col gap-2 rounded-xl border px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between ${r.seen ? "border-emerald-200 bg-emerald-50" : "border-slate-200"}`}
+          >
+            <p className="font-semibold text-slate-800">{p.name}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Select value={r.idType} onChange={(e) => set(i, { idType: e.target.value })} className="w-48" aria-label={`ID of ${p.name}`}>
+                {ID_CHECK_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {ID_LABELS[t]}
+                  </option>
+                ))}
+              </Select>
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+                <input type="checkbox" className="h-5 w-5 accent-emerald-600" checked={r.seen} onChange={(e) => set(i, { seen: e.target.checked })} />
+                ID verified
+              </label>
+            </div>
+          </div>
+        );
+      })}
+      <p className="text-xs text-slate-500">
+        Look at the original ID and tick it. Nothing is typed or saved from it, only which kind of ID was seen.
+        {required ? " Every adult must be ticked before price & payment." : " The guest is not here yet? Leave it and tick the IDs on the booking at check-in."}
+      </p>
     </div>
   );
 }

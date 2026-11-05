@@ -39,8 +39,8 @@ Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
 1. **Dates.** Quick buttons for “1 night”, “2 nights” and so on.
 2. **Room.** Only free rooms are shown, each with its total price.
 3. **Guest.** Search a returning guest by name or phone, or type a new one, with
-   everything the police register (Pathik) asks for: last name, mobile, email, ID
-   proof (a number for any ID but Aadhaar), house and street, area/locality, city,
+   everything the police register (Pathik) asks for: last name, mobile, email,
+   house and street, area/locality, city,
    district, state, PIN code and date of birth (for a returning guest, what is empty
    on their profile; it is saved there), and the journey: coming from, going to
    next, how they are travelling (car, two-wheeler, bus, auto-rickshaw, other
@@ -52,6 +52,13 @@ Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
    compulsory: a box under the form lists what is still needed, and Next stays
    off until it is filled in. Locality, district, state and PIN are not asked of
    foreign guests. With Pathik switched off they are optional.
+   **ID check:** for every adult, choose which ID they have (Aadhaar, passport,
+   driving licence, voter ID, PAN or other photo ID) and tick **ID verified** once
+   you have seen the original. No number is typed and no copy is made. For a
+   walk-in, **Price & payment** opens only when every adult is ticked; for a
+   booking in advance it is optional, and the IDs are ticked on the booking at
+   check-in. The ticks show on the booking with who ticked them and when. ID
+   numbers are typed in Pathik itself.
 4. **Price & payment.** Agreed price, discount, **GST on the room** (the default
    from Settings is selected; tap 0%, 5%, 12%, 18% or “Other” for this booking
    only), where the booking came from (walk-in, phone, website, Booking.com,

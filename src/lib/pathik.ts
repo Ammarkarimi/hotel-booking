@@ -258,10 +258,6 @@ export function pathikRecord(input: PathikInput): PathikRecord {
   need(guest.mobile, "Mobile number");
   need(guest.email, "Email");
   need(docType, "ID proof type");
-  if (docType && docType !== "aadhar") {
-    need(docNumber, "ID proof number");
-    need(guestDocs.length > 0, "Copy of the ID proof");
-  }
   if (stay) {
     need(stay.comingFrom, "Coming from");
     need(stay.goingTo, "Going to");
@@ -270,8 +266,11 @@ export function pathikRecord(input: PathikInput): PathikRecord {
     others.forEach((o) => need(o.docType, `ID proof type of ${o.fullName}`));
   }
 
+  // The desk only ticks which ID it saw, so ID numbers (and photos not uploaded) are typed in Pathik.
+  const byHand: string[] = [];
   const aadhaarPeople = [...(docType === "aadhar" ? [guest.fullName] : []), ...others.filter((o) => o.docType === "aadhar").map((o) => o.fullName)];
-  const byHand = aadhaarPeople.length ? [`Aadhaar number and photo for ${aadhaarPeople.join(", ")}`] : [];
+  if (aadhaarPeople.length) byHand.push(`Aadhaar number and photo for ${aadhaarPeople.join(", ")}`);
+  if (docType && docType !== "aadhar" && !docNumber) byHand.push(`${guest.fullName}'s ID number${guestDocs.length ? "" : " and photo"}`);
 
   const title = b ? `Booking #${b.number} · Room ${b.roomNumber} · ${guest.fullName}` : guest.fullName;
   return { title, guest, stay, others, documents, missing, byHand };
