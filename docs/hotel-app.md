@@ -83,8 +83,8 @@ Open any booking (search at the top of the screen) to:
 - **Change** the stay: extend by a night, change dates, move to another free room,
   or change the price, discount or GST on the room. The check-out screen also
   lets you change the GST before the final invoice is made
-- **Edit bill** (on the Bill card, while the guest is staying and also after they
-  have left): a new price per night, discount or GST, for example when the guest
+- **Edit bill** (on the Bill card; all staff while the guest is staying, only the
+  owner once the guest has left): a new price per night, discount or GST, for example when the guest
   agreed ₹1,500 at check-in and bargains to ₹1,200 at check-out. The window shows
   the new total and what is then still to pay, or how much to give back with
   **Refund**. A final invoice keeps its number and gets the new amounts. Each

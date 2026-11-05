@@ -775,9 +775,10 @@ export default function BookingDetailPage() {
               title="Bill"
               description={b.bill ? `Final invoice ${b.bill.invoiceNumber} created ${formatDateTime(b.bill.generatedAt)}` : "Running total. It becomes final when the guest checks out."}
               action={
-                (open || b.status === "checked_out") && (
+                (open || (b.status === "checked_out" && isAdmin)) && (
                   <div className="flex flex-wrap justify-end gap-2">
-                    {(b.status === "checked_in" || b.status === "checked_out") && (
+                    {/* After check-out only the owner can change the bill. */}
+                    {(b.status === "checked_in" || (b.status === "checked_out" && isAdmin)) && (
                       <Button size="sm" variant="outline" onClick={() => setBillOpen(true)}>
                         <Pencil className="h-4 w-4" /> Edit bill
                       </Button>

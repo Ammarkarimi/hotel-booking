@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { fail, withAuth } from "@/lib/api";
+import { fail, isAdmin, withAuth } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { bookingLabel, folioFor, loadBooking, serializeBooking } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
@@ -11,7 +11,7 @@ import { formatCurrency } from "@/lib/utils";
 type Params = { params: Promise<{ id: string }> };
 
 // Edit bill: the price agreed with the guest changes (they bargained at check-out, for example).
-// Works while the guest is staying and after they have left; a final invoice keeps its number and
+// Staff can edit while the guest is staying; after check-out only the owner can. A final invoice keeps its number and
 // gets the new amounts. Payments are not touched: a refund or a payment is recorded as usual.
 const schema = z.object({
   ratePerNight: z.coerce.number().min(0, "The price cannot be less than 0").max(10_00_000),
@@ -31,6 +31,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     const { before, after, booking } = await prisma.$transaction(async (tx) => {
       const old = await loadBooking(id, tx);
       if (!["checked_in", "checked_out"].includes(old.status)) fail("The bill can be edited once the guest has checked in. Before that, use Change booking.");
+      // Once the guest has left, only the owner can change the bill.
+      if (old.status === "checked_out" && !isAdmin(user)) fail("Only the owner can edit the bill after check-out", 403);
       const before = folioFor(old, ctx);
 
       await tx.booking.update({
