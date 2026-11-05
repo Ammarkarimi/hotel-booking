@@ -19,7 +19,7 @@ import {
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
-import type { GuestFormDetails } from "@/lib/guest-form";
+import { VEHICLE_TYPES, hasOwnVehicle, type GuestFormDetails } from "@/lib/guest-form";
 import { parseDetails } from "@/lib/guest-forms-api";
 
 export async function GET(request: NextRequest) {
@@ -67,6 +67,25 @@ export async function GET(request: NextRequest) {
   });
 }
 
+const addressFields = z.object({
+  dateOfBirth: z.string().refine((v) => v === "" || isDateKey(v), "Please check the date of birth").optional(),
+  locality: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(60).optional(),
+  district: z.string().trim().max(60).optional(),
+  state: z.string().trim().max(60).optional(),
+  pinCode: z.string().trim().max(12).optional(),
+});
+
+/** Only the filled-in boxes, ready for the guest's profile. */
+function addressData(d: z.infer<typeof addressFields> | undefined) {
+  if (!d) return {};
+  const out: Record<string, string | Date> = {};
+  for (const k of ["locality", "city", "district", "state"] as const) if (d[k]) out[k] = d[k]!;
+  if (d.pinCode) out.pinCode = d.pinCode.replace(/\s/g, "");
+  if (d.dateOfBirth) out.dateOfBirth = dateFromKey(d.dateOfBirth);
+  return out;
+}
+
 const createSchema = z.object({
   guestId: z.string().optional(),
   // A guest form filled in on WhatsApp: the guest's details, ID copies and travel details come from it.
@@ -82,6 +101,18 @@ const createSchema = z.object({
       idType: z.string().optional(),
       idNumber: z.string().trim().optional(),
     })
+    .merge(addressFields)
+    .optional(),
+  // The police register (Pathik) details of a guest chosen from the list: only the boxes filled in change.
+  guestDetails: addressFields.optional(),
+  // The journey and the other adults, typed at the desk (a guest form brings its own).
+  comingFrom: z.string().trim().max(80).optional(),
+  goingTo: z.string().trim().max(80).optional(),
+  vehicleNumber: z.string().trim().max(20).optional(),
+  vehicleType: z.enum(["", ...VEHICLE_TYPES]).optional(),
+  companions: z
+    .array(z.object({ name: z.string().trim().min(1, "Please enter the name of each adult staying").max(80), phone: z.string().trim().max(20).optional() }))
+    .max(49)
     .optional(),
   roomId: z.string().min(1, "Please choose a room"),
   checkInDate: z.string(),
@@ -117,6 +148,10 @@ export async function POST(request: NextRequest) {
       fail("A guest can only be checked in now if the arrival date is today");
     }
     if (!body.guestId && !body.guest && !body.guestFormId) fail("Please choose or add a guest");
+    const companions = body.guestFormId ? [] : (body.companions ?? []).filter((c) => c.name);
+    if (companions.length > body.adults - 1) fail("There are more names than adults. Please check the number of adults");
+    const names = companions.map((c) => c.name.toLowerCase());
+    if (new Set(names).size !== names.length) fail("Two adults have the same name. Please add a surname so they can be told apart");
 
     const booking = await prisma.$transaction(async (tx) => {
       await lockRooms(tx, [body.roomId]);
@@ -145,6 +180,7 @@ export async function POST(request: NextRequest) {
                 email: body.guest.email || null,
                 nationality: body.guest.nationality || "Indian",
                 address: body.guest.address || null,
+                ...addressData(body.guest),
                 idType: body.guest.idType || null,
                 // Nothing from an Aadhaar is saved: the front desk checks the card at check-in.
                 idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
@@ -152,7 +188,11 @@ export async function POST(request: NextRequest) {
             })
           ).id;
       }
-      const guest = await tx.guest.findUnique({ where: { id: guestId! } });
+      // Details typed at the desk for a returning guest fill in their profile.
+      const extra = form ? {} : addressData(body.guestId ? body.guestDetails : body.guest);
+      const guest = Object.keys(extra).length
+        ? await tx.guest.update({ where: { id: guestId! }, data: extra }).catch(() => null)
+        : await tx.guest.findUnique({ where: { id: guestId! } });
       if (!guest) fail("Guest not found", 404);
       if (body.checkInNow && room.status === "occupied") {
         fail(`Room ${room.roomNumber} still has a guest inside. Check them out first.`);
@@ -175,6 +215,13 @@ export async function POST(request: NextRequest) {
           gstRate: body.gstRate ?? null,
           notes: body.notes || null,
           otaReference: body.otaReference || null,
+          ...(!form && {
+            comingFrom: body.comingFrom || null,
+            goingTo: body.goingTo || null,
+            vehicleType: body.vehicleType || null,
+            vehicleNumber: hasOwnVehicle(body.vehicleType) || !body.vehicleType ? body.vehicleNumber?.toUpperCase() || null : null,
+            companions: companions.length ? JSON.stringify(companions.map((c) => ({ name: c.name, ...(c.phone && { phone: c.phone }) }))) : null,
+          }),
           ...(form && {
             comingFrom: form.details.comingFrom || null,
             goingTo: form.details.goingTo || null,

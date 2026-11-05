@@ -63,7 +63,7 @@ function copyRows(r: PathikRecord): Array<[string, string]> {
       ["Check-out time", s.checkOutTime],
       ["Adults", String(s.adults)],
       ["Children", String(s.children)],
-      ["Vehicle type", s.vehicleType ? VEHICLE_LABELS[s.vehicleType as keyof typeof VEHICLE_LABELS] ?? s.vehicleType : "None"],
+      ["Vehicle type", s.vehicleType ? VEHICLE_LABELS[s.vehicleType as keyof typeof VEHICLE_LABELS] ?? s.vehicleType : ""],
       ["Vehicle number", s.vehicleNumber]
     );
     r.others.forEach((o, i) => rows.push([`Adult ${i + 2}`, [o.fullName, o.mobile, o.docType ? label(o.docType) : ""].filter(Boolean).join(" · ")]));

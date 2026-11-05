@@ -29,7 +29,7 @@ import { GstPicker, PaymentDialog, useBookingActions } from "@/components/bookin
 import { IdCheckCard } from "@/components/id-checks";
 import { useGuestMessage } from "@/components/guest-message";
 import { messageKindFor } from "@/lib/messages";
-import { VEHICLE_LABELS, VEHICLE_TYPES } from "@/lib/guest-form";
+import { VEHICLE_LABELS, VEHICLE_TYPES, type VehicleType } from "@/lib/guest-form";
 import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
@@ -294,9 +294,9 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
             <Field label="Vehicle number" optional>
               <Input maxLength={20} value={form.vehicleNumber} onChange={(e) => setForm({ ...form, vehicleNumber: e.target.value.toUpperCase() })} />
             </Field>
-            <Field label="Type of vehicle" optional>
+            <Field label="How they travel" optional>
               <Select value={form.vehicleType} onChange={(e) => setForm({ ...form, vehicleType: e.target.value })}>
-                <option value="">None</option>
+                <option value="">Not asked yet</option>
                 {VEHICLE_TYPES.map((v) => (
                   <option key={v} value={v}>
                     {VEHICLE_LABELS[v]}
@@ -307,12 +307,21 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
           </div>
           {form.companions.map((c, i) => (
             <div key={i} className="flex items-end gap-2">
-              <Field label={`Adult ${i + 2}: name`} className="min-w-0 flex-1">
+              <Field label={`Adult ${i + 2}: full name`} className="min-w-0 flex-1">
                 <Input
                   required
                   maxLength={80}
                   value={c.name}
                   onChange={(e) => setForm({ ...form, companions: form.companions.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)) })}
+                />
+              </Field>
+              <Field label="Mobile" optional className="w-36 sm:w-44">
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  maxLength={20}
+                  value={c.phone}
+                  onChange={(e) => setForm({ ...form, companions: form.companions.map((x, j) => (j === i ? { ...x, phone: e.target.value } : x)) })}
                 />
               </Field>
               <Button
@@ -807,11 +816,11 @@ export default function BookingDetailPage() {
                   </>
                 )}
               </p>
-              {(b.companions.length > 0 || b.comingFrom || b.goingTo || b.vehicleNumber) && (
+              {(b.companions.length > 0 || b.comingFrom || b.goingTo || b.vehicleNumber || b.vehicleType) && (
                 <div className="space-y-0.5 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
                   {b.companions.length > 0 && (
                     <p>
-                      <b>Staying with:</b> {b.companions.map((c) => c.name).join(", ")}
+                      <b>Staying with:</b> {b.companions.map((c) => (c.phone ? `${c.name} (${c.phone})` : c.name)).join(", ")}
                     </p>
                   )}
                   {(b.comingFrom || b.goingTo) && (
@@ -819,9 +828,9 @@ export default function BookingDetailPage() {
                       <b>Journey:</b> {[b.comingFrom && `from ${b.comingFrom}`, b.goingTo && `going to ${b.goingTo}`].filter(Boolean).join(", ")}
                     </p>
                   )}
-                  {b.vehicleNumber && (
+                  {(b.vehicleNumber || b.vehicleType) && (
                     <p>
-                      <b>Vehicle:</b> {b.vehicleNumber}
+                      <b>Travelling by:</b> {[b.vehicleType && VEHICLE_LABELS[b.vehicleType as VehicleType], b.vehicleNumber].filter(Boolean).join(" · ")}
                     </p>
                   )}
                 </div>

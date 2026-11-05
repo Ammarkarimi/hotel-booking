@@ -7,7 +7,7 @@ import { Button, Card, CardContent, CountInput, Field, Input, Loading, Select, T
 import { addDays, diffDays } from "@/lib/dates";
 import { shrinkPhoto } from "@/lib/client";
 import { cn, formatDate, label } from "@/lib/utils";
-import { FORM_ID_TYPES, INDIAN_STATES, MAX_FILES_PER_PERSON, VEHICLE_LABELS, VEHICLE_TYPES, isIndian, missingDocuments } from "@/lib/guest-form";
+import { FORM_ID_TYPES, INDIAN_STATES, MAX_FILES_PER_PERSON, VEHICLE_LABELS, VEHICLE_TYPES, hasOwnVehicle, isIndian, missingDocuments } from "@/lib/guest-form";
 
 interface FormInfo {
   hotel: { name: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string };
@@ -385,8 +385,8 @@ export default function GuestFormPage() {
       children,
       comingFrom: f.comingFrom,
       goingTo: f.goingTo,
-      vehicleNumber: f.vehicleNumber,
-      vehicleType: f.vehicleNumber.trim() ? f.vehicleType : "",
+      vehicleNumber: hasOwnVehicle(f.vehicleType) ? f.vehicleNumber : "",
+      vehicleType: f.vehicleType,
       aadhaarAtDesk: !f.foreign && f.aadhaarAtDesk,
       companions,
       requests: f.requests,
@@ -490,8 +490,8 @@ export default function GuestFormPage() {
                   <Field label="House and street" className="sm:col-span-2">
                     <Input value={f.address} onChange={set("address")} required autoComplete="address-line1" maxLength={200} />
                   </Field>
-                  <Field label="Area / locality" optional>
-                    <Input value={f.locality} onChange={set("locality")} autoComplete="address-line2" maxLength={80} />
+                  <Field label="Area / locality" optional={!indian}>
+                    <Input value={f.locality} onChange={set("locality")} required={indian} autoComplete="address-line2" maxLength={80} />
                   </Field>
                   <Field label="City">
                     <Input value={f.city} onChange={set("city")} required autoComplete="address-level2" maxLength={60} />
@@ -534,22 +534,22 @@ export default function GuestFormPage() {
                   <Field label="Coming from (city)">
                     <Input value={f.comingFrom} onChange={set("comingFrom")} required maxLength={80} />
                   </Field>
-                  <Field label="Going to next (city)" optional>
-                    <Input value={f.goingTo} onChange={set("goingTo")} maxLength={80} />
+                  <Field label="Going to next (city)">
+                    <Input value={f.goingTo} onChange={set("goingTo")} required maxLength={80} />
                   </Field>
-                  <Field label="Vehicle number" optional hint="If you are coming in your own vehicle.">
-                    <Input value={f.vehicleNumber} onChange={set("vehicleNumber")} className="uppercase" maxLength={20} />
+                  <Field label="How are you travelling?">
+                    <Select value={f.vehicleType} onChange={set("vehicleType")} required>
+                      <option value="">Choose</option>
+                      {VEHICLE_TYPES.map((v) => (
+                        <option key={v} value={v}>
+                          {VEHICLE_LABELS[v]}
+                        </option>
+                      ))}
+                    </Select>
                   </Field>
-                  {f.vehicleNumber.trim() && (
-                    <Field label="Type of vehicle">
-                      <Select value={f.vehicleType} onChange={set("vehicleType")} required>
-                        <option value="">Choose</option>
-                        {VEHICLE_TYPES.map((v) => (
-                          <option key={v} value={v}>
-                            {VEHICLE_LABELS[v]}
-                          </option>
-                        ))}
-                      </Select>
+                  {hasOwnVehicle(f.vehicleType) && (
+                    <Field label="Vehicle number" optional hint="As on the number plate, e.g. GJ01AB1234.">
+                      <Input value={f.vehicleNumber} onChange={set("vehicleNumber")} className="uppercase" maxLength={20} />
                     </Field>
                   )}
                 </div>

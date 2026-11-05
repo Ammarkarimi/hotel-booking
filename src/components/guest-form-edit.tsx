@@ -200,9 +200,9 @@ export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: Gu
             <Field label="Vehicle number" optional>
               <Input maxLength={20} value={d.vehicleNumber} onChange={(e) => set({ vehicleNumber: e.target.value.toUpperCase() })} />
             </Field>
-            <Field label="Type of vehicle" optional>
+            <Field label="How they travel" optional>
               <Select value={d.vehicleType ?? ""} onChange={(e) => set({ vehicleType: e.target.value as GuestFormDetails["vehicleType"] })}>
-                <option value="">None</option>
+                <option value="">Not asked yet</option>
                 {VEHICLE_TYPES.map((v) => (
                   <option key={v} value={v}>
                     {VEHICLE_LABELS[v]}

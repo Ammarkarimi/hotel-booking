@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Pathik helper for Hotel Manager",
   "short_name": "Pathik helper",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fills Pathik's Add Guest form (pathik.guru) with a guest from Hotel Manager, including the other adults in the room.",
   "permissions": ["storage", "scripting"],
   "host_permissions": ["https://pathik.guru/*", "https://www.pathik.guru/*"],

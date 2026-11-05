@@ -55,9 +55,19 @@ export const INDIAN_STATES = [
   "West Bengal",
 ];
 
-/** Vehicle types, as the police guest register (Pathik) asks for them. */
-export const VEHICLE_TYPES = ["two_wheeler", "four_wheeler", "other"] as const;
-export const VEHICLE_LABELS: Record<(typeof VEHICLE_TYPES)[number], string> = { two_wheeler: "Two-wheeler", four_wheeler: "Car / four-wheeler", other: "Other" };
+/** How the guest travels, as the police guest register (Pathik) asks for it ("Vehicle Type", a required field there). */
+export const VEHICLE_TYPES = ["four_wheeler", "two_wheeler", "bus", "auto", "other", "none"] as const;
+export type VehicleType = (typeof VEHICLE_TYPES)[number];
+export const VEHICLE_LABELS: Record<VehicleType, string> = {
+  four_wheeler: "Car",
+  two_wheeler: "Two-wheeler (bike / scooter)",
+  bus: "Bus",
+  auto: "Auto-rickshaw",
+  other: "Other vehicle",
+  none: "No vehicle (train, flight or on foot)",
+};
+/** A vehicle with a number plate worth asking for. */
+export const hasOwnVehicle = (t: string | null | undefined) => !!t && t !== "none" && t !== "bus";
 
 export function isIndian(nationality: string | null | undefined) {
   return !nationality || nationality.trim().toLowerCase() === "indian" || nationality.trim().toLowerCase() === "india";
@@ -119,12 +129,19 @@ function checkForm(d: FormFields, ctx: z.RefinementCtx) {
   }
 }
 
-/** What the guest sends. The police form (Pathik) also needs the district of an Indian address. */
+/**
+ * What the guest sends. The police form (Pathik) also needs the locality and district of an Indian
+ * address, where the guest goes next and how they travel.
+ */
 export const guestFormSchema = formFields
   .extend({ consent: z.literal(true, { errorMap: () => ({ message: "Please tick the box to agree" }) }) })
   .superRefine(checkForm)
   .superRefine((d, ctx) => {
-    if (isIndian(d.nationality) && !d.district) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Please enter your district", path: ["district"] });
+    const issue = (message: string, path: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
+    if (isIndian(d.nationality) && !d.locality) issue("Please enter your area or locality", "locality");
+    if (isIndian(d.nationality) && !d.district) issue("Please enter your district", "district");
+    if (d.goingTo.length < 2) issue("Please say which city you are going to next", "goingTo");
+    if (!d.vehicleType) issue("Please choose how you are travelling", "vehicleType");
   });
 
 /** The same details when the front desk corrects them: the same checks, no agreement box. */
