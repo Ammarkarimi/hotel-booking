@@ -17,7 +17,9 @@ interface PaymentRow {
   reference: string | null;
   receivedBy: string | null;
   paidAt: string;
-  booking: { id: string; number: number; guest: { firstName: string; lastName: string }; room: { roomNumber: string } };
+  booking: { id: string; number: number; guest: { firstName: string; lastName: string }; room: { roomNumber: string } } | null;
+  // Money for a function in a hall instead of a room booking.
+  banquet: { id: string; number: number; customerName: string; hall: { name: string } } | null;
 }
 
 type Period = "today" | "yesterday" | "week" | "month" | "custom";
@@ -110,7 +112,7 @@ export default function PaymentsPage() {
       <Card className="mb-6">
         <CardHeader title="Cash drawer" description="Count the cash at the end of a shift. It should match the last line." />
         <CardContent className="max-w-md">
-          <Row label="Cash received from guests">{formatCurrency(byMethod.cash || 0)}</Row>
+          <Row label="Cash received from guests and functions">{formatCurrency(byMethod.cash || 0)}</Row>
           <Row label={<Link href="/expenses" className="text-primary-700 hover:underline">Cash paid for expenses</Link>}>− {formatCurrency(cashSpent)}</Row>
           <Row label="Cash that should be in the drawer" strong>
             {formatCurrency((byMethod.cash || 0) - cashSpent)}
@@ -128,13 +130,18 @@ export default function PaymentsPage() {
           <ul className="divide-y divide-slate-100">
             {inRange.map((p) => (
               <li key={p.id}>
-                <Link href={`/bookings/${p.booking.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+                <Link
+                  href={p.booking ? `/bookings/${p.booking.id}` : `/banquets/${p.banquet?.id}`}
+                  className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50"
+                >
                   <div className="min-w-0">
                     <p className="truncate font-semibold">
-                      {p.booking.guest.firstName} {p.booking.guest.lastName} · Room {p.booking.room.roomNumber}
+                      {p.booking
+                        ? `${p.booking.guest.firstName} ${p.booking.guest.lastName} · Room ${p.booking.room.roomNumber}`
+                        : `${p.banquet?.customerName} · Banquet, ${p.banquet?.hall.name}`}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {formatDateTime(p.paidAt)} · #{p.booking.number} · {label(p.type)} by {label(p.method)}
+                      {formatDateTime(p.paidAt)} · {p.booking ? `#${p.booking.number}` : `Function #${p.banquet?.number}`} · {label(p.type)} by {label(p.method)}
                       {p.reference && ` (${p.reference})`}
                       {p.receivedBy && ` · ${p.receivedBy}`}
                     </p>

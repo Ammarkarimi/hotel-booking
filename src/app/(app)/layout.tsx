@@ -15,8 +15,9 @@ export default async function SignedInLayout({ children }: { children: React.Rea
   // or the sign-in page would send them straight back here.
   if (!session) redirect("/api/auth/expired");
 
-  const { settings, hotel } = await runForHotel(session.hotelId, async () => ({
+  const { settings, hotel, halls } = await runForHotel(session.hotelId, async () => ({
     settings: await getSettings(),
+    halls: await prisma.banquetHall.count(),
     hotel: await prisma.hotel.findUniqueOrThrow({
       where: { id: session.hotelId },
       include: { subscriptionPayments: { select: { month: true, amount: true, clearsMonth: true } } },
@@ -47,6 +48,7 @@ export default async function SignedInLayout({ children }: { children: React.Rea
         phone: settings.phone,
         address: [settings.address, settings.city].filter(Boolean).join(", ") || null,
         pathik: settings.pathik,
+        banquets: halls > 0,
         messages: { booking: settings.msgBooking, checkIn: settings.msgCheckIn, checkOut: settings.msgCheckOut },
       }}
     >

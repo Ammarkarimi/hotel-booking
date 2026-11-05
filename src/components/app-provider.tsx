@@ -22,6 +22,8 @@ export interface ShellSettings {
   address: string | null;
   /** Show "Fill in Pathik" for the police guest register (Gujarat). */
   pathik: boolean;
+  /** The hotel has at least one banquet hall, so staff see Banquets in the menu. */
+  banquets: boolean;
   /** The owner's wording for each message; null = the default. */
   messages: { booking: string | null; checkIn: string | null; checkOut: string | null };
 }

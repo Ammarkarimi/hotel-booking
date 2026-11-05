@@ -5,6 +5,8 @@ import { isOtaSource, payoutSummary } from "./payouts";
 import { groupKey, groupLabel, type GroupBy } from "./periods";
 import { round2 } from "./pricing";
 import type { BillingContext } from "./settings";
+import { banquetInclude } from "./banquets";
+import { banquetBill, HOLDING_STATUSES } from "./banquet-bill";
 
 const SOLD_STATUSES = ["reserved", "checked_in", "checked_out"];
 
@@ -13,6 +15,7 @@ export interface MetricsInput {
   roomsSold: number; // room-nights with a guest
   roomRevenue: number; // before tax, after discounts
   extrasRevenue: number; // food, laundry and other items, before tax
+  banquetRevenue?: number; // functions in the halls (food, hall rent, services), before tax
   expenses: number;
 }
 
@@ -23,7 +26,7 @@ export interface MetricsInput {
  * available room (RevPAR) is ₹50,000 ÷ 25 = ₹2,000.
  */
 export function hotelMetrics(m: MetricsInput) {
-  const revenue = m.roomRevenue + m.extrasRevenue;
+  const revenue = m.roomRevenue + m.extrasRevenue + (m.banquetRevenue ?? 0);
   const profit = revenue - m.expenses;
   const perAvailable = (n: number) => (m.roomsAvailable ? round2(n / m.roomsAvailable) : 0);
   const perSold = (n: number) => (m.roomsSold ? round2(n / m.roomsSold) : 0);
@@ -58,6 +61,7 @@ interface DayRow {
   roomsSold: number;
   roomRevenue: number;
   extrasRevenue: number;
+  banquetRevenue: number; // functions held on this day, and cancellation charges kept on the day of cancelling
   expenses: number;
   commission: number; // booking-site commission and fees, counted on the guest's leaving day
   collected: number;
@@ -72,7 +76,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   // Timestamps are widened by a day each side, then sorted into the hotel's local days.
   const widened = { gte: dateFromKey(addDays(from, -1)), lt: dateFromKey(addDays(endExclusive, 1)) };
 
-  const [rooms, stays, cancelled, payments, charges, bills, expenses, made, payoutsPaid] = await Promise.all([
+  const [rooms, stays, cancelled, payments, charges, bills, expenses, made, payoutsPaid, functions, cancelledFunctions, banquetInvoices] = await Promise.all([
     prisma.room.findMany(),
     prisma.booking.findMany({
       where: {
@@ -91,7 +95,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     }),
     prisma.payment.findMany({
       where: { status: "completed", paidAt: widened },
-      include: { booking: { include: { guest: true, room: true } } },
+      include: { booking: { include: { guest: true, room: true } }, banquet: { include: { hall: true } } },
       orderBy: { paidAt: "asc" },
     }),
     prisma.charge.findMany({ where: { date: widened, booking: { status: { in: SOLD_STATUSES } } } }),
@@ -110,6 +114,16 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       where: { payoutReceivedOn: { gte: dateFromKey(from), lt: dateFromKey(endExclusive) }, payoutAmount: { not: null } },
       select: { payoutAmount: true },
     }),
+    // Functions in the halls on these days (on hold, confirmed or billed), counted on the day of the function.
+    prisma.banquet.findMany({
+      where: { status: { in: HOLDING_STATUSES }, eventDate: { gte: dateFromKey(from), lt: dateFromKey(endExclusive) } },
+      include: banquetInclude,
+      orderBy: [{ eventDate: "asc" }, { startTime: "asc" }],
+    }),
+    // Cancelled functions: what was kept of the advance is a cancellation charge, counted on the day of cancelling.
+    prisma.banquet.findMany({ where: { status: "cancelled", cancelledAt: widened }, include: banquetInclude }),
+    // Final banquet bills (tax invoices) made in the period.
+    prisma.banquet.findMany({ where: { invoiceNumber: { not: null }, billedAt: widened }, include: banquetInclude, orderBy: { billedAt: "asc" } }),
   ]);
 
   const tz = ctx.settings.timezone;
@@ -130,7 +144,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   const daily = new Map<string, DayRow>(
     days.map((d) => [
       d,
-      { date: d, roomsAvailable: forSaleOn.get(d)!.length, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 },
+      { date: d, roomsAvailable: forSaleOn.get(d)!.length, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, banquetRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 },
     ])
   );
   // Booking-site stays that end in the period, to compare with the site's payment statement.
@@ -241,14 +255,89 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     if (day) day.expenses += e.amount;
   }
 
+  // Banquets: functions by the day they are held, and cancellation charges kept.
+  const functionRows = functions.map((f) => ({ f, bill: banquetBill(f) }));
+  for (const { f, bill } of functionRows) {
+    const day = daily.get(toDateKey(f.eventDate));
+    if (day) day.banquetRevenue += bill.taxable;
+  }
+  const keptRows = cancelledFunctions
+    .filter((f) => f.cancelledAt && inRange(f.cancelledAt))
+    .map((f) => ({ f, kept: banquetBill(f).netPaid }))
+    .filter((r) => r.kept > 0);
+  for (const { f, kept } of keptRows) {
+    const day = daily.get(localDay(f.cancelledAt!));
+    if (day) day.banquetRevenue += kept;
+  }
+  const byHall: Record<string, { functions: number; guests: number; revenue: number }> = {};
+  const byEventType: Record<string, { functions: number; revenue: number }> = {};
+  for (const { f, bill } of functionRows) {
+    const h = (byHall[f.hall.name] ??= { functions: 0, guests: 0, revenue: 0 });
+    h.functions += 1;
+    h.guests += bill.billedPax;
+    h.revenue += bill.taxable;
+    const e = (byEventType[f.eventType] ??= { functions: 0, revenue: 0 });
+    e.functions += 1;
+    e.revenue += bill.taxable;
+  }
+  const sumF = (k: "food" | "hall" | "extras" | "discount" | "taxable" | "tax" | "total" | "billedPax") => round2(functionRows.reduce((s, r) => s + r.bill[k], 0));
+  const cancellationKept = round2(keptRows.reduce((s, r) => s + r.kept, 0));
+  const banquets = {
+    functions: functionRows.length,
+    billed: functionRows.filter((r) => r.f.status === "completed").length,
+    guests: sumF("billedPax"),
+    food: sumF("food"),
+    hall: sumF("hall"),
+    extras: sumF("extras"),
+    discount: sumF("discount"),
+    taxable: sumF("taxable"),
+    tax: sumF("tax"),
+    total: sumF("total"),
+    cancelled: keptRows.length,
+    cancellationKept,
+    revenue: round2(sumF("taxable") + cancellationKept),
+    byHall: Object.entries(byHall)
+      .map(([hall, v]) => ({ hall, ...v, revenue: round2(v.revenue) }))
+      .sort((a, b) => b.revenue - a.revenue),
+    byEventType: Object.fromEntries(Object.entries(byEventType).map(([k, v]) => [k, { ...v, revenue: round2(v.revenue) }])),
+    rows: functionRows.map(({ f, bill }) => ({
+      ...bill,
+      hallRent: bill.hall,
+      id: f.id,
+      number: f.number,
+      invoiceNumber: f.invoiceNumber,
+      date: toDateKey(f.eventDate),
+      session: f.session,
+      startTime: f.startTime,
+      endTime: f.endTime,
+      hall: f.hall.name,
+      customerName: f.customerName,
+      phone: f.phone,
+      company: f.company,
+      gstin: f.gstin,
+      eventType: f.eventType,
+      status: f.status,
+      expectedPax: f.expectedPax,
+      guaranteedPax: f.guaranteedPax,
+      actualPax: f.actualPax,
+      platePrice: f.platePrice,
+    })),
+  };
+
   const invoices = bills.filter((b) => inRange(b.generatedAt));
+  const functionInvoices = banquetInvoices.filter((f) => f.billedAt && inRange(f.billedAt)).map((f) => ({ f, bill: banquetBill(f) }));
+  const banquetTaxable = round2(functionInvoices.reduce((s, r) => s + r.bill.taxable, 0));
+  const banquetTax = round2(functionInvoices.reduce((s, r) => s + r.bill.tax, 0));
   const tax = {
-    invoices: invoices.length,
-    taxable: round2(invoices.reduce((s, b) => s + b.roomCharges - b.discount + b.additionalCharges, 0)),
+    invoices: invoices.length + functionInvoices.length,
+    taxable: round2(invoices.reduce((s, b) => s + b.roomCharges - b.discount + b.additionalCharges, 0) + banquetTaxable),
     roomTax: round2(invoices.reduce((s, b) => s + b.roomTax, 0)),
     extrasTax: round2(invoices.reduce((s, b) => s + b.extrasTax, 0)),
-    total: round2(invoices.reduce((s, b) => s + b.taxAmount, 0)),
-    invoiced: round2(invoices.reduce((s, b) => s + b.totalAmount, 0)),
+    banquetInvoices: functionInvoices.length,
+    banquetTaxable,
+    banquetTax,
+    total: round2(invoices.reduce((s, b) => s + b.taxAmount, 0) + banquetTax),
+    invoiced: round2(invoices.reduce((s, b) => s + b.totalAmount, 0) + functionInvoices.reduce((s, r) => s + r.bill.total, 0)),
   };
 
   // Day rows, then the same numbers added up by day, week or month.
@@ -256,12 +345,13 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
   const groupMap = new Map<string, DayRow & { days: number }>();
   for (const d of dayRows) {
     const key = groupKey(d.date, groupBy);
-    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsAvailable: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 };
+    const g = groupMap.get(key) ?? { ...d, date: key, days: 0, roomsAvailable: 0, roomsSold: 0, roomRevenue: 0, extrasRevenue: 0, banquetRevenue: 0, expenses: 0, commission: 0, collected: 0, arrivals: 0, departures: 0 };
     g.days += 1;
     g.roomsAvailable += d.roomsAvailable;
     g.roomsSold += d.roomsSold;
     g.roomRevenue += d.roomRevenue;
     g.extrasRevenue += d.extrasRevenue;
+    g.banquetRevenue += d.banquetRevenue;
     g.expenses += d.expenses;
     g.commission += d.commission;
     g.collected += d.collected;
@@ -279,18 +369,20 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     roomsSold: g.roomsSold,
     roomRevenue: round2(g.roomRevenue),
     extrasRevenue: round2(g.extrasRevenue),
+    banquetRevenue: round2(g.banquetRevenue),
     expenses: round2(g.expenses),
     commission: round2(g.commission),
     costs: round2(g.expenses + g.commission),
     collected: round2(g.collected),
     arrivals: g.arrivals,
     departures: g.departures,
-    ...hotelMetrics({ roomsAvailable: g.roomsAvailable, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, expenses: g.expenses + g.commission }),
+    ...hotelMetrics({ roomsAvailable: g.roomsAvailable, roomsSold: g.roomsSold, roomRevenue: g.roomRevenue, extrasRevenue: g.extrasRevenue, banquetRevenue: g.banquetRevenue, expenses: g.expenses + g.commission }),
   }));
 
   const roomNightsSold = dayRows.reduce((s, d) => s + d.roomsSold, 0);
   const roomRevenue = round2(dayRows.reduce((s, d) => s + d.roomRevenue, 0));
   const extrasRevenue = round2(dayRows.reduce((s, d) => s + d.extrasRevenue, 0));
+  const banquetRevenue = round2(dayRows.reduce((s, d) => s + d.banquetRevenue, 0));
   const expensesTotal = round2(expenses.reduce((s, e) => s + e.amount, 0));
   const available = dayRows.reduce((s, d) => s + d.roomsAvailable, 0);
 
@@ -328,6 +420,17 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     .map((b) => serializeBooking(b, ctx))
     .filter((b) => b.folio.balance > 0.5)
     .map((b) => ({ id: b.id, number: b.number, guestName: b.guestName, phone: b.guest.phone, room: b.room.roomNumber, checkOut: b.checkOutDate, balance: b.folio.balance, status: b.status }));
+  // Functions already held (or billed) whose bill is not fully paid.
+  const owedFunctions = await prisma.banquet.findMany({
+    where: { status: { in: ["confirmed", "completed"] }, eventDate: { lte: dateFromKey(ctx.today) } },
+    include: banquetInclude,
+    orderBy: { eventDate: "desc" },
+    take: 500,
+  });
+  const banquetOutstanding = owedFunctions
+    .map((f) => ({ f, bill: banquetBill(f) }))
+    .filter((r) => r.bill.balance > 0.5)
+    .map(({ f, bill }) => ({ id: f.id, number: f.number, customerName: f.customerName, phone: f.phone, hall: f.hall.name, date: toDateKey(f.eventDate), balance: bill.balance, status: f.status }));
 
   const cancelledCount = cancelled.filter((c) => c.status === "cancelled").length;
   const noShowCount = cancelled.filter((c) => c.status === "no_show").length;
@@ -347,11 +450,12 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       roomNightsSold,
       roomRevenue,
       extrasRevenue,
+      banquetRevenue,
       expenses: expensesTotal,
       otaFees,
       costs: round2(expensesTotal + otaFees),
       // Costs include booking-site commission, so profit and cost per room are the real figures.
-      ...hotelMetrics({ roomsAvailable: available, roomsSold: roomNightsSold, roomRevenue, extrasRevenue, expenses: expensesTotal + otaFees }),
+      ...hotelMetrics({ roomsAvailable: available, roomsSold: roomNightsSold, roomRevenue, extrasRevenue, banquetRevenue, expenses: expensesTotal + otaFees }),
       collected: round2(collected),
       refunds: round2(refunds),
       collectedAtHotel: round2(collected - prepaidOnSites),
@@ -361,7 +465,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       // Money that actually reached the hotel: paid at the hotel plus what booking sites sent, minus expenses.
       netCash: round2(collected - prepaidOnSites + payoutsReceived - expensesTotal),
       cashInDrawer: round2(cashIn - cashOut),
-      outstanding: round2(outstanding.reduce((s, o) => s + o.balance, 0)),
+      outstanding: round2(outstanding.reduce((s, o) => s + o.balance, 0) + banquetOutstanding.reduce((s, o) => s + o.balance, 0)),
     },
     guests: {
       arrivals,
@@ -373,7 +477,7 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       noShows: noShowCount,
       cancellationRate: arrivals + cancelledCount + noShowCount ? Math.round(((cancelledCount + noShowCount) / (arrivals + cancelledCount + noShowCount)) * 1000) / 10 : 0,
     },
-    daily: dayRows.map((d) => ({ ...d, roomRevenue: round2(d.roomRevenue), extrasRevenue: round2(d.extrasRevenue), expenses: round2(d.expenses), commission: round2(d.commission), collected: round2(d.collected) })),
+    daily: dayRows.map((d) => ({ ...d, roomRevenue: round2(d.roomRevenue), extrasRevenue: round2(d.extrasRevenue), banquetRevenue: round2(d.banquetRevenue), expenses: round2(d.expenses), commission: round2(d.commission), collected: round2(d.collected) })),
     groups,
     bySource: Object.fromEntries(Object.entries(bySource).map(([k, v]) => [k, { ...v, revenue: round2(v.revenue) }])),
     byRoomType: Object.entries(roomsByType)
@@ -388,17 +492,34 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
     expensesByCategory: Object.fromEntries(Object.entries(expensesByCategory).map(([k, v]) => [k, round2(v)])),
     expensesByMethod: Object.fromEntries(Object.entries(expensesByMethod).map(([k, v]) => [k, round2(v)])),
     tax,
-    invoices: invoices.map((b) => ({
-      invoiceNumber: b.invoiceNumber,
-      date: localDay(b.generatedAt),
-      guestName: `${b.booking.guest.firstName} ${b.booking.guest.lastName}`.trim(),
-      guestGstin: b.booking.guest.gstin,
-      room: b.booking.room.roomNumber,
-      taxable: round2(b.roomCharges - b.discount + b.additionalCharges),
-      tax: b.taxAmount,
-      total: b.totalAmount,
-      bookingId: b.bookingId,
-    })),
+    banquets,
+    invoices: [
+      ...invoices.map((b) => ({
+        invoiceNumber: b.invoiceNumber,
+        date: localDay(b.generatedAt),
+        guestName: `${b.booking.guest.firstName} ${b.booking.guest.lastName}`.trim(),
+        guestGstin: b.booking.guest.gstin,
+        room: b.booking.room.roomNumber,
+        taxable: round2(b.roomCharges - b.discount + b.additionalCharges),
+        tax: b.taxAmount,
+        total: b.totalAmount,
+        bookingId: b.bookingId as string | null,
+        banquetId: null as string | null,
+      })),
+      // Banquet bills are tax invoices too, in their own series (BQ-...).
+      ...functionInvoices.map(({ f, bill }) => ({
+        invoiceNumber: f.invoiceNumber,
+        date: localDay(f.billedAt!),
+        guestName: f.company || f.customerName,
+        guestGstin: f.gstin,
+        room: `Banquet: ${f.hall.name}`,
+        taxable: bill.taxable,
+        tax: bill.tax,
+        total: bill.total,
+        bookingId: null,
+        banquetId: f.id,
+      })),
+    ].sort((a, b) => a.date.localeCompare(b.date)),
     payments: paymentsInRange.map((p) => ({
       id: p.id,
       paidAt: p.paidAt,
@@ -408,12 +529,15 @@ export async function buildReport(ctx: BillingContext, from: string, to: string,
       reference: p.reference,
       receivedBy: p.receivedBy,
       bookingId: p.bookingId,
-      bookingNumber: p.booking.number,
-      guestName: `${p.booking.guest.firstName} ${p.booking.guest.lastName}`.trim(),
-      room: p.booking.room.roomNumber,
+      banquetId: p.banquetId,
+      // A banquet payment shows "F12" (function 12) and the hall instead of a booking and room.
+      bookingNumber: p.booking ? String(p.booking.number) : `F${p.banquet?.number ?? ""}`,
+      guestName: p.booking ? `${p.booking.guest.firstName} ${p.booking.guest.lastName}`.trim() : (p.banquet?.customerName ?? ""),
+      room: p.booking ? p.booking.room.roomNumber : `Banquet: ${p.banquet?.hall.name ?? ""}`,
     })),
     expenses: expenses.map((e) => ({ date: toDateKey(e.date), category: e.category, title: e.title, description: e.description, amount: e.amount, method: e.method, addedBy: e.addedBy })),
     outstanding,
+    banquetOutstanding,
     payouts: {
       rows: payoutRows.sort((a, b) => a.checkOut.localeCompare(b.checkOut) || a.number - b.number),
       bySite,
