@@ -46,6 +46,7 @@ interface DashboardRoom {
 interface Dashboard {
   today: string;
   hotelName: string;
+  hasBookings: boolean; // the hotel has taken at least one booking, ever
   stats: {
     totalRooms: number;
     occupied: number;
@@ -93,7 +94,7 @@ function SetupChecklist({ data }: { data: Dashboard }) {
   const steps = [
     { done: data.hotelName !== "My Hotel", text: "Add your hotel name, address and tax details", href: "/settings" },
     { done: data.stats.totalRooms > 0, text: "Add your rooms and their prices", href: "/rooms" },
-    { done: data.inHouse.length + data.arrivals.length > 0, text: "Take your first booking", href: "/bookings/new" },
+    { done: data.hasBookings, text: "Take your first booking", href: "/bookings/new" },
   ];
   if (steps.every((s) => s.done)) return null;
   return (
