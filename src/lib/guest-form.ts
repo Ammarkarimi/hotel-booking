@@ -217,3 +217,57 @@ export function parseCompanions(raw: string | null | undefined): Companion[] {
     return [];
   }
 }
+
+/** A booking typed at the front desk, as checked against what Pathik's Add Guest form requires. */
+export interface DeskPathikDetails {
+  lastName?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  nationality?: string | null;
+  address?: string | null;
+  locality?: string | null;
+  city?: string | null;
+  district?: string | null;
+  state?: string | null;
+  pinCode?: string | null;
+  dateOfBirth?: string | Date | null;
+  /** Only for a new guest: the ID shown (Aadhaar needs no number, any other ID does). */
+  idType?: string | null;
+  idNumber?: string | null;
+  comingFrom?: string | null;
+  goingTo?: string | null;
+  vehicleType?: string | null;
+  adults: number;
+  companions: { name: string }[];
+}
+
+/**
+ * What is still missing before a desk booking can be entered in Pathik, as labels for the screen.
+ * Empty = ready. Used by New booking and checked again by the server when Pathik is switched on.
+ */
+export function deskPathikMissing(d: DeskPathikDetails): string[] {
+  const missing: string[] = [];
+  const has = (v: unknown) => (typeof v === "string" ? v.trim() !== "" : !!v);
+  const need = (v: unknown, label: string) => !has(v) && missing.push(label);
+  const indian = isIndian(d.nationality);
+  need(d.lastName, "Last name");
+  need(d.phone, "Mobile number");
+  need(d.email, "Email");
+  if (d.idType && d.idType !== "aadhar") need(d.idNumber, "ID number");
+  need(d.address, "House and street");
+  if (indian) need(d.locality, "Area / locality");
+  need(d.city, "City");
+  if (indian) {
+    need(d.district, "District");
+    need(d.state, "State");
+    if (!/^\d{6}$/.test((d.pinCode ?? "").replace(/\s/g, ""))) missing.push("6-digit PIN code");
+  }
+  need(d.dateOfBirth, "Date of birth");
+  need(d.comingFrom, "Coming from");
+  need(d.goingTo, "Going to next");
+  need(d.vehicleType, "How they are travelling");
+  const named = d.companions.filter((c) => has(c.name)).length;
+  const others = Math.max(0, d.adults - 1);
+  if (named < others) missing.push(others - named === 1 ? `Full name of adult ${named + 2}` : `Full names of ${others - named} other adults`);
+  return missing;
+}

@@ -174,7 +174,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 |---|---|
 | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/password` | POST, POST, GET, POST |
 | `/api/dashboard`, `/api/calendar`, `/api/search`, `/api/availability` | GET |
-| `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST (also `comingFrom`, `goingTo`, `vehicleType`, `vehicleNumber`, `companions` [{ name, phone }], and the Pathik address fields `dateOfBirth`, `locality`, `city`, `district`, `state`, `pinCode` on `guest`, or on `guestDetails` for a returning guest, where only filled-in fields change) |
+| `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST (also `comingFrom`, `goingTo`, `vehicleType`, `vehicleNumber`, `companions` [{ name, phone }], and the Pathik address fields `dateOfBirth`, `locality`, `city`, `district`, `state`, `pinCode` on `guest`, or on `guestDetails` for a returning guest, where only filled-in fields change, also `lastName`, `email`, `address`). With `HotelSettings.pathik` on, a desk booking (not from a guest form) missing anything `deskPathikMissing` in `src/lib/guest-form.ts` lists is refused |
 | `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks and copies follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
 | `/api/bookings/[id]/charges` | POST, DELETE |
 | `/api/payments` | GET, POST, DELETE ⓐ |
