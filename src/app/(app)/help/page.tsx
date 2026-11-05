@@ -55,6 +55,18 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/calendar", text: "Open the room calendar" },
   },
   {
+    q: "How do I book a wedding, party or meeting in our hall?",
+    steps: [
+      "Open “Banquets” and press “New function” (or tap + on a free day in the Hall calendar).",
+      "Type the customer's name and mobile, the kind of function, the date and session, and pick a hall marked Free.",
+      "Type the guests expected and the guaranteed plates, choose the menu, and check the hall rent. Add decoration, DJ or other items if needed.",
+      "Save it as Enquiry (a quote), On hold, or Confirmed, with the advance if one was paid.",
+      "Print the confirmation or send it on WhatsApp. Print the function sheet for the kitchen before the day.",
+      "After the function press “Make final bill”, type the plates served and take the balance.",
+    ],
+    link: { href: "/banquets/new", text: "New function" },
+  },
+  {
     q: "A guest cancelled or did not come",
     steps: [
       "Open the booking. Press “Cancel booking” (or “Guest did not come” on/after the arrival day).",

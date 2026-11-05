@@ -155,6 +155,10 @@ export async function deleteHotelData(hotelId: string) {
     const where = { hotelId };
     await tx.bill.deleteMany({ where });
     await tx.payment.deleteMany({ where });
+    await tx.banquetItem.deleteMany({ where });
+    await tx.banquet.deleteMany({ where });
+    await tx.banquetMenu.deleteMany({ where });
+    await tx.banquetHall.deleteMany({ where });
     await tx.charge.deleteMany({ where });
     await tx.booking.deleteMany({ where });
     await tx.guestDocument.deleteMany({ where });

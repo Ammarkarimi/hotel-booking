@@ -7,6 +7,7 @@ import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
 import { bookingLabel, folioFor, loadBooking, serializeBooking } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
+import { banquetLabel } from "@/lib/banquets";
 import { GUEST_PAYMENT_METHODS, label } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       where,
       orderBy: { paidAt: "desc" },
       take: 1000,
-      include: { booking: { include: { guest: true, room: true } } },
+      include: { booking: { include: { guest: true, room: true } }, banquet: { include: { hall: true } } },
     });
     return NextResponse.json(payments);
   });
@@ -90,11 +91,12 @@ export async function DELETE(request: NextRequest) {
     if (!id) fail("Payment not specified");
     const payment = await prisma.payment.findUnique({
       where: { id },
-      include: { booking: { include: { guest: true, room: true } } },
+      include: { booking: { include: { guest: true, room: true } }, banquet: { include: { hall: true } } },
     });
     if (!payment) fail("Payment not found", 404);
     await prisma.payment.delete({ where: { id } });
-    await logActivity(user, "Payment deleted", `${bookingLabel(payment.booking)}: ${payment.amount} by ${label(payment.method)}`);
+    const what = payment.booking ? bookingLabel(payment.booking) : payment.banquet ? banquetLabel(payment.banquet) : "";
+    await logActivity(user, "Payment deleted", `${what}: ${payment.amount} by ${label(payment.method)}`);
     return NextResponse.json({ success: true });
   });
 }

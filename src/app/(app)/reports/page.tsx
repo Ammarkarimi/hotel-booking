@@ -122,6 +122,9 @@ export default function ReportsPage() {
               <div>
                 <Row label="Room earnings">{money(t.roomRevenue)}</Row>
                 <Row label="Food, laundry & other extras">{money(t.extrasRevenue)}</Row>
+                {(t.banquetRevenue > 0 || data.banquets.functions > 0) && (
+                  <Row label={<Link href="/banquets" className="text-primary-700 hover:underline">Banquets (functions)</Link>}>{money(t.banquetRevenue)}</Row>
+                )}
                 <Row label="Total earnings" strong>
                   {money(t.revenue)}
                 </Row>
@@ -523,10 +526,45 @@ export default function ReportsPage() {
                   {formatCurrency(data.tax.total)}
                 </Row>
                 <Row label="Invoice total">{formatCurrency(data.tax.invoiced)}</Row>
+                {data.tax.banquetInvoices > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Includes {data.tax.banquetInvoices} banquet bill(s): taxable {formatCurrency(data.tax.banquetTaxable)}, GST {formatCurrency(data.tax.banquetTax)}.
+                  </p>
+                )}
                 <p className="mt-2 text-xs text-slate-500">For guests from another state, the same total is IGST. Please confirm filings with your accountant.</p>
               </CardContent>
             </Card>
           </div>
+
+          {(data.banquets.functions > 0 || data.banquets.cancellationKept > 0) && (
+            <Card>
+              <CardHeader
+                title={`Banquets · ${data.banquets.functions} function(s)`}
+                description={`${data.banquets.guests} plates · ${data.banquets.billed} with a final bill. Counted on the day of the function, before GST.`}
+              />
+              <CardContent className="grid gap-6 md:grid-cols-2">
+                <div>
+                  <Row label="Food">{money(data.banquets.food)}</Row>
+                  <Row label="Hall rent">{money(data.banquets.hall)}</Row>
+                  <Row label="Decoration, DJ & other extras">{money(data.banquets.extras)}</Row>
+                  {data.banquets.discount > 0 && <Row label="Discounts">− {money(data.banquets.discount)}</Row>}
+                  {data.banquets.cancellationKept > 0 && (
+                    <Row label={`Cancellation charges kept (${data.banquets.cancelled})`}>{money(data.banquets.cancellationKept)}</Row>
+                  )}
+                  <Row label="Banquet earnings" strong>
+                    {money(data.banquets.revenue)}
+                  </Row>
+                  <Row label="GST on these bills">{money(data.banquets.tax)}</Row>
+                </div>
+                <div>
+                  <p className="mb-2 text-sm font-semibold text-slate-700">By hall</p>
+                  <BarList data={data.banquets.byHall.map((h) => ({ key: h.hall, sub: `${h.functions} function(s)`, value: h.revenue }))} empty="No functions" />
+                  <p className="mb-2 mt-4 text-sm font-semibold text-slate-700">By kind of function</p>
+                  <BarList data={Object.entries(data.banquets.byEventType).map(([k, v]) => ({ key: k, sub: `${v.functions} function(s)`, value: v.revenue }))} empty="No functions" />
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="no-print">
             <CardHeader title="Download for Excel / accountant" description="Files open in Excel, Google Sheets or any spreadsheet app." />
@@ -548,6 +586,9 @@ export default function ReportsPage() {
               </Button>
               <Button variant="outline" onClick={() => download("roomtypes")}>
                 <Download className="h-4 w-4" /> Room types
+              </Button>
+              <Button variant="outline" onClick={() => download("banquets")}>
+                <Download className="h-4 w-4" /> Banquets
               </Button>
               <Button variant="outline" onClick={() => download("payouts")}>
                 <Download className="h-4 w-4" /> Booking site payouts
@@ -579,6 +620,29 @@ export default function ReportsPage() {
               </ul>
             )}
           </Card>
+
+          {data.banquetOutstanding.length > 0 && (
+            <Card>
+              <CardHeader title={`Functions not fully paid (${data.banquetOutstanding.length})`} description="Functions already held whose bill still has money to collect." />
+              <ul className="divide-y divide-slate-100">
+                {data.banquetOutstanding.map((o) => (
+                  <li key={o.id}>
+                    <Link href={`/banquets/${o.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
+                      <span>
+                        <span className="block font-semibold">
+                          {o.customerName} · {o.hall}
+                        </span>
+                        <span className="block text-xs text-slate-500">
+                          Function #{o.number} · {o.phone} · {formatDate(o.date)} · {label(o.status)}
+                        </span>
+                      </span>
+                      <span className="font-bold text-red-600">{formatCurrency(o.balance)}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
         </>
       )}
     </div>

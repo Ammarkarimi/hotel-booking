@@ -329,6 +329,11 @@ const BADGE_COLORS: Record<string, string> = {
   clean: "bg-emerald-100 text-emerald-800",
   dirty: "bg-red-100 text-red-700",
   cleaning: "bg-amber-100 text-amber-800",
+  // banquet (function) status
+  enquiry: "bg-sky-100 text-sky-800",
+  tentative: "bg-amber-100 text-amber-800",
+  confirmed: "bg-emerald-100 text-emerald-800",
+  completed: "bg-slate-100 text-slate-700",
   // payment state
   unpaid: "bg-red-100 text-red-700",
   partial: "bg-amber-100 text-amber-800",
