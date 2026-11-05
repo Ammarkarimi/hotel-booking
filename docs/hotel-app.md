@@ -83,6 +83,12 @@ Open any booking (search at the top of the screen) to:
 - **Change** the stay: extend by a night, change dates, move to another free room,
   or change the price, discount or GST on the room. The check-out screen also
   lets you change the GST before the final invoice is made
+- **Edit bill** (on the Bill card, while the guest is staying and also after they
+  have left): a new price per night, discount or GST, for example when the guest
+  agreed ₹1,500 at check-in and bargains to ₹1,200 at check-out. The window shows
+  the new total and what is then still to pay, or how much to give back with
+  **Refund**. A final invoice keeps its number and gets the new amounts. Each
+  change is kept in the activity log with the old and new total and the reason.
 - **Add item** to the bill: food, laundry, minibar, taxi, extra bed or damage
 - take payments (cash, UPI, card, bank transfer, or **Booking site (prepaid)** for
   a guest who paid on MakeMyTrip, Goibibo, Booking.com and so on) and **Refund**

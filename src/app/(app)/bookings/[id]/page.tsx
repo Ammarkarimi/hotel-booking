@@ -35,7 +35,7 @@ import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource, netAfterDeductions } from "@/lib/payouts";
-import { paymentState } from "@/lib/pricing";
+import { computeFolio, parseGstSlabs, paymentState } from "@/lib/pricing";
 import { BOOKING_SOURCES, CHARGE_CATEGORIES, cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { BookingDetailDTO, RoomDTO } from "@/lib/types";
 
@@ -112,6 +112,108 @@ function AddChargeDialog({ booking, open, onClose, onDone }: { booking: BookingD
           </Button>
           <Button type="submit" loading={saving} disabled={!total}>
             Add to bill
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/**
+ * Edit bill: a new price per night, discount or GST, also after check-out (the guest bargained at
+ * the desk, for example). Shows the new total and what is then still to pay or to give back.
+ */
+function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDetailDTO; open: boolean; onClose: () => void; onDone: () => void }) {
+  const { toast } = useApp();
+  const f = booking.folio;
+  const [rate, setRate] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [gstRate, setGstRate] = useState<number | null>(null);
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    // The price per night actually charged (the same for every night once a price is agreed).
+    setRate(String(f.nightCount ? Math.round((f.roomTotal / f.nightCount) * 100) / 100 : booking.ratePerNight));
+    setDiscount(f.discount ? String(f.discount) : "");
+    setGstRate(booking.gstRate ?? null);
+    setReason("");
+  }, [open, booking, f]);
+
+  const s = booking.settings;
+  const preview = computeFolio({
+    nights: f.nights.map((n) => ({ ...n, rate: Number(rate) || 0, adjustment: 0 })),
+    discount: Number(discount) || 0,
+    charges: booking.charges,
+    payments: booking.payments,
+    // The booking's settings come as saved, with the GST slabs still as text.
+    tax: { taxMode: s.taxMode, taxRate: s.taxRate, gstSlabs: Array.isArray(s.gstSlabs) ? s.gstSlabs : parseGstSlabs(s.gstSlabs as unknown as string), extrasTaxRate: s.extrasTaxRate },
+    gstRate,
+  });
+  const tooMuchDiscount = (Number(discount) || 0) > preview.roomTotal;
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api(`/api/bookings/${booking.id}/bill`, { method: "PATCH", body: { ratePerNight: Number(rate), discount: Number(discount) || 0, gstRate, reason } });
+      toast(`Bill changed. New total ${formatCurrency(preview.grandTotal)}`);
+      onDone();
+      onClose();
+    } catch (err) {
+      toast((err as Error).message, "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit bill"
+      description={booking.bill ? `Invoice ${booking.bill.invoiceNumber} keeps its number and gets the new amounts.` : "The new price is used for every night of this stay."}
+    >
+      <form onSubmit={save} className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Price per night" hint={`${f.nightCount} night${f.nightCount === 1 ? "" : "s"}. Was ${formatCurrency(f.nightCount ? f.roomTotal / f.nightCount : booking.ratePerNight)}.`}>
+            <Input type="number" min={0} step="any" inputMode="decimal" required autoFocus value={rate} onChange={(e) => setRate(e.target.value)} className="text-lg font-semibold" />
+          </Field>
+          <Field label="Discount (amount)" optional>
+            <Input type="number" min={0} step="any" inputMode="decimal" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
+          </Field>
+        </div>
+        <Field label="GST on the room">
+          <GstPicker value={gstRate} defaultRate={preview.defaultRoomTaxRate} onChange={setGstRate} />
+        </Field>
+        <Field label="Reason" optional hint="Kept in the activity log, e.g. “Agreed ₹1,200 at check-out”.">
+          <Input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} />
+        </Field>
+        <div className="rounded-xl bg-slate-50 px-4 py-3">
+          <Row label="Room">{formatCurrency(preview.roomTotal)}</Row>
+          {preview.discount > 0 && <Row label="Discount">− {formatCurrency(preview.discount)}</Row>}
+          {preview.extrasTotal > 0 && <Row label="Other items">{formatCurrency(preview.extrasTotal)}</Row>}
+          <Row label={`GST (${preview.roomTaxRate}%)`}>{formatCurrency(preview.taxTotal)}</Row>
+          <Row label={`New total (was ${formatCurrency(f.grandTotal)})`} strong>
+            {formatCurrency(preview.grandTotal)}
+          </Row>
+          {preview.netPaid > 0 && <Row label="Already paid">{formatCurrency(preview.netPaid)}</Row>}
+          <p className={cn("mt-1 text-right font-bold", preview.balance > 0.5 ? "text-red-700" : preview.balance < -0.5 ? "text-violet-700" : "text-emerald-700")}>
+            {preview.balance > 0.5
+              ? `Still to pay: ${formatCurrency(preview.balance)}`
+              : preview.balance < -0.5
+                ? `Paid extra: give back ${formatCurrency(-preview.balance)} with “Refund”`
+                : "Fully paid"}
+          </p>
+        </div>
+        {tooMuchDiscount && <Tip tone="danger">The discount is more than the room price.</Tip>}
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" loading={saving} disabled={rate === "" || Number(rate) < 0 || tooMuchDiscount}>
+            Save bill
           </Button>
         </div>
       </form>
@@ -560,6 +662,7 @@ export default function BookingDetailPage() {
   const [b, setB] = useState<BookingDetailDTO | null>(null);
   const [error, setError] = useState("");
   const [chargeOpen, setChargeOpen] = useState(false);
+  const [billOpen, setBillOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
@@ -672,10 +775,19 @@ export default function BookingDetailPage() {
               title="Bill"
               description={b.bill ? `Final invoice ${b.bill.invoiceNumber} created ${formatDateTime(b.bill.generatedAt)}` : "Running total. It becomes final when the guest checks out."}
               action={
-                open && (
-                  <Button size="sm" variant="outline" onClick={() => setChargeOpen(true)}>
-                    <Plus className="h-4 w-4" /> Add item
-                  </Button>
+                (open || b.status === "checked_out") && (
+                  <div className="flex flex-wrap justify-end gap-2">
+                    {(b.status === "checked_in" || b.status === "checked_out") && (
+                      <Button size="sm" variant="outline" onClick={() => setBillOpen(true)}>
+                        <Pencil className="h-4 w-4" /> Edit bill
+                      </Button>
+                    )}
+                    {open && (
+                      <Button size="sm" variant="outline" onClick={() => setChargeOpen(true)}>
+                        <Plus className="h-4 w-4" /> Add item
+                      </Button>
+                    )}
+                  </div>
                 )
               }
             />
@@ -950,6 +1062,7 @@ export default function BookingDetailPage() {
       </div>
 
       <AddChargeDialog booking={b} open={chargeOpen} onClose={() => setChargeOpen(false)} onDone={load} />
+      <EditBillDialog booking={b} open={billOpen} onClose={() => setBillOpen(false)} onDone={load} />
       <EditBookingDialog booking={b} open={editOpen} onClose={() => setEditOpen(false)} onDone={load} />
       {isAdmin && <PayoutDialog booking={b} open={payoutOpen} onClose={() => setPayoutOpen(false)} onDone={load} />}
       <PaymentDialog booking={b} open={refundOpen} refund onClose={() => setRefundOpen(false)} onDone={() => load()} />
