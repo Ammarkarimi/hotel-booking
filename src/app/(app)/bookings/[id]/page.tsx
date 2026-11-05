@@ -25,7 +25,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, Field, Input, Loading, Modal, Row, Select, StatusBadge, Textarea, Tip } from "@/components/ui";
-import { GstPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
+import { GstPicker, MethodPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { IdCheckCard } from "@/components/id-checks";
 import { useGuestMessage } from "@/components/guest-message";
 import { messageKindFor } from "@/lib/messages";
@@ -36,7 +36,7 @@ import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource, netAfterDeductions } from "@/lib/payouts";
 import { computeFolio, parseGstSlabs, paymentState } from "@/lib/pricing";
-import { BOOKING_SOURCES, CHARGE_CATEGORIES, cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
+import { BOOKING_SOURCES, CHARGE_CATEGORIES, PAYMENT_METHODS, cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { BookingDetailDTO, RoomDTO } from "@/lib/types";
 
 function AddChargeDialog({ booking, open, onClose, onDone }: { booking: BookingDetailDTO; open: boolean; onClose: () => void; onDone: () => void }) {
@@ -130,10 +130,12 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
   const [discount, setDiscount] = useState("");
   const [gstRate, setGstRate] = useState<number | null>(null);
   const [reason, setReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState("cash");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!open) return;
+    setRefundMethod("cash");
     // The price per night actually charged (the same for every night once a price is agreed).
     setRate(String(f.nightCount ? Math.round((f.roomTotal / f.nightCount) * 100) / 100 : booking.ratePerNight));
     setDiscount(f.discount ? String(f.discount) : "");
@@ -152,13 +154,15 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
     gstRate,
   });
   const tooMuchDiscount = (Number(discount) || 0) > preview.roomTotal;
+  // After check-out the stay is closed: money paid above the new total is given back now.
+  const giveBack = booking.status === "checked_out" && preview.balance < -0.5 ? Math.round(-preview.balance * 100) / 100 : 0;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await api(`/api/bookings/${booking.id}/bill`, { method: "PATCH", body: { ratePerNight: Number(rate), discount: Number(discount) || 0, gstRate, reason } });
-      toast(`Bill changed. New total ${formatCurrency(preview.grandTotal)}`);
+      await api(`/api/bookings/${booking.id}/bill`, { method: "PATCH", body: { ratePerNight: Number(rate), discount: Number(discount) || 0, gstRate, reason, ...(giveBack > 0 && { refundMethod }) } });
+      toast(`Bill changed. New total ${formatCurrency(preview.grandTotal)}${giveBack > 0 ? `, ${formatCurrency(giveBack)} given back` : ""}`);
       onDone();
       onClose();
     } catch (err) {
@@ -199,14 +203,26 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
             {formatCurrency(preview.grandTotal)}
           </Row>
           {preview.netPaid > 0 && <Row label="Already paid">{formatCurrency(preview.netPaid)}</Row>}
-          <p className={cn("mt-1 text-right font-bold", preview.balance > 0.5 ? "text-red-700" : preview.balance < -0.5 ? "text-violet-700" : "text-emerald-700")}>
-            {preview.balance > 0.5
-              ? `Still to pay: ${formatCurrency(preview.balance)}`
-              : preview.balance < -0.5
-                ? `Paid extra: give back ${formatCurrency(-preview.balance)} with “Refund”`
-                : "Fully paid"}
-          </p>
+          {giveBack > 0 ? (
+            <>
+              <Row label="Given back to the guest">− {formatCurrency(giveBack)}</Row>
+              <p className="mt-1 text-right font-bold text-emerald-700">Fully paid. The invoice shows Paid {formatCurrency(preview.grandTotal)}</p>
+            </>
+          ) : (
+            <p className={cn("mt-1 text-right font-bold", preview.balance > 0.5 ? "text-red-700" : preview.balance < -0.5 ? "text-violet-700" : "text-emerald-700")}>
+              {preview.balance > 0.5
+                ? `Still to pay: ${formatCurrency(preview.balance)}`
+                : preview.balance < -0.5
+                  ? `Paid extra: give back ${formatCurrency(-preview.balance)} with “Refund”`
+                  : "Fully paid"}
+            </p>
+          )}
         </div>
+        {giveBack > 0 && (
+          <Field label={`How was the ${formatCurrency(giveBack)} given back?`} hint="Saved as money given back to the guest, so today's cash and payments match the drawer.">
+            <MethodPicker value={refundMethod} onChange={setRefundMethod} methods={PAYMENT_METHODS} />
+          </Field>
+        )}
         {tooMuchDiscount && <Tip tone="danger">The discount is more than the room price.</Tip>}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={onClose}>

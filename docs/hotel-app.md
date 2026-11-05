@@ -87,7 +87,10 @@ Open any booking (search at the top of the screen) to:
   owner once the guest has left): a new price per night, discount or GST, for example when the guest
   agreed ₹1,500 at check-in and bargains to ₹1,200 at check-out. The window shows
   the new total and what is then still to pay, or how much to give back with
-  **Refund**. A final invoice keeps its number and gets the new amounts. Each
+  **Refund**. After check-out (owner only), money paid above the new total is
+  recorded as given back when you save: choose how (cash, UPI, card…). The stay
+  is then fully paid and the invoice shows the new rate, amount, total and Paid,
+  with no refund line. A final invoice keeps its number and gets the new amounts. Each
   change is kept in the activity log with the old and new total and the reason.
 - **Add item** to the bill: food, laundry, minibar, taxi, extra bed or damage
 - take payments (cash, UPI, card, bank transfer, or **Booking site (prepaid)** for
