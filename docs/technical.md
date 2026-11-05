@@ -191,7 +191,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
 | `/api/expenses`, `/api/expenses/[id]` | GET (front desk: own entries; `?summary=cash` for everyone), POST / PATCH, DELETE (owner, or the person who added it on the same day) |
 | `/api/reports?from=&to=&groupBy=day\|week\|month` | ⓐ GET |
-| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|gst\|roomtypes\|payouts` | ⓐ GET. `bookings` has First total (at `Booking.originalPrice`, same nights and extras), Final total and Difference; `gst` is one row per stay arriving in the period (not cancelled / no-show) with the final amounts and CGST / SGST |
+| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes\|payouts` | ⓐ GET. `bookings` has First total (at `Booking.originalPrice`, same nights and extras), Final total and Difference |
 | `/api/bookings/[id]/payout` | ⓐ PUT: booking site ID, commission, GST on commission, TCS, TDS, net payout, received date and UTR |
 | `/api/activity` | ⓐ GET |
 | `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |

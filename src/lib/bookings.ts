@@ -204,8 +204,7 @@ export function serializeBooking(booking: FullBooking, ctx: BillingContext) {
     guestName: `${booking.guest.firstName} ${booking.guest.lastName}`.trim(),
     companions: parseCompanions(booking.companions),
     folio,
-    // Edit bill: the total at the price first agreed, and whether the bill was edited.
-    billEdited: booking.originalPrice !== null,
+    // Edit bill: the total at the price first agreed (same as the final total if never edited).
     firstTotal,
     payoutReceivedOn: booking.payoutReceivedOn ? toDateKey(booking.payoutReceivedOn) : null,
     payout: payoutSummary(folio.grandTotal, booking),

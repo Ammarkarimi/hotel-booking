@@ -313,11 +313,6 @@ received date and UTR, to tick off against the site's own statement).
   lowered to ₹1,200 shows −300), with a total row. A bill never edited shows the
   same first and final total and 0. Bills edited before this was added show 0 too,
   as the first price was not saved then (the activity log still has the old total)
-- **GST based report**: one row per stay arriving in the period (not cancelled or
-  no-show) with the final amounts after any edit: invoice number and date, guest
-  GSTIN, price per night, room charges, discount, extras, taxable value, GST % on
-  the room, GST on room and on extras, CGST, SGST, total GST, bill total and
-  whether the bill was edited, with a total row
 
 ### Settings (owner)
 
