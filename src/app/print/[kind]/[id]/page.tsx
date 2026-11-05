@@ -158,10 +158,12 @@ function Invoice({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
               <td className="py-1">Paid</td>
               <td className="py-1 text-right">{money(f.netPaid, cur)}</td>
             </tr>
-            <tr className="font-bold">
-              <td className="py-1">{f.balance >= 0 ? "Balance due" : "Refund due"}</td>
-              <td className="py-1 text-right">{money(Math.abs(f.balance), cur)}</td>
-            </tr>
+            {Math.abs(f.balance) >= 0.5 && (
+              <tr className="font-bold">
+                <td className="py-1">{f.balance >= 0 ? "Balance due" : "Refund due"}</td>
+                <td className="py-1 text-right">{money(Math.abs(f.balance), cur)}</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -169,7 +171,8 @@ function Invoice({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
         <span className="text-slate-500">Amount in words:</span> <b>{amountInWords(f.grandTotal, cur)}</b>
       </p>
 
-      {b.payments.length > 0 && (
+      {/* With money given back the invoice shows only what was finally paid (the list stays in the app). */}
+      {b.payments.length > 0 && !b.payments.some((p) => p.type === "refund") && (
         <div className="mt-6">
           <p className="mb-1 text-xs font-bold uppercase text-slate-500">Payments received</p>
           <table className="w-full text-sm">
