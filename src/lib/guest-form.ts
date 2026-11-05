@@ -231,9 +231,6 @@ export interface DeskPathikDetails {
   state?: string | null;
   pinCode?: string | null;
   dateOfBirth?: string | Date | null;
-  /** Only for a new guest: the ID shown (Aadhaar needs no number, any other ID does). */
-  idType?: string | null;
-  idNumber?: string | null;
   comingFrom?: string | null;
   goingTo?: string | null;
   vehicleType?: string | null;
@@ -253,7 +250,6 @@ export function deskPathikMissing(d: DeskPathikDetails): string[] {
   need(d.lastName, "Last name");
   need(d.phone, "Mobile number");
   need(d.email, "Email");
-  if (d.idType && d.idType !== "aadhar") need(d.idNumber, "ID number");
   need(d.address, "House and street");
   if (indian) need(d.locality, "Area / locality");
   need(d.city, "City");

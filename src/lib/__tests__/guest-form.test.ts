@@ -85,12 +85,11 @@ test("the front desk can correct the details with the same checks, without the a
 test("a desk booking lists what Pathik still needs, and nothing once all is filled in", () => {
   const full = {
     lastName: "Karimi", phone: "9898485698", email: "a@b.in", nationality: "Indian", address: "12 Kalupur Road", locality: "Panchpatti",
-    city: "Ahmedabad", district: "Ahmedabad", state: "Gujarat", pinCode: "380 001", dateOfBirth: "1992-05-14", idType: "aadhar",
+    city: "Ahmedabad", district: "Ahmedabad", state: "Gujarat", pinCode: "380 001", dateOfBirth: "1992-05-14",
     comingFrom: "Surat", goingTo: "Udaipur", vehicleType: "bus", adults: 2, companions: [{ name: "Sana Karimi" }],
   };
   assert.deepEqual(deskPathikMissing(full), []);
   assert.deepEqual(deskPathikMissing({ ...full, lastName: " ", pinCode: "3800", companions: [] }), ["Last name", "6-digit PIN code", "Full name of adult 2"]);
-  assert.deepEqual(deskPathikMissing({ ...full, idType: "driving_licence", idNumber: "" }), ["ID number"]);
   // A foreign guest has no Indian locality, district, state or PIN code.
   assert.deepEqual(deskPathikMissing({ ...full, nationality: "British", locality: "", district: "", state: "", pinCode: "" }), []);
 });
