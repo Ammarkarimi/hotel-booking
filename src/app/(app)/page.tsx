@@ -238,6 +238,29 @@ export default function TodayPage() {
       </div>
       <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />
 
+      {settings.pathik && notInPathik.length > 0 && (
+        <div role="alert" className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-3 text-amber-900">
+            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-amber-600" />
+            <span>
+              <span className="block text-lg font-bold">
+                {notInPathik.length} guest{notInPathik.length === 1 ? "" : "s"} still to enter in Pathik
+              </span>
+              <span className="block text-sm">
+                {notInPathik
+                  .slice(0, 4)
+                  .map((b) => `${b.guestName} (Room ${b.room.roomNumber})`)
+                  .join(", ")}
+                {notInPathik.length > 4 ? ` and ${notInPathik.length - 4} more` : ""}
+              </span>
+            </span>
+          </p>
+          <Button variant="outline" className="shrink-0 border-amber-300 bg-white" onClick={() => document.getElementById("pathik-left")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+            Fill them now
+          </Button>
+        </div>
+      )}
+
       {forms.length > 0 && (
         <Card className="border-primary-200">
           <CardHeader
@@ -311,7 +334,7 @@ export default function TodayPage() {
       </div>
 
       {settings.pathik && notInPathik.length > 0 && (
-        <Card className="border-amber-200">
+        <Card className="scroll-mt-4 border-amber-200" id="pathik-left">
           <CardHeader
             title={
               <span className="flex items-center gap-2">

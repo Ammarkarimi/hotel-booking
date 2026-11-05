@@ -19,7 +19,7 @@ import {
 import { logActivity } from "@/lib/activity";
 import { BOOKING_SOURCES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
-import { VEHICLE_TYPES, hasOwnVehicle, type GuestFormDetails } from "@/lib/guest-form";
+import { VEHICLE_TYPES, deskPathikMissing, hasOwnVehicle, type GuestFormDetails } from "@/lib/guest-form";
 import { parseDetails } from "@/lib/guest-forms-api";
 
 export async function GET(request: NextRequest) {
@@ -68,6 +68,9 @@ export async function GET(request: NextRequest) {
 }
 
 const addressFields = z.object({
+  lastName: z.string().trim().max(80).optional(),
+  email: z.string().trim().email("Email is not valid").max(120).optional().or(z.literal("")),
+  address: z.string().trim().max(200).optional(),
   dateOfBirth: z.string().refine((v) => v === "" || isDateKey(v), "Please check the date of birth").optional(),
   locality: z.string().trim().max(80).optional(),
   city: z.string().trim().max(60).optional(),
@@ -80,7 +83,7 @@ const addressFields = z.object({
 function addressData(d: z.infer<typeof addressFields> | undefined) {
   if (!d) return {};
   const out: Record<string, string | Date> = {};
-  for (const k of ["locality", "city", "district", "state"] as const) if (d[k]) out[k] = d[k]!;
+  for (const k of ["lastName", "email", "address", "locality", "city", "district", "state"] as const) if (d[k]) out[k] = d[k]!;
   if (d.pinCode) out.pinCode = d.pinCode.replace(/\s/g, "");
   if (d.dateOfBirth) out.dateOfBirth = dateFromKey(d.dateOfBirth);
   return out;
@@ -194,6 +197,19 @@ export async function POST(request: NextRequest) {
         ? await tx.guest.update({ where: { id: guestId! }, data: extra }).catch(() => null)
         : await tx.guest.findUnique({ where: { id: guestId! } });
       if (!guest) fail("Guest not found", 404);
+      // With Pathik switched on, a booking made at the desk needs everything Pathik's form asks for.
+      if (!form && ctx.settings.pathik) {
+        const missing = deskPathikMissing({
+          ...guest,
+          ...(!body.guestId && body.guest && { idType: body.guest.idType ?? "aadhar", idNumber: body.guest.idNumber }),
+          comingFrom: body.comingFrom,
+          goingTo: body.goingTo,
+          vehicleType: body.vehicleType,
+          adults: body.adults,
+          companions,
+        });
+        if (missing.length) fail(`Please fill in: ${missing.join(", ")}`);
+      }
       if (body.checkInNow && room.status === "occupied") {
         fail(`Room ${room.roomNumber} still has a guest inside. Check them out first.`);
       }

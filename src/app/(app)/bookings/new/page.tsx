@@ -12,7 +12,7 @@ import { useGuestMessage } from "@/components/guest-message";
 import { useApp } from "@/components/app-provider";
 import { AddressFields, TravelFields, emptyAddress, emptyTravel, sizeCompanions } from "@/components/pathik-details";
 import type { DeskAddress, DeskTravel } from "@/components/pathik-details";
-import { isIndian } from "@/lib/guest-form";
+import { deskPathikMissing, isIndian } from "@/lib/guest-form";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource } from "@/lib/payouts";
@@ -77,6 +77,8 @@ function NewBookingWizard() {
   // For the police register (Pathik): the guest's full address, the journey and the other adults.
   const [address, setAddress] = useState<DeskAddress>(emptyAddress);
   const [travel, setTravel] = useState<DeskTravel>(emptyTravel);
+  // A returning guest whose profile has no surname or email yet.
+  const [profileFix, setProfileFix] = useState({ lastName: "", email: "" });
 
   const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [customRate, setCustomRate] = useState("");
@@ -106,8 +108,10 @@ function NewBookingWizard() {
   // A returning guest: what their profile already has.
   const guestKey = guest?.id;
   useEffect(() => {
+    setProfileFix({ lastName: guest?.lastName ?? "", email: guest?.email ?? "" });
     if (!guest) return setAddress(emptyAddress);
     setAddress({
+      address: guest.address ?? "",
       dateOfBirth: guest.dateOfBirth?.slice(0, 10) ?? "",
       locality: guest.locality ?? "",
       city: guest.city ?? "",
@@ -253,7 +257,19 @@ function NewBookingWizard() {
     setCheckOut(addDays(checkIn, n));
   }
 
-  const guestReady = !!guestForm || !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5);
+  // With Pathik switched on, everything Pathik's form asks for is needed before going on.
+  const pathikMissing =
+    !shell.pathik || guestForm || (!guest && !newGuest.firstName.trim())
+      ? []
+      : deskPathikMissing({
+          ...address,
+          ...(guest
+            ? { lastName: guest.lastName || profileFix.lastName, email: guest.email || profileFix.email, phone: guest.phone, nationality: guest.nationality }
+            : { lastName: newGuest.lastName, email: newGuest.email, phone: newGuest.phone, nationality: newGuest.nationality, idType: newGuest.idType, idNumber: newGuest.idNumber }),
+          ...travel,
+          adults,
+        });
+  const guestReady = (!!guestForm || !!guest || (newGuest.firstName.trim() && newGuest.phone.trim().length >= 5)) && pathikMissing.length === 0;
   const guestName = guestForm?.details
     ? `${guestForm.details.firstName} ${guestForm.details.lastName}`.trim()
     : guest
@@ -282,7 +298,7 @@ function NewBookingWizard() {
             ? { guestFormId: guestForm.id, ...(linkGuestId && { guestId: linkGuestId }) }
             : {
                 ...(guest
-                  ? { guestId: guest.id, guestDetails: address }
+                  ? { guestId: guest.id, guestDetails: { ...address, ...(!guest.lastName && { lastName: profileFix.lastName.trim() }), ...(!guest.email && { email: profileFix.email.trim() }) } }
                   : { guest: { ...newGuest, ...address, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
                 comingFrom: travel.comingFrom,
                 goingTo: travel.goingTo,
@@ -578,7 +594,21 @@ function NewBookingWizard() {
               <div className="rounded-xl border border-slate-200 p-4">
                 <p className="mb-1 font-semibold text-slate-800">Address and date of birth</p>
                 <p className="mb-3 text-sm text-slate-500">From their profile. Fill in what is empty: it is saved to the profile{shell.pathik ? " and goes to Pathik" : ""}.</p>
-                <AddressFields value={address} onChange={setAddress} indian={isIndian(guest.nationality)} today={shell.today} />
+                {(!guest.lastName || !guest.email) && (
+                  <div className="mb-4 grid gap-4 sm:grid-cols-2">
+                    {!guest.lastName && (
+                      <Field label="Last name" optional={!shell.pathik}>
+                        <Input value={profileFix.lastName} onChange={(e) => setProfileFix({ ...profileFix, lastName: e.target.value })} maxLength={80} />
+                      </Field>
+                    )}
+                    {!guest.email && (
+                      <Field label="Email" optional={!shell.pathik}>
+                        <Input type="email" value={profileFix.email} onChange={(e) => setProfileFix({ ...profileFix, email: e.target.value })} maxLength={120} />
+                      </Field>
+                    )}
+                  </div>
+                )}
+                <AddressFields value={address} onChange={setAddress} indian={isIndian(guest.nationality)} today={shell.today} required={shell.pathik} />
               </div>
             )}
             {!guestForm && !guest && (
@@ -613,13 +643,13 @@ function NewBookingWizard() {
                     <Field label="First name">
                       <Input value={newGuest.firstName} onChange={(e) => setNewGuest({ ...newGuest, firstName: e.target.value })} autoFocus={!guestQuery} />
                     </Field>
-                    <Field label="Last name" optional>
+                    <Field label="Last name" optional={!shell.pathik}>
                       <Input value={newGuest.lastName} onChange={(e) => setNewGuest({ ...newGuest, lastName: e.target.value })} />
                     </Field>
                     <Field label="Mobile number" hint="Used to send the booking on WhatsApp.">
                       <Input type="tel" inputMode="tel" value={newGuest.phone} onChange={(e) => setNewGuest({ ...newGuest, phone: e.target.value })} placeholder="98765 43210" />
                     </Field>
-                    <Field label="Email" optional>
+                    <Field label="Email" optional={!shell.pathik}>
                       <Input type="email" value={newGuest.email} onChange={(e) => setNewGuest({ ...newGuest, email: e.target.value })} />
                     </Field>
                     <Field label="Nationality">
@@ -627,7 +657,7 @@ function NewBookingWizard() {
                     </Field>
                     <Field
                       label="ID proof"
-                      optional
+                      optional={!shell.pathik}
                       hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Check the card at check-in and tick it on the booking." : "You can also upload a photo of the ID later."}
                     >
                       <div className="flex gap-2">
@@ -643,24 +673,42 @@ function NewBookingWizard() {
                         )}
                       </div>
                     </Field>
-                    <Field label="House and street" optional className="sm:col-span-2">
-                      <Input value={newGuest.address} onChange={(e) => setNewGuest({ ...newGuest, address: e.target.value })} />
-                    </Field>
                   </div>
                   <div className="mt-4">
-                    <AddressFields value={address} onChange={setAddress} indian={isIndian(newGuest.nationality)} today={shell.today} />
+                    <AddressFields value={address} onChange={setAddress} indian={isIndian(newGuest.nationality)} today={shell.today} required={shell.pathik} />
                   </div>
                 </div>
               </>
             )}
             {!guestForm && (
               <div className="rounded-xl border border-slate-200 p-4">
-                <p className="mb-1 font-semibold text-slate-800">Journey{adults > 1 ? " and other adults" : ""}</p>
+                <p className="mb-1 font-semibold text-slate-800">Journey and other adults</p>
                 <p className="mb-3 text-sm text-slate-500">
-                  {shell.pathik ? "The police register (Pathik) asks for these. " : ""}You can also add them later with Change booking.
+                  {shell.pathik ? "The police register (Pathik) asks for these." : "Optional. You can also add them later with Change booking."}
                 </p>
-                <TravelFields value={travel} onChange={setTravel} />
+                <TravelFields
+                  value={travel}
+                  onChange={setTravel}
+                  adults={adults}
+                  required={shell.pathik}
+                  onAdults={(n, companions) => {
+                    setTravel({ ...travel, companions });
+                    setAdults(Math.max(1, n));
+                  }}
+                />
+                {selectedRoom && adults + children > selectedRoom.capacity && (
+                  <div className="mt-3">
+                    <Tip tone="warning">
+                      Room {selectedRoom.roomNumber} is for up to {selectedRoom.capacity} guest{selectedRoom.capacity > 1 ? "s" : ""}. Go back to choose a bigger room, or add an extra bed later.
+                    </Tip>
+                  </div>
+                )}
               </div>
+            )}
+            {pathikMissing.length > 0 && (
+              <Tip tone="warning">
+                <b>Still needed for Pathik:</b> {pathikMissing.join(", ")}.
+              </Tip>
             )}
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={() => setStep(1)}>

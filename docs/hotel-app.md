@@ -38,13 +38,20 @@ Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
 
 1. **Dates.** Quick buttons for “1 night”, “2 nights” and so on.
 2. **Room.** Only free rooms are shown, each with its total price.
-3. **Guest.** Search a returning guest by name or phone, or type a new one. The
-   police register (Pathik) details can be typed here too, all optional: house
-   and street, area/locality, city, district, state, PIN code and date of birth
-   (for a returning guest, what is empty on their profile; it is saved there), and
-   the journey: coming from, going to next, how they are travelling (car,
-   two-wheeler, bus, auto-rickshaw, other vehicle, or no vehicle) with the vehicle
-   number, and the full name and mobile of every other adult.
+3. **Guest.** Search a returning guest by name or phone, or type a new one, with
+   everything the police register (Pathik) asks for: last name, mobile, email, ID
+   proof (a number for any ID but Aadhaar), house and street, area/locality, city,
+   district, state, PIN code and date of birth (for a returning guest, what is empty
+   on their profile; it is saved there), and the journey: coming from, going to
+   next, how they are travelling (car, two-wheeler, bus, auto-rickshaw, other
+   vehicle, or no vehicle) with the vehicle number.
+   **Other adults in the room** (wife, husband, family, friends): press **Add
+   another adult** for each one and type their full name (mobile if they have one);
+   the number of adults on the booking goes up with it, and × takes one off.
+   While Pathik is switched on (Settings → Hotel details) all of these are
+   compulsory: a box under the form lists what is still needed, and Next stays
+   off until it is filled in. Locality, district, state and PIN are not asked of
+   foreign guests. With Pathik switched off they are optional.
 4. **Price & payment.** Agreed price, discount, **GST on the room** (the default
    from Settings is selected; tap 0%, 5%, 12%, 18% or “Other” for this booking
    only), where the booking came from (walk-in, phone, website, Booking.com,
@@ -349,7 +356,9 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
 **For each stay:**
 
 1. On the booking (card **Police register (Pathik)**), on the guest's page, or from
-   **Today → Not entered in Pathik yet**, press **Fill in Pathik**.
+   **Today → Not entered in Pathik yet**, press **Fill in Pathik**. At the top of
+   Today an amber alert says how many guests staying now are still to enter in
+   Pathik, with their names and rooms; **Fill them now** jumps to the list.
 2. The window says what Pathik needs that is not in the software yet (for example
    the district or email). Add it on the booking or guest first, or type it in Pathik.
 3. Press **Open Pathik and fill the form**. Pathik opens in a new tab (sign in if it
