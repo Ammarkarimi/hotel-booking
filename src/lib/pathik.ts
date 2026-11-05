@@ -40,7 +40,7 @@ export interface PathikStay {
   children: number;
   comingFrom: string;
   goingTo: string;
-  vehicleType: string | null; // two_wheeler, four_wheeler, other; null = no vehicle
+  vehicleType: string | null; // four_wheeler, two_wheeler, bus, auto, other, none; null = not asked yet
   vehicleNumber: string;
 }
 
@@ -232,7 +232,7 @@ export function pathikRecord(input: PathikInput): PathikRecord {
       children: b.children,
       comingFrom: b.comingFrom ?? "",
       goingTo: b.goingTo ?? "",
-      vehicleType: b.vehicleNumber ? (b.vehicleType ?? null) : null,
+      vehicleType: b.vehicleType || null,
       vehicleNumber: b.vehicleNumber ?? "",
     };
     others = parseCompanions(b.companions).map((c) => {
@@ -265,7 +265,7 @@ export function pathikRecord(input: PathikInput): PathikRecord {
   if (stay) {
     need(stay.comingFrom, "Coming from");
     need(stay.goingTo, "Going to");
-    if (stay.vehicleNumber) need(stay.vehicleType, "Type of vehicle");
+    need(stay.vehicleType, "How the guest travels (vehicle type)");
     if (others.length < stay.adults - 1) missing.push(`Names of the other ${stay.adults - 1 - others.length === 1 ? "adult" : `${stay.adults - 1 - others.length} adults`}`);
     others.forEach((o) => need(o.docType, `ID proof type of ${o.fullName}`));
   }

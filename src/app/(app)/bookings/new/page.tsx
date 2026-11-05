@@ -10,6 +10,9 @@ import { FormDetails } from "@/components/guest-form-send";
 import { EditGuestFormDialog } from "@/components/guest-form-edit";
 import { useGuestMessage } from "@/components/guest-message";
 import { useApp } from "@/components/app-provider";
+import { AddressFields, TravelFields, emptyAddress, emptyTravel, sizeCompanions } from "@/components/pathik-details";
+import type { DeskAddress, DeskTravel } from "@/components/pathik-details";
+import { isIndian } from "@/lib/guest-form";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays, diffDays } from "@/lib/dates";
 import { isOtaSource } from "@/lib/payouts";
@@ -71,6 +74,10 @@ function NewBookingWizard() {
   const [guest, setGuest] = useState<GuestResult | null>(null);
   const [newGuest, setNewGuest] = useState({ firstName: "", lastName: "", phone: "", email: "", nationality: "Indian", idType: "aadhar", idNumber: "", address: "" });
 
+  // For the police register (Pathik): the guest's full address, the journey and the other adults.
+  const [address, setAddress] = useState<DeskAddress>(emptyAddress);
+  const [travel, setTravel] = useState<DeskTravel>(emptyTravel);
+
   const [settings, setSettings] = useState<SettingsDTO | null>(null);
   const [customRate, setCustomRate] = useState("");
   const [discount, setDiscount] = useState("");
@@ -93,6 +100,23 @@ function NewBookingWizard() {
   const [tips, setTips] = useState<Record<string, RateTip>>({});
 
   const nights = Math.max(0, diffDays(checkIn, checkOut));
+
+  useEffect(() => setTravel((t) => ({ ...t, companions: sizeCompanions(t.companions, adults) })), [adults]);
+
+  // A returning guest: what their profile already has.
+  const guestKey = guest?.id;
+  useEffect(() => {
+    if (!guest) return setAddress(emptyAddress);
+    setAddress({
+      dateOfBirth: guest.dateOfBirth?.slice(0, 10) ?? "",
+      locality: guest.locality ?? "",
+      city: guest.city ?? "",
+      district: guest.district ?? "",
+      state: guest.state ?? "",
+      pinCode: guest.pinCode ?? "",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [guestKey]);
 
   /** The stay as the guest (or the desk, after a change) filled it in. */
   const applyForm = useCallback(
@@ -256,9 +280,16 @@ function NewBookingWizard() {
           checkInNow: walkIn,
           ...(guestForm
             ? { guestFormId: guestForm.id, ...(linkGuestId && { guestId: linkGuestId }) }
-            : guest
-              ? { guestId: guest.id }
-              : { guest: { ...newGuest, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
+            : {
+                ...(guest
+                  ? { guestId: guest.id, guestDetails: address }
+                  : { guest: { ...newGuest, ...address, idType: newGuest.idNumber || newGuest.idType === "aadhar" ? newGuest.idType : undefined, idNumber: newGuest.idNumber || undefined } }),
+                comingFrom: travel.comingFrom,
+                goingTo: travel.goingTo,
+                vehicleType: travel.vehicleType,
+                vehicleNumber: travel.vehicleNumber,
+                companions: travel.companions.filter((c) => c.name.trim()).map((c) => ({ name: c.name.trim(), phone: c.phone.trim() })),
+              }),
           ...(Number(advance) > 0 && { advance: { amount: Number(advance), method } }),
         },
       });
@@ -542,7 +573,15 @@ function NewBookingWizard() {
                   Choose a different guest
                 </Button>
               </div>
-            ) : (
+            ) : null}
+            {!guestForm && guest && (
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 font-semibold text-slate-800">Address and date of birth</p>
+                <p className="mb-3 text-sm text-slate-500">From their profile. Fill in what is empty: it is saved to the profile{shell.pathik ? " and goes to Pathik" : ""}.</p>
+                <AddressFields value={address} onChange={setAddress} indian={isIndian(guest.nationality)} today={shell.today} />
+              </div>
+            )}
+            {!guestForm && !guest && (
               <>
                 <Field label="Has this guest stayed before?" hint="Type their name or phone number to find them.">
                   <div className="relative">
@@ -592,7 +631,7 @@ function NewBookingWizard() {
                       hint={newGuest.idType === "aadhar" ? "Nothing from the Aadhaar is saved. Check the card at check-in and tick it on the booking." : "You can also upload a photo of the ID later."}
                     >
                       <div className="flex gap-2">
-                        <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value, idNumber: "" })} className="w-40">
+                        <Select value={newGuest.idType} onChange={(e) => setNewGuest({ ...newGuest, idType: e.target.value, idNumber: "" })} className="w-48 shrink-0">
                           {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
                             <option key={t} value={t}>
                               {label(t)}
@@ -604,12 +643,24 @@ function NewBookingWizard() {
                         )}
                       </div>
                     </Field>
-                    <Field label="Address" optional className="sm:col-span-2">
+                    <Field label="House and street" optional className="sm:col-span-2">
                       <Input value={newGuest.address} onChange={(e) => setNewGuest({ ...newGuest, address: e.target.value })} />
                     </Field>
                   </div>
+                  <div className="mt-4">
+                    <AddressFields value={address} onChange={setAddress} indian={isIndian(newGuest.nationality)} today={shell.today} />
+                  </div>
                 </div>
               </>
+            )}
+            {!guestForm && (
+              <div className="rounded-xl border border-slate-200 p-4">
+                <p className="mb-1 font-semibold text-slate-800">Journey{adults > 1 ? " and other adults" : ""}</p>
+                <p className="mb-3 text-sm text-slate-500">
+                  {shell.pathik ? "The police register (Pathik) asks for these. " : ""}You can also add them later with Change booking.
+                </p>
+                <TravelFields value={travel} onChange={setTravel} />
+              </div>
             )}
             <div className="flex justify-between">
               <Button variant="outline" size="lg" onClick={() => setStep(1)}>

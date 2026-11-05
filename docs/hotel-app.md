@@ -38,7 +38,13 @@ Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
 
 1. **Dates.** Quick buttons for “1 night”, “2 nights” and so on.
 2. **Room.** Only free rooms are shown, each with its total price.
-3. **Guest.** Search a returning guest by name or phone, or type a new one.
+3. **Guest.** Search a returning guest by name or phone, or type a new one. The
+   police register (Pathik) details can be typed here too, all optional: house
+   and street, area/locality, city, district, state, PIN code and date of birth
+   (for a returning guest, what is empty on their profile; it is saved there), and
+   the journey: coming from, going to next, how they are travelling (car,
+   two-wheeler, bus, auto-rickshaw, other vehicle, or no vehicle) with the vehicle
+   number, and the full name and mobile of every other adult.
 4. **Price & payment.** Agreed price, discount, **GST on the room** (the default
    from Settings is selected; tap 0%, 5%, 12%, 18% or “Other” for this booking
    only), where the booking came from (walk-in, phone, website, Booking.com,
@@ -91,8 +97,10 @@ Instead of typing a guest's details at the desk, send them a form:
    **Send on WhatsApp** and then Send in WhatsApp. The link works for 7 days.
 2. The guest opens the link on their phone and fills in: arrival and leaving
    dates, adults and children, name, mobile, date of birth, email, nationality,
-   home address (house and street, city, state, PIN code), where they are coming
-   from and going next, their vehicle number, and the name of every other adult.
+   home address (house and street, area/locality, city, district, state, PIN code),
+   where they are coming from and going next, how they are travelling (car,
+   two-wheeler, bus, auto-rickshaw, other vehicle or no vehicle) and the vehicle
+   number, and the full name and mobile of every other adult.
    For every adult they choose **Aadhaar** (shown at check-in, nothing uploaded)
    or upload a photo or PDF of another ID (driving licence, voter ID; passport
    and visa for foreign guests). No ID number is asked. They tick that they
@@ -350,7 +358,9 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
    email, coming from and going to, ID type and number, the ID copies (made smaller
    than 250 KB, at most 6), room, check-in and check-out dates and times, adults and
    children, vehicle type and number. When there are more adults, Pathik's extra
-   blocks are filled with each one's name, mobile and ID type.
+   blocks ("Other Guest Full Name", "Other Guest Mobile Number"…) are filled with
+   each one's name, mobile and ID type. A vehicle Pathik has no word for is chosen
+   as its "Other".
 4. Filled boxes get a green border, boxes still empty an amber one, and a small panel
    lists what is left. **Aadhaar is always typed by hand** (number and photo): nothing
    from an Aadhaar is saved in the software.
@@ -361,8 +371,9 @@ If dates or times come out in the wrong format, choose the format in the panel a
 press *Fill again*. Without the helper, the window still lists every detail with a
 copy button.
 
-The guest form on WhatsApp asks for the area/locality, district and type of vehicle
-too, so most stays need nothing typed. Hotels outside Gujarat can switch Pathik off
+The guest form on WhatsApp asks for the area/locality, district, the next city and
+how the guest travels too, and New booking has the same boxes for walk-ins, so most
+stays need nothing typed in Pathik. Hotels outside Gujarat can switch Pathik off
 in Settings → Hotel details.
 
 ## WhatsApp messages to guests

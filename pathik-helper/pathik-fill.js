@@ -70,9 +70,11 @@
   };
   const VEHICLES = {
     two_wheeler: [/two/, /2\s*-?\s*wheel/, /bike/, /scooter/, /motor\s*cycle/],
-    four_wheeler: [/four/, /4\s*-?\s*wheel/, /\bcar\b/],
+    four_wheeler: [/\bcar\b/, /four/, /4\s*-?\s*wheel/, /jeep/, /suv/, /taxi/, /\bcab\b/],
+    bus: [/\bbus\b/, /coach/, /tempo/, /traveller/],
+    auto: [/auto/, /rickshaw/, /three/, /3\s*-?\s*wheel/],
     other: [/other/],
-    none: [/^none$/, /^no$/, /no vehicle/, /not applicable/, /^n\/?a$/, /without/, /walk/],
+    none: [/^none$/, /^no$/, /no vehicle/, /not applicable/, /^n\/?a$/, /without/, /walk/, /train/, /flight/, /public/],
   };
 
   // ---------- finding fields ----------
@@ -264,8 +266,10 @@
       let ok = false;
       if (how === "skip") return;
       if (f.el instanceof HTMLSelectElement) {
-        const patterns = name === "docType" ? DOC_TYPES[value] : name === "vehicleType" ? VEHICLES[value || "none"] : null;
-        ok = value || name === "vehicleType" ? chooseOption(f.el, value || "none", patterns) : false;
+        const patterns = name === "docType" ? DOC_TYPES[value] : name === "vehicleType" ? VEHICLES[value] : null;
+        ok = value ? chooseOption(f.el, value, patterns) : false;
+        // A vehicle Pathik has no word for goes under its "Other".
+        if (!ok && name === "vehicleType" && value && value !== "none") ok = chooseOption(f.el, "other", VEHICLES.other);
       } else if (f.el.type === "file") {
         return;
       } else if (/date/i.test(name)) ok = setField(f.el, formatDate(value, f.el));
@@ -372,9 +376,19 @@
     chrome.runtime.sendMessage({ type: "pathik:refresh" }).catch(() => undefined);
   }
 
+  // Pathik labels the extra adults' boxes "Other Guest Full Name", "Other Guest Mobile Number"...
+  const OTHER_PREFIX = /^(other|additional|extra|co)[\s-]*(guest|person|adult|member)s?\s*(\d+\s*)?/;
+
   /** The fields Pathik added for the extra adults, split into one group per person. */
   function extraBlocks(before) {
-    const fresh = labelledFields().filter((f) => !before.has(f.el));
+    let fresh = labelledFields().filter((f) => !before.has(f.el));
+    // The boxes may already be on the page before the number of adults is set.
+    if (!fresh.some((f) => OTHER_PREFIX.test(f.key))) {
+      const named = labelledFields().filter((f) => OTHER_PREFIX.test(f.key));
+      if (named.length) fresh = named;
+    }
+    // "other guest full name" → "full name", so the words below match.
+    fresh = fresh.map((f) => ({ ...f, key: f.key.replace(OTHER_PREFIX, "").trim() || f.key }));
     if (!fresh.length) return null;
     const groups = [];
     let current = null;

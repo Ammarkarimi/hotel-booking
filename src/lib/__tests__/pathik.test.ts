@@ -101,7 +101,7 @@ test("what is missing is listed, and a guest without a booking fills only their 
       idChecks: [],
     })
   );
-  assert.deepEqual(r.missing, ["Last name (surname)", "District", "Date of birth", "Email", "Going to", "Type of vehicle", "Names of the other adult"]);
+  assert.deepEqual(r.missing, ["Last name (surname)", "District", "Date of birth", "Email", "Going to", "How the guest travels (vehicle type)", "Names of the other adult"]);
   assert.deepEqual(r.byHand, ["Aadhaar number and photo for Rajesh, Ravi"]);
   assert.equal(r.guest.docNumber, "");
 

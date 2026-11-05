@@ -8,7 +8,8 @@ const filled = {
   phone: "98765 43210",
   dateOfBirth: "1990-04-12",
   nationality: "Indian",
-  address: "12 MG Road, Navrangpura",
+  address: "12 MG Road",
+  locality: "Navrangpura",
   city: "Ahmedabad",
   district: "Ahmedabad",
   state: "Gujarat",
@@ -18,6 +19,8 @@ const filled = {
   adults: 2,
   children: 1,
   comingFrom: "Mumbai",
+  goingTo: "Udaipur",
+  vehicleType: "bus",
   companions: [{ name: "Ravi Rao" }],
   consent: true,
 };
@@ -32,10 +35,16 @@ test("the guest form needs every adult's name, a state and PIN for Indian guests
   assert.match(fail({ pinCode: "3800" }), /6-digit PIN/);
   assert.match(fail({ state: "" }), /state/);
   assert.match(fail({ district: "" }), /district/);
+  // The police register (Pathik) also asks for the locality, the next city and how the guest travels.
+  assert.match(fail({ locality: "" }), /locality/);
+  assert.match(fail({ goingTo: "" }), /going to next/);
+  assert.match(fail({ vehicleType: "" }), /how you are travelling/);
+  // The desk can save a form without them.
+  assert.equal(staffFormSchema.safeParse({ ...filled, goingTo: "", vehicleType: "", locality: "" }).success, true);
   assert.match(fail({ checkOut: "2026-11-03" }), /after the arrival date/);
   assert.match(fail({ consent: false }), /agree/);
   // A foreign guest has no Indian state or PIN code.
-  assert.equal(guestFormSchema.safeParse({ ...filled, nationality: "British", state: "", pinCode: "SW1A 1AA" }).success, true);
+  assert.equal(guestFormSchema.safeParse({ ...filled, nationality: "British", state: "", locality: "", district: "", pinCode: "SW1A 1AA" }).success, true);
 });
 
 test("every adult shows an Aadhaar at check-in or uploads another ID, and a foreign guest a passport", () => {

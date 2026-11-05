@@ -6,7 +6,7 @@ import { Button, Field, Input, Modal, Row, Tip } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays } from "@/lib/dates";
-import { formMessage, fullAddress, isIndian } from "@/lib/guest-form";
+import { VEHICLE_LABELS, formMessage, fullAddress, isIndian } from "@/lib/guest-form";
 import { formatDate, label } from "@/lib/utils";
 import type { DocumentDTO, GuestFormDTO } from "@/lib/types";
 
@@ -186,7 +186,9 @@ export function FormDetails({ form }: { form: GuestFormDTO }) {
         </Row>
         <Row label="Coming from">{d.comingFrom}</Row>
         {d.goingTo && <Row label="Going to">{d.goingTo}</Row>}
-        {d.vehicleNumber && <Row label="Vehicle">{d.vehicleNumber.toUpperCase()}</Row>}
+        {(d.vehicleType || d.vehicleNumber) && (
+          <Row label="Travelling by">{[d.vehicleType && VEHICLE_LABELS[d.vehicleType], d.vehicleNumber?.toUpperCase()].filter(Boolean).join(" · ")}</Row>
+        )}
         {d.companions.length > 0 && (
           <Row label="Staying with">
             <span className="text-right">{d.companions

@@ -75,7 +75,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
 | `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`), and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
-| Pathik fields | — | `Guest.locality`, `Guest.district`; `Booking.vehicleType` (two_wheeler, four_wheeler, other), `Booking.pathikAt` and `pathikByName` (marked as entered in Pathik); `HotelSettings.pathik` shows "Fill in Pathik" |
+| Pathik fields | — | `Guest.locality`, `Guest.district`; `Booking.vehicleType` (four_wheeler, two_wheeler, bus, auto, other, none = no vehicle), `Booking.pathikAt` and `pathikByName` (marked as entered in Pathik); `HotelSettings.pathik` shows "Fill in Pathik" |
 | `RateTipSeen` | Hotel | Someone typed "I have seen" on a rate tip: `staffId`, `staffName`, `tipKey` (`date\|roomType\|price`, so a lower price later is a new tip), when. Unique per person and tip |
 | `IdCheck` | Hotel, Booking | An adult's ID ticked as verified at the desk after the receptionist looked at the original: `person` (null = the guest who booked), `idType` (aadhar, passport, driving_licence, voter_id, pan, other), who and when. `method` is `id_seen`; rows marked `aadhaar_qr` come from the earlier QR scanner. Nothing from the ID itself is stored |
 | `FileCleanup` | — | Uploaded files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
@@ -174,7 +174,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 |---|---|
 | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/password` | POST, POST, GET, POST |
 | `/api/dashboard`, `/api/calendar`, `/api/search`, `/api/availability` | GET |
-| `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST |
+| `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST (also `comingFrom`, `goingTo`, `vehicleType`, `vehicleNumber`, `companions` [{ name, phone }], and the Pathik address fields `dateOfBirth`, `locality`, `city`, `district`, `state`, `pinCode` on `guest`, or on `guestDetails` for a returning guest, where only filled-in fields change) |
 | `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks and copies follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
 | `/api/bookings/[id]/charges` | POST, DELETE |
 | `/api/payments` | GET, POST, DELETE ⓐ |
