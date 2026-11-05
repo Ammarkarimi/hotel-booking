@@ -13,7 +13,7 @@ export async function GET() {
     const { today } = ctx;
     const tomorrow = addDays(today, 1);
 
-    const [rooms, active, recentlyLeft, payments, activity, upcomingCount] = await Promise.all([
+    const [rooms, active, recentlyLeft, payments, activity, upcomingCount, anyBooking] = await Promise.all([
       prisma.room.findMany({ orderBy: { roomNumber: "asc" } }),
       prisma.booking.findMany({
         where: {
@@ -39,6 +39,8 @@ export async function GET() {
           checkInDate: { gte: dateFromKey(tomorrow), lt: dateFromKey(addDays(today, 8)) },
         },
       }),
+      // For "Getting started": has the hotel ever taken a booking (even if every guest has left)?
+      prisma.booking.findFirst({ select: { id: true } }),
     ]);
 
     const serialized = active.map((b) => serializeBooking(b, ctx));
@@ -76,6 +78,7 @@ export async function GET() {
     return NextResponse.json({
       today,
       hotelName: ctx.settings.hotelName,
+      hasBookings: anyBooking !== null,
       stats: {
         totalRooms: rooms.length,
         occupied: inHouse.length,
