@@ -213,6 +213,13 @@
 
   // ---------- the panel ----------
 
+  const VERSION = (() => {
+    try {
+      return chrome.runtime.getManifest().version;
+    } catch {
+      return "";
+    }
+  })();
   const host = document.createElement("div");
   host.style.cssText = "position:fixed;right:16px;bottom:16px;z-index:2147483647;";
   const shadow = host.attachShadow({ mode: "open" });
@@ -226,7 +233,7 @@
       ul{margin:4px 0 8px;padding-left:18px}button,select{font:inherit}button{cursor:pointer;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 10px}
       .x{background:transparent;border:0;color:#fff;font-size:18px;padding:0 4px}.row{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:3px 0;border-top:1px solid #f1f5f9;font-size:13px}
       .row span:first-child{color:#64748b;width:110px;flex:none}.row span:nth-child(2){flex:1;word-break:break-word}.small{font-size:12px;color:#64748b}
-    </style><div class="p"><div class="h"><span>Pathik helper</span><button class="x" id="close" title="Close">×</button></div><div class="b">${html}</div></div>`;
+    </style><div class="p"><div class="h"><span>Pathik helper ${esc(VERSION)}</span><button class="x" id="close" title="Close">×</button></div><div class="b">${html}</div></div>`;
     shadow.getElementById("close").onclick = () => host.remove();
     if (!host.isConnected) document.documentElement.appendChild(host);
   }
@@ -350,16 +357,37 @@
             blocks = await waitFor(() => extraBlocks(before), 3000);
           }
         }
+        const fillAll = (list) => {
+          const notes = [];
+          others.forEach((o, i) => {
+            const block = list?.[i];
+            if (!block) {
+              notes.push(`${o.fullName}: no place for this adult was found`);
+              return;
+            }
+            const missed = fillOther(block, o, files.filter((f) => f.person === o.fullName || f.person === [o.firstName, o.middleName, o.lastName].filter(Boolean).join(" ")));
+            if (missed.length) notes.push(`${o.fullName}: ${missed.join(", ")}`);
+          });
+          return notes;
+        };
+        // Still on the page and holding the name typed in?
+        const holds = (list) =>
+          !!list &&
+          others.every((o, i) => {
+            const f = list[i] && (pick(list[i], OTHER.fullName) || pick(list[i], OTHER.firstName));
+            return !!f && f.el.isConnected && f.el.value.trim() !== "";
+          });
+        let notes = fillAll(blocks);
+        // Pathik can draw the other guests' boxes again a moment after the number of adults
+        // changes, which throws away what was typed: look again, and fill the new boxes.
+        for (let t = 0; t < 5 && blocks?.length; t++) {
+          await sleep(600);
+          if (holds(blocks)) continue;
+          blocks = (await waitFor(() => extraBlocks(before), 2000)) || blocks;
+          notes = fillAll(blocks);
+        }
         savedBlocks = blocks;
-        others.forEach((o, i) => {
-          const block = blocks?.[i];
-          if (!block) {
-            otherNotes.push(`${o.fullName}: no place for this adult was found`);
-            return;
-          }
-          const missed = fillOther(block, o, files.filter((f) => f.person === o.fullName || f.person === [o.firstName, o.middleName, o.lastName].filter(Boolean).join(" ")));
-          if (missed.length) otherNotes.push(`${o.fullName}: ${missed.join(", ")}`);
-        });
+        otherNotes.push(...notes);
       }
     }
 
