@@ -359,8 +359,8 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
    than 250 KB, at most 6), room, check-in and check-out dates and times, adults and
    children, vehicle type and number. When there are more adults, Pathik's extra
    blocks ("Other Guest Full Name", "Other Guest Mobile Number"…) are filled with
-   each one's name, mobile and ID type. A vehicle Pathik has no word for is chosen
-   as its "Other".
+   each one's name, mobile and ID type. Pathik's vehicle list is Car, Bike, Bus,
+   Auto and Other: "No vehicle" (train, flight, on foot) is chosen as Other.
 4. Filled boxes get a green border, boxes still empty an amber one, and a small panel
    lists what is left. **Aadhaar is always typed by hand** (number and photo): nothing
    from an Aadhaar is saved in the software.

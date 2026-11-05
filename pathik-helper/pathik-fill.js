@@ -268,8 +268,8 @@
       if (f.el instanceof HTMLSelectElement) {
         const patterns = name === "docType" ? DOC_TYPES[value] : name === "vehicleType" ? VEHICLES[value] : null;
         ok = value ? chooseOption(f.el, value, patterns) : false;
-        // A vehicle Pathik has no word for goes under its "Other".
-        if (!ok && name === "vehicleType" && value && value !== "none") ok = chooseOption(f.el, "other", VEHICLES.other);
+        // Pathik's list is Car, Bike, Bus, Auto, Other: no vehicle, or one it has no word for, goes under "Other".
+        if (!ok && name === "vehicleType" && value) ok = chooseOption(f.el, "other", VEHICLES.other);
       } else if (f.el.type === "file") {
         return;
       } else if (/date/i.test(name)) ok = setField(f.el, formatDate(value, f.el));
