@@ -91,7 +91,9 @@ Open any booking (search at the top of the screen) to:
   recorded as given back when you save: choose how (cash, UPI, card…). The stay
   is then fully paid and the invoice shows the new rate, amount, total and Paid,
   with no refund line. A final invoice keeps its number and gets the new amounts. Each
-  change is kept in the activity log with the old and new total and the reason.
+  change is kept in the activity log with the old and new total and the reason. The
+  price first agreed is kept from the first edit, so the **Bookings** download shows
+  the first total, the final total and the difference
 - **Add item** to the bill: food, laundry, minibar, taxi, extra bed or damage
 - take payments (cash, UPI, card, bank transfer, or **Booking site (prepaid)** for
   a guest who paid on MakeMyTrip, Goibibo, Booking.com and so on) and **Refund**
@@ -305,6 +307,17 @@ Excel:** the summary (by day, week or month, with a total row), expenses,
 bookings, payments, GST invoices, room types, and **booking site payouts** (one
 row per stay with the site's booking ID, gross bill, each deduction, net, and
 received date and UTR, to tick off against the site's own statement).
+
+- **Bookings** has three columns for Edit bill: **First total (as first agreed)**,
+  **Final total (after edit)** and **Difference** (final minus first, so ₹1,500
+  lowered to ₹1,200 shows −300), with a total row. A bill never edited shows the
+  same first and final total and 0. Bills edited before this was added show 0 too,
+  as the first price was not saved then (the activity log still has the old total)
+- **GST based report**: one row per stay arriving in the period (not cancelled or
+  no-show) with the final amounts after any edit: invoice number and date, guest
+  GSTIN, price per night, room charges, discount, extras, taxable value, GST % on
+  the room, GST on room and on extras, CGST, SGST, total GST, bill total and
+  whether the bill was edited, with a total row
 
 ### Settings (owner)
 

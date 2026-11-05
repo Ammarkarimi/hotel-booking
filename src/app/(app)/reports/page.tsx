@@ -546,6 +546,9 @@ export default function ReportsPage() {
               <Button variant="outline" onClick={() => download("invoices")}>
                 <Download className="h-4 w-4" /> GST invoices
               </Button>
+              <Button variant="outline" onClick={() => download("gst")}>
+                <Download className="h-4 w-4" /> GST based report
+              </Button>
               <Button variant="outline" onClick={() => download("roomtypes")}>
                 <Download className="h-4 w-4" /> Room types
               </Button>

@@ -162,8 +162,39 @@ export function folioFor(booking: FullBooking, ctx: BillingContext): Folio {
   };
 }
 
+/** The price first agreed with the guest, saved the first time the bill is edited. */
+export interface OriginalPrice {
+  ratePerNight: number;
+  fixedRate: boolean;
+  discount: number;
+  gstRate: number | null;
+}
+
+export function parseOriginalPrice(raw: string | null | undefined): OriginalPrice | null {
+  if (!raw) return null;
+  try {
+    const p = JSON.parse(raw);
+    if (typeof p?.ratePerNight !== "number") return null;
+    return { ratePerNight: p.ratePerNight, fixedRate: !!p.fixedRate, discount: Number(p.discount) || 0, gstRate: typeof p.gstRate === "number" ? p.gstRate : null };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The bill total at the price first agreed, with the same nights and extras as now, so the
+ * difference from the final total is only what the Edit bill changed. Same as the final
+ * total when the bill was never edited.
+ */
+export function firstTotalFor(booking: FullBooking, ctx: BillingContext, finalTotal: number): number {
+  const first = parseOriginalPrice(booking.originalPrice);
+  if (!first) return finalTotal;
+  return folioFor({ ...booking, ...first, bill: null }, ctx).grandTotal;
+}
+
 export function serializeBooking(booking: FullBooking, ctx: BillingContext) {
   const folio = folioFor(booking, ctx);
+  const firstTotal = firstTotalFor(booking, ctx, folio.grandTotal);
   const checkIn = toDateKey(booking.checkInDate);
   const checkOut = toDateKey(booking.checkOutDate);
   return {
@@ -173,6 +204,9 @@ export function serializeBooking(booking: FullBooking, ctx: BillingContext) {
     guestName: `${booking.guest.firstName} ${booking.guest.lastName}`.trim(),
     companions: parseCompanions(booking.companions),
     folio,
+    // Edit bill: the total at the price first agreed, and whether the bill was edited.
+    billEdited: booking.originalPrice !== null,
+    firstTotal,
     payoutReceivedOn: booking.payoutReceivedOn ? toDateKey(booking.payoutReceivedOn) : null,
     payout: payoutSummary(folio.grandTotal, booking),
     flags: {

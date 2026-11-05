@@ -47,6 +47,10 @@ export async function PATCH(request: NextRequest, { params }: Params) {
           fixedRate: true,
           discount: body.discount,
           gstRate: body.gstRate,
+          // The price first agreed, kept from the first edit so reports can show first, final and the difference.
+          ...(old.originalPrice
+            ? {}
+            : { originalPrice: JSON.stringify({ ratePerNight: old.ratePerNight, fixedRate: old.fixedRate, discount: old.discount, gstRate: old.gstRate }) }),
         },
       });
       const fresh = await loadBooking(id, tx);
