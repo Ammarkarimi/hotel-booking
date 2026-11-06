@@ -8,7 +8,6 @@
  * More hotels are added from the software provider's panel at /platform.
  */
 import bcrypt from "bcryptjs";
-import type { Prisma } from "@prisma/client";
 import { currentHotelId, prisma, rawPrisma, runForHotel } from "../src/lib/db";
 import { addDays, dateFromKey, todayKey } from "../src/lib/dates";
 import { computeFolio, parseGstSlabs, priceNights } from "../src/lib/pricing";
@@ -342,71 +341,11 @@ async function seedDemo() {
   console.log(`Demo data created: ${DEMO_GUESTS.length} guests, ${DEMO_PLANS.length} bookings.`);
 }
 
-/** Demo banquets: two halls, three menus and functions done, today, coming and an enquiry. */
-async function seedBanquets() {
-  if ((await prisma.banquetHall.count()) > 0) return;
-  const hotelId = currentHotelId();
-  const settings = await prisma.hotelSettings.findUniqueOrThrow({ where: { hotelId } });
-  const today = todayKey(settings.timezone);
-  await prisma.hotelSettings.update({
-    where: { hotelId },
-    data: { banquetTerms: "50% advance to confirm the booking, balance on the day of the function.\nAdvance is not refunded if cancelled within 30 days of the function.\nMusic till 10:30 pm as per local rules.\nOutside food and decorators are not allowed without permission." },
-  });
-  const crystal = await prisma.banquetHall.create({ data: { hotelId, name: "Crystal Hall", capacity: 300, rent: 25000, notes: "AC, stage, 2 green rooms" } });
-  const lawn = await prisma.banquetHall.create({ data: { hotelId, name: "Garden Lawn", capacity: 600, rent: 40000, notes: "Open air, parking for 80 cars" } });
-  const gujarati = await prisma.banquetMenu.create({
-    data: { hotelId, name: "Gujarati thali", foodType: "veg", pricePerPlate: 550, items: "Welcome drink\nKhaman, patra\n3 sabzi, dal, kadhi\nRotli, puri, rice\nShrikhand, gulab jamun\nPapad, salad, chaas" },
-  });
-  await prisma.banquetMenu.create({
-    data: { hotelId, name: "Gold buffet", foodType: "veg", pricePerPlate: 850, items: "2 mocktails\n4 starters\nSoup\nPaneer, 2 sabzi, dal makhani\nNaan, rice, biryani\n2 desserts, ice cream" },
-  });
-  await prisma.banquetMenu.create({ data: { hotelId, name: "Non-veg buffet", foodType: "non_veg", pricePerPlate: 1100, items: "2 mocktails\nChicken tikka, fish fingers\nButter chicken, mutton rogan josh\nNaan, biryani\n2 desserts" } });
-  const make = async (n: number, d: Omit<Prisma.BanquetUncheckedCreateInput, "hotelId" | "number">, payments: Array<{ amount: number; method: string; type: string; daysAgo: number }> = []) => {
-    const hotel = await rawPrisma.hotel.update({ where: { id: hotelId }, data: { banquetSeq: { increment: 1 } } });
-    const b = await prisma.banquet.create({ data: { hotelId, number: hotel.banquetSeq, createdByName: "Anil Sharma", ...d } });
-    for (const p of payments) {
-      await prisma.payment.create({ data: { hotelId, banquetId: b.id, amount: p.amount, method: p.method, type: p.type, receivedBy: "Pooja Verma", paidAt: new Date(Date.now() - p.daysAgo * 86400000) } });
-    }
-    return n;
-  };
-  const menu = { menuName: gujarati.name, foodType: "veg", menuItems: gujarati.items, platePrice: gujarati.pricePerPlate, foodGst: 5, hallGst: 18 };
-  await make(1, {
-    status: "completed", customerName: "Rakesh Shah", phone: "9825012345", eventType: "engagement", eventName: "Shah–Mehta engagement", hallId: crystal.id,
-    eventDate: dateFromKey(addDays(today, -3)), session: "lunch", startTime: "12:00", endTime: "16:00", expectedPax: 150, guaranteedPax: 150, actualPax: 162,
-    seating: "round_tables", hallRent: 25000, ...menu, invoiceNumber: "BQ-1", billedAt: new Date(Date.now() - 3 * 86400000),
-    items: { create: [{ hotelId, category: "decoration", description: "Stage and flower decoration", quantity: 1, unitPrice: 18000, amount: 18000, gstRate: 18 }] },
-  }, [{ amount: 50000, method: "upi", type: "advance", daysAgo: 20 }, { amount: 94295, method: "bank_transfer", type: "balance", daysAgo: 3 }]);
-  await make(2, {
-    status: "confirmed", customerName: "Infosys Ltd (Ahmedabad)", company: "Infosys Ltd", gstin: "24AAACI4798L1ZP", phone: "9909000111", eventType: "conference", eventName: "Quarterly sales meet",
-    hallId: crystal.id, eventDate: dateFromKey(today), session: "full_day", startTime: "09:00", endTime: "18:00", expectedPax: 80, guaranteedPax: 70, seating: "classroom",
-    menuName: "Gold buffet", foodType: "veg", platePrice: 850, foodGst: 18, hallRent: 25000, hallGst: 18, requirements: "Projector, 2 mics, notepads and pens on every table\nTea at 11:00 and 16:00",
-    items: { create: [{ hotelId, category: "equipment", description: "Projector and sound", quantity: 1, unitPrice: 5000, amount: 5000, gstRate: 18 }] },
-  }, [{ amount: 50000, method: "bank_transfer", type: "advance", daysAgo: 10 }]);
-  await make(3, {
-    status: "confirmed", customerName: "Sunita Patel", phone: "9898123456", eventType: "wedding", eventName: "Patel–Desai wedding", hallId: lawn.id,
-    eventDate: dateFromKey(addDays(today, 9)), session: "dinner", startTime: "19:00", endTime: "23:30", expectedPax: 450, guaranteedPax: 400, seating: "round_tables",
-    hallRent: 40000, ...menu, menuName: "Gold buffet", platePrice: 850, followUpOn: null, requirements: "Mandap on the lawn, DJ till 10:30 pm, 2 counters for live jalebi",
-    items: { create: [{ hotelId, category: "decoration", description: "Mandap and lighting", quantity: 1, unitPrice: 65000, amount: 65000, gstRate: 18 }, { hotelId, category: "sound_dj", description: "DJ with sound", quantity: 1, unitPrice: 15000, amount: 15000, gstRate: 18 }] },
-  }, [{ amount: 150000, method: "bank_transfer", type: "advance", daysAgo: 30 }]);
-  await make(4, {
-    status: "tentative", customerName: "Kiran Joshi", phone: "9724455667", eventType: "birthday", eventName: "Aarav's 1st birthday", hallId: crystal.id,
-    eventDate: dateFromKey(addDays(today, 5)), session: "dinner", startTime: "19:30", endTime: "23:00", expectedPax: 120, hallRent: 20000, ...menu, followUpOn: dateFromKey(addDays(today, 2)),
-  });
-  await make(5, {
-    status: "enquiry", customerName: "Mehul Trivedi", phone: "9879988776", eventType: "reception", hallId: lawn.id, eventDate: dateFromKey(addDays(today, 40)), session: "dinner",
-    startTime: "19:00", endTime: "23:00", expectedPax: 500, hallRent: 40000, ...menu, menuName: "Non-veg buffet", foodType: "non_veg", platePrice: 1100, followUpOn: dateFromKey(addDays(today, 1)),
-  });
-  console.log("Demo banquets created: 2 halls, 3 menus, 5 functions.");
-}
-
 async function main() {
   const hotel = await firstHotel();
   await runForHotel(hotel.id, async () => {
     await seedBasics();
-    if (withDemo) {
-      await seedDemo();
-      await seedBanquets();
-    }
+    if (withDemo) await seedDemo();
   });
   console.log("Seed complete. Sign in with:");
   console.log("  Owner / manager: admin@hotel.com / admin123");

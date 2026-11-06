@@ -82,16 +82,12 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest, moves the ID copies to the guest and sets `bookingId`. Closing an unused form deletes its uploads |
 | `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings). `comingFrom`, `goingTo`, `vehicleNumber` and `companions` (JSON names of the other adults) are for police guest registration and usually come from the guest form |
 | `Charge` | Hotel, Booking | Extras on the bill |
-| `Payment` | Hotel, Booking or Banquet | Payments and refunds. Exactly one of `bookingId` and `banquetId` is set (database check `Payment_one_owner`) |
+| `Payment` | Hotel, Booking | Payments and refunds |
 | `Bill` | Hotel, Booking | Invoice frozen at check-out. `invoiceNumber` is unique per hotel |
 | `ActivityLog` | Hotel | Who did what |
 | `Shift` | Hotel | One front-desk shift: `startedAt`, `endedAt`, `startNote`, compulsory `handoverNote`, the `endCode` to type (cleared when it ends), `summary` (JSON counts, booking lists and money, fixed at the end), `reportText` (the report as saved), `endReason` (staff, owner, transferred), `endedBy` when the owner closed or approved it, `ownerSeenAt`. No route edits a shift once ended. A shift starts only while fewer than `HotelSettings.frontDeskStaff` (default 1) are open; when the desk is full a `ShiftTransfer` asks the person on shift (or the owner) to accept, which ends their shift (`endReason` transferred, `handedOverTo`) and starts the new one at the same moment; front-desk changes need an open shift (`assertOnShift`) |
 | `ShiftTransfer` | Hotel | A request to take over someone's shift when the front desk is full: `fromShiftId`, `toStaffId`, `startNote`, `status` (pending, accepted, declined, cancelled), who answered and when |
 | `Expense` | Hotel | Money the hotel spent: `date` (a day), `category`, `title`, `amount`, `method`, who added it |
-| `BanquetHall` | Hotel | A hall, lawn or meeting room: `name` (unique per hotel), `capacity`, usual `rent`, `notes`, `active` (a hall with functions is switched off, not deleted) |
-| `BanquetMenu` | Hotel | A package: `name`, `foodType` (veg, non_veg, jain, mixed), `pricePerPlate`, `items` (dishes, one per line). Functions keep their own copy |
-| `Banquet` | Hotel, BanquetHall | A function. `number` per hotel from `Hotel.banquetSeq`. `status` enquiry, tentative, confirmed, completed, cancelled (tentative, confirmed and completed hold the hall). Customer (`customerName`, `phone`, `company`, `gstin`, `address`), `eventType`, `eventDate` (a day), `session`, `startTime` / `endTime` (HH:MM; an end before the start runs past midnight), `expectedPax`, `guaranteedPax`, `actualPax`, menu copy (`menuName`, `foodType`, `menuItems`, `platePrice`, `foodGst`), `hallRent`, `hallGst`, `discount`, `requirements`, `followUpOn`, `invoiceNumber` and `billedAt` (final bill), `cancelReason`, `cancelledAt` |
-| `BanquetItem` | Hotel, Banquet | Extra items on a function's bill, each with its own `gstRate` |
 
 `Booking` also holds booking-site payout fields: `otaReference`, `payoutAmount`
 (null until entered), `payoutCommission`, `payoutCommissionGst`, `payoutTcs`,
@@ -182,14 +178,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks and copies follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
 | `/api/bookings/[id]/charges` | POST, DELETE |
 | `/api/bookings/[id]/bill` | PATCH (`ratePerNight`, `discount`, `gstRate` or null, `reason`, `refundMethod`): Edit bill for a checked-in stay, or a checked-out one by an admin (owner) only. Sets a fixed rate; a final `Bill` keeps its invoice number and gets the new amounts; while staying payments are not touched; after check-out money paid above the new total is saved as a `refund` payment (`refundMethod`, reference "Bill edited"). The printed invoice hides "Balance/Refund due" at 0 and its payment list when there is a refund. The first edit saves the price first agreed in `Booking.originalPrice` (JSON `{ ratePerNight, fixedRate, discount, gstRate }`). Logged as "Bill edited" |
-| `/api/payments` | GET (room and banquet payments), POST (room bookings), DELETE ⓐ (either) |
-| `/api/banquets` | GET `?view=upcoming\|today\|enquiries\|unpaid\|past\|cancelled\|all&q=` or `?from=&to=` (hall calendar); POST a function (`status` enquiry, tentative or confirmed, `items`, `advance`). A hall is locked (`pg_advisory_xact_lock`) while saving and functions holding it may not overlap (`hallClashes`, 409) |
-| `/api/banquets/[id]` | GET; PATCH `action`: `edit` (after the final bill owner only; a total below what was paid needs `refundMethod` and saves a refund), `status` (enquiry, tentative, confirmed), `complete` (`actualPax`; on or after the function day; sets `invoiceNumber` `<banquetPrefix>-<number>`), `cancel` (`reason`, optional `refund`); DELETE ⓐ (not after the final bill) |
-| `/api/banquets/[id]/items` | POST, DELETE `?itemId=` (after the final bill owner only) |
-| `/api/banquets/[id]/payments` | POST (`amount`, `method`, `reference`, `refund`) |
-| `/api/banquets/availability?date=&start=&end=&exceptId=` | GET: the functions holding each hall at that time |
-| `/api/banquets/setup` | GET halls, menus and defaults; PUT ⓐ default GST (food, hall, services), `prefix`, `terms` |
-| `/api/banquets/halls`, `/api/banquets/menus` | ⓐ POST, PATCH (`id` in the body), DELETE `?id=` |
+| `/api/payments` | GET, POST, DELETE ⓐ |
 | `/api/guests`, `/api/guests/[id]` | GET, POST / GET, PUT, DELETE ⓐ |
 | `/api/guests/[id]/documents`, `/api/uploads?path=` | POST, GET, DELETE / GET |
 | `/api/rooms`, `/api/rooms/[id]` | GET, POST ⓐ / GET, PUT ⓐ, DELETE ⓐ |
@@ -202,7 +191,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/staff`, `/api/staff/[id]` | ⓐ GET, POST / PUT, DELETE |
 | `/api/expenses`, `/api/expenses/[id]` | GET (front desk: own entries; `?summary=cash` for everyone), POST / PATCH, DELETE (owner, or the person who added it on the same day) |
 | `/api/reports?from=&to=&groupBy=day\|week\|month` | ⓐ GET |
-| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|banquets\|roomtypes\|payouts` | ⓐ GET. `invoices` includes banquet bills; `banquets` is one row per function held in the period; `bookings` has First total (at `Booking.originalPrice`, same nights and extras), Final total and Difference |
+| `/api/reports/export?type=summary\|expenses\|bookings\|payments\|invoices\|roomtypes\|payouts` | ⓐ GET. `bookings` has First total (at `Booking.originalPrice`, same nights and extras), Final total and Difference |
 | `/api/bookings/[id]/payout` | ⓐ PUT: booking site ID, commission, GST on commission, TCS, TDS, net payout, received date and UTR |
 | `/api/activity` | ⓐ GET |
 | `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |
@@ -326,8 +315,7 @@ this deployment's own address from `VERCEL_PROJECT_PRODUCTION_URL` to the pages 
 - OTA channel manager sync with Booking.com, MakeMyTrip and Airbnb. For now,
   record those bookings with the matching source.
 - One owner running several hotels from a single sign-in.
-- Restaurant POS and GST e-invoicing (IRN). Banquets are built (`src/lib/banquet-bill.ts` for the maths,
-  `src/lib/banquets.ts` on the server, `/banquets` screens, prints in `src/app/print/[kind]/[id]/banquet.tsx`).
+- Restaurant POS and GST e-invoicing (IRN).
 - Sending guest details to police portals such as Pathik (Gujarat). The guest
   form already collects what they ask for.
 - Scanning the Aadhaar QR code was tried and removed: phone cameras did not

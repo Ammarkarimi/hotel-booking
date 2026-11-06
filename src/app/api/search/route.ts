@@ -7,10 +7,10 @@ import { toDateKey } from "@/lib/dates";
 export async function GET(request: NextRequest) {
   return withAuth(async () => {
     const q = (new URL(request.url).searchParams.get("q") || "").trim();
-    if (q.length < 1) return NextResponse.json({ guests: [], bookings: [], rooms: [], functions: [] });
+    if (q.length < 1) return NextResponse.json({ guests: [], bookings: [], rooms: [] });
     const num = Number(q.replace(/^#/, ""));
 
-    const [guests, bookings, rooms, functions] = await Promise.all([
+    const [guests, bookings, rooms] = await Promise.all([
       prisma.guest.findMany({
         where: {
           OR: [
@@ -36,20 +36,6 @@ export async function GET(request: NextRequest) {
         include: { guest: true, room: true },
       }),
       prisma.room.findMany({ where: { roomNumber: { startsWith: q } }, take: 4 }),
-      // Functions in the halls: by customer, mobile, company or function number.
-      prisma.banquet.findMany({
-        where: {
-          OR: [
-            ...(Number.isInteger(num) && num > 0 ? [{ number: num }] : []),
-            { customerName: { contains: q, mode: "insensitive" as const } },
-            { company: { contains: q, mode: "insensitive" as const } },
-            { phone: { contains: q } },
-          ],
-        },
-        take: 5,
-        orderBy: { eventDate: "desc" },
-        include: { hall: true },
-      }),
     ]);
 
     return NextResponse.json({
@@ -64,7 +50,6 @@ export async function GET(request: NextRequest) {
         checkOut: toDateKey(b.checkOutDate),
       })),
       rooms: rooms.map((r) => ({ id: r.id, roomNumber: r.roomNumber, type: r.type })),
-      functions: functions.map((f) => ({ id: f.id, number: f.number, customerName: f.customerName, hall: f.hall.name, date: toDateKey(f.eventDate), status: f.status })),
     });
   });
 }

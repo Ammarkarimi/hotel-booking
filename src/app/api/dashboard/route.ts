@@ -5,7 +5,6 @@ import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, todayKey } from "@/lib/dates";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
 import { round2 } from "@/lib/pricing";
-import { banquetBill } from "@/lib/banquet-bill";
 
 /** Everything the front desk needs for "Today" in one request. */
 export async function GET() {
@@ -43,12 +42,6 @@ export async function GET() {
       // For "Getting started": has the hotel ever taken a booking (even if every guest has left)?
       prisma.booking.findFirst({ select: { id: true } }),
     ]);
-    // Functions in the halls today (on hold, confirmed or already billed).
-    const functions = await prisma.banquet.findMany({
-      where: { eventDate: dateFromKey(today), status: { in: ["tentative", "confirmed", "completed"] } },
-      include: { hall: true, items: true, payments: true },
-      orderBy: { startTime: "asc" },
-    });
 
     const serialized = active.map((b) => serializeBooking(b, ctx));
     const arrivals = serialized.filter((b) => b.status === "reserved");
@@ -86,10 +79,6 @@ export async function GET() {
       today,
       hotelName: ctx.settings.hotelName,
       hasBookings: anyBooking !== null,
-      functionsToday: functions.map((f) => {
-        const bill = banquetBill(f);
-        return { id: f.id, number: f.number, customerName: f.customerName, eventType: f.eventType, hall: f.hall.name, startTime: f.startTime, endTime: f.endTime, guests: bill.billedPax, status: f.status, balance: bill.balance };
-      }),
       stats: {
         totalRooms: rooms.length,
         occupied: inHouse.length,

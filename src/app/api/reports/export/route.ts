@@ -75,15 +75,15 @@ export async function GET(request: NextRequest) {
       return csvResponse(`summary_by_${groupBy}_${suffix}`, [
         [
           groupBy === "day" ? "Date" : groupBy === "week" ? "Week starting" : "Month", "Rooms available", "Rooms sold", "Occupancy %",
-          "Average price per room sold (ADR)", "Earnings per available room (RevPAR)", "Room earnings", "Extras earnings", "Banquet earnings", "Total earnings",
+          "Average price per room sold (ADR)", "Earnings per available room (RevPAR)", "Room earnings", "Extras earnings", "Total earnings",
           "Expenses", "Booking site commission", "Profit", "Cost per available room", "Profit per available room", "Money received", "Arrivals", "Departures",
         ],
         ...report.groups.map((g) => [
-          g.from, g.roomsAvailable, g.roomsSold, g.occupancy, g.adr, g.revpar, g.roomRevenue, g.extrasRevenue, g.banquetRevenue, g.revenue,
+          g.from, g.roomsAvailable, g.roomsSold, g.occupancy, g.adr, g.revpar, g.roomRevenue, g.extrasRevenue, g.revenue,
           g.expenses, g.commission, g.profit, g.costPerAvailableRoom, g.profitPerAvailableRoom, g.collected, g.arrivals, g.departures,
         ]),
         [
-          "Total", t.availableRoomNights, t.roomNightsSold, t.occupancy, t.adr, t.revpar, t.roomRevenue, t.extrasRevenue, t.banquetRevenue, t.revenue,
+          "Total", t.availableRoomNights, t.roomNightsSold, t.occupancy, t.adr, t.revpar, t.roomRevenue, t.extrasRevenue, t.revenue,
           t.expenses, t.otaFees, t.profit, t.costPerAvailableRoom, t.profitPerAvailableRoom, t.collected, report.guests.arrivals, report.guests.departures,
         ],
       ]);
@@ -114,28 +114,6 @@ export async function GET(request: NextRequest) {
           "Total", "", "", "", "", "", "", "", "", "", "", r.totals.gross, "", "", "", "", "",
           r.totals.net, `Received ${r.totals.received}, waiting ${r.totals.waiting}`, "", "",
         ],
-      ]);
-    }
-    if (type === "banquets") {
-      // One row per function held in the period (on hold, confirmed or billed), with its bill.
-      const b = report.banquets;
-      const gstText = (lines: { rate: number; tax: number }[]) => lines.filter((l) => l.tax).map((l) => `${l.rate}%: ${l.tax}`).join("; ");
-      return csvResponse(`banquets_${suffix}`, [
-        [
-          "Function #", "Invoice #", "Date", "Session", "From", "To", "Hall", "Customer", "Phone", "Company", "GSTIN", "Function", "Status",
-          "Guests expected", "Guaranteed", "Plates served", "Plates billed", "Price per plate", "Food", "Hall rent", "Extras", "Discount",
-          "Taxable value", "GST by rate", "CGST", "SGST", "Total GST", "Bill total", "Paid", "Balance",
-        ],
-        ...b.rows.map((r) => [
-          r.number, r.invoiceNumber, r.date, label(r.session), r.startTime, r.endTime, r.hall, r.customerName, r.phone, r.company, r.gstin,
-          label(r.eventType), label(r.status), r.expectedPax, r.guaranteedPax, r.actualPax ?? "", r.billedPax, r.platePrice, r.food, r.hallRent,
-          r.extras, r.discount, r.taxable, gstText(r.taxLines), round2(r.tax / 2), round2(r.tax - round2(r.tax / 2)), r.tax, r.total, r.netPaid, r.balance,
-        ]),
-        [
-          "Total", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", b.guests, "", b.food, b.hall, b.extras, b.discount, b.taxable, "",
-          round2(b.tax / 2), round2(b.tax - round2(b.tax / 2)), b.tax, b.total, sum(b.rows.map((r) => r.netPaid)), sum(b.rows.map((r) => r.balance)),
-        ],
-        ...(b.cancellationKept ? [[`Cancellation charges kept (${b.cancelled} cancelled)`, "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", b.cancellationKept]] : []),
       ]);
     }
     if (type === "roomtypes") {

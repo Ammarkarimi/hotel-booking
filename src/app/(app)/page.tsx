@@ -20,7 +20,6 @@ import {
   Users,
   Wallet,
   ShieldCheck,
-  PartyPopper,
 } from "lucide-react";
 import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatCard, StatusBadge } from "@/components/ui";
 import { PathikButton } from "@/components/pathik";
@@ -48,7 +47,6 @@ interface Dashboard {
   today: string;
   hotelName: string;
   hasBookings: boolean; // the hotel has taken at least one booking, ever
-  functionsToday: Array<{ id: string; number: number; customerName: string; eventType: string; hall: string; startTime: string; endTime: string; guests: number; status: string; balance: number }>;
   stats: {
     totalRooms: number;
     occupied: number;
@@ -426,36 +424,6 @@ export default function TodayPage() {
           )}
         </Card>
       </div>
-
-      {data.functionsToday.length > 0 && (
-        <Card>
-          <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <PartyPopper className="h-5 w-5 text-violet-600" /> Functions in the halls today ({data.functionsToday.length})
-              </span>
-            }
-            description="Print the function sheet for the kitchen and staff from each function."
-          />
-          <ul className="divide-y divide-slate-100">
-            {data.functionsToday.map((f) => (
-              <li key={f.id}>
-                <Link href={`/banquets/${f.id}`} className="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50">
-                  <span className="min-w-0">
-                    <span className="block truncate text-[15px] font-semibold">
-                      {f.startTime}–{f.endTime} · {f.hall} · {f.customerName}
-                    </span>
-                    <span className="flex flex-wrap items-center gap-1.5 text-sm text-slate-500">
-                      #{f.number} · {label(f.eventType)} · {f.guests} guests <StatusBadge status={f.status} />
-                    </span>
-                  </span>
-                  {f.balance > 0.5 && <span className="shrink-0 text-sm font-semibold text-red-600">to collect {formatCurrency(f.balance)}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
 
       <RoomBoard rooms={data.rooms} />
 
