@@ -11,23 +11,29 @@ import {
   Camera,
   Check,
   ClipboardCheck,
+  Clock,
   DoorOpen,
-  FileDown,
+  FilePenLine,
   FileText,
   Globe,
   History,
   Hotel,
+  IdCard,
   IndianRupee,
+  Landmark,
   Mail,
   MessageCircle,
+  MessageSquareText,
   Play,
   Receipt,
   Repeat,
+  Send,
   ShieldCheck,
   Smartphone,
   Sparkles,
   Star,
   Tags,
+  TrendingDown,
   UserCheck,
   UserCog,
   Users,
@@ -42,7 +48,7 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700",
 export const metadata: Metadata = {
   title: { absolute: "Hotel Manager · Hotel software for boutique and premium hotels" },
   description:
-    "Reservations, arrivals, polished GST invoices, housekeeping, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
+    "Reservations, guest forms on WhatsApp, ID checks, polished GST invoices, housekeeping, staff shifts, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
   openGraph: {
     title: "Hotel Manager · Hotel software for boutique and premium hotels",
     description: "Effortless front desk software for boutique hotels, resorts and premium stays, with your own commission-free booking website.",
@@ -62,44 +68,55 @@ const FEATURE_GROUPS = [
   {
     title: "Front desk",
     items: [
-      { icon: ClipboardCheck, name: "Today screen", text: "Every arrival, departure, ready room and today's takings, on one calm screen." },
-      { icon: CalendarPlus, name: "Reservations in under a minute", text: "Dates, room and guest details. Walk-in guests are welcomed and checked in straight away." },
-      { icon: CalendarDays, name: "Room calendar", text: "Every room, two weeks ahead. Tap an open night to reserve it." },
-      { icon: DoorOpen, name: "One-tap arrivals and departures", text: "A gentle reminder if a room isn't ready or the guest's ID is missing." },
-      { icon: Repeat, name: "Extend, move or cancel", text: "Stay extensions, room moves, early departures, cancellations and no-shows." },
+      { icon: ClipboardCheck, name: "Today screen", text: "Arrivals, departures, rooms ready tonight, today's takings and the last handover note, on one calm screen." },
+      { icon: CalendarPlus, name: "Reservations in under a minute", text: "Dates, room, guest and advance in four steps. Walk-in guests are checked in straight away." },
+      { icon: CalendarDays, name: "Room calendar", text: "Every room, one or two weeks ahead. Tap an open night to reserve it." },
+      { icon: DoorOpen, name: "One-tap arrivals and departures", text: "A gentle reminder if the room isn't clean yet or an adult's ID hasn't been checked." },
+      { icon: Repeat, name: "Extend, move or cancel", text: "Stay extensions, room moves, early and late departures, cancellations, no-shows and undo check-in." },
       { icon: ShieldCheck, name: "Zero double bookings", text: "The same room can never be sold twice for the same night." },
+    ],
+  },
+  {
+    title: "Guests and ID",
+    items: [
+      { icon: Send, name: "Guest forms on WhatsApp", text: "Send a link and guests fill in their details, journey and every adult's name on their phone. You only choose the room." },
+      { icon: UserCheck, name: "ID check at check-in", text: "Tick each adult's original ID at the desk, with who checked it and when. Nothing from an Aadhaar is ever saved." },
+      { icon: Camera, name: "ID copies and foreign guests", text: "Photograph a passport, visa, licence or voter ID. Passport and visa details print on the registration card for Form C." },
+      { icon: IdCard, name: "Pathik filled in for you", text: "For hotels in Gujarat, a Chrome helper fills Pathik's Add Guest form with every adult, and Today shows who is still to enter." },
+      { icon: Star, name: "Guest history and VIP flags", text: "Every stay and payment on record, returning guests recognised by phone, and VIP or “do not allow” flags." },
+      { icon: MessageSquareText, name: "WhatsApp messages in your words", text: "Booking confirmation, welcome at check-in and thank-you at check-out, ready to send in one tap." },
     ],
   },
   {
     title: "Billing, payments and GST",
     items: [
-      { icon: Receipt, name: "Guest bills that total themselves", text: "Room nights, weekend and festive rates, discounts and taxes, always correct." },
-      { icon: UtensilsCrossed, name: "Dining, laundry and extras", text: "Add anything the guest enjoys to their bill, with the right tax." },
-      { icon: Wallet, name: "Advances, part payments and refunds", text: "Cash, UPI, card or bank transfer, with the balance always clear." },
-      { icon: FileText, name: "Polished GST invoices", text: "Your GSTIN and the guest's, CGST and SGST, SAC codes and the amount in words." },
-      { icon: IndianRupee, name: "Shift cash-up", text: "Takings split by cash, UPI and card at the end of every shift." },
-      { icon: Tags, name: "Your rates, your rules", text: "Weekend and festive rates, with GST slabs applied automatically." },
+      { icon: Receipt, name: "Guest bills that total themselves", text: "Room nights, weekend and festival prices, discounts and taxes, always correct." },
+      { icon: UtensilsCrossed, name: "Food, laundry and extras", text: "Food, laundry, minibar, taxi, extra bed or damage, added to the bill with the right tax." },
+      { icon: Wallet, name: "Advances, part payments and refunds", text: "Cash, UPI, card, bank transfer or prepaid on a booking site, with the balance always clear." },
+      { icon: FileText, name: "Polished GST invoices", text: "Your GSTIN and the guest's, CGST and SGST, SAC codes and the amount in words. Print or save as PDF." },
+      { icon: FilePenLine, name: "Bill changes done right", text: "Agreed a lower rate at check-out? Edit the bill and any extra paid is recorded as given back. Reports show the first and final totals." },
+      { icon: Tags, name: "Your rates, your rules", text: "Weekend and festival prices, GST slabs or one flat rate, which staff can change for a single booking." },
     ],
   },
   {
-    title: "Guest experience",
+    title: "Staff and shifts",
     items: [
-      { icon: Users, name: "Guest history", text: "Every stay and payment on record. Returning guests are recognised by their phone number." },
-      { icon: Camera, name: "ID capture with the camera", text: "Photograph Aadhaar, passport or licence at the desk and keep it securely with the guest." },
-      { icon: Globe, name: "International guests", text: "Registration cards with passport and visa details, ready for Form C." },
-      { icon: MessageCircle, name: "WhatsApp in one tap", text: "Booking confirmations and bill details, sent with the message already written." },
-      { icon: Star, name: "VIP and “do not allow” flags", text: "Staff know at a glance who deserves extra care, and who should not be admitted." },
-      { icon: FileDown, name: "Print or save as PDF", text: "Invoices, confirmations and registration cards that look as good as your property." },
-    ],
-  },
-  {
-    title: "Owner control",
-    items: [
-      { icon: Sparkles, name: "Housekeeping board", text: "Rooms are queued for cleaning at check-out, with today's arrivals prepared first." },
-      { icon: BarChart3, name: "Profit reports", text: "Profit, occupancy, ADR and RevPAR for any day, week, month or year, ready for Excel." },
-      { icon: Banknote, name: "Expense tracker", text: "Salaries, electricity, supplies and repairs, written down as you pay them." },
+      { icon: Clock, name: "Shifts with a handover", text: "Staff read the last handover note before they start, and end with a note for the next person." },
+      { icon: MessageCircle, name: "Shift report on your WhatsApp", text: "Check-ins, check-outs, new bookings and money by method, sent to the owner at the end of every shift." },
+      { icon: IndianRupee, name: "Cash drawer count", text: "Cash received minus cash spent on expenses: exactly what should be in the drawer." },
+      { icon: Users, name: "Attendance and staff report", text: "Hours, check-ins, check-outs and money per person, with one Excel row for every shift." },
       { icon: UserCog, name: "Role-based staff access", text: "Front desk staff can't see reports, change rates or delete payments." },
       { icon: History, name: "Complete audit trail", text: "Every booking, payment and change, with who made it and when." },
+    ],
+  },
+  {
+    title: "Owner control and revenue",
+    items: [
+      { icon: BarChart3, name: "Profit reports", text: "Profit, occupancy, ADR, RevPAR and GOPPAR for any day, week, month or year, by room type and booking source, ready for Excel." },
+      { icon: Banknote, name: "Expense tracker", text: "Salaries, electricity, supplies and repairs, written down as you pay them." },
+      { icon: TrendingDown, name: "Rate tips for empty rooms", text: "Later in the day, a lower price for rooms likely to stay empty, from your own booking history and never below your lowest price." },
+      { icon: Landmark, name: "Booking-site payouts", text: "Commission, GST, TCS and TDS from MakeMyTrip, Goibibo, Booking.com and others, and which payouts have reached your bank." },
+      { icon: Sparkles, name: "Housekeeping board", text: "Rooms queued for cleaning at check-out, today's arrivals first, and rooms under maintenance kept off sale." },
       { icon: Globe, name: "Your own booking website", text: "Guests book you directly from their phone, with no commission." },
     ],
   },
@@ -145,7 +162,7 @@ const SPOTLIGHTS = [
     image: "/welcome/housekeeping.webp",
     eyebrow: "Housekeeping",
     title: "Every room ready before the guest is",
-    text: "When a guest checks out, the room moves to Needs cleaning, with rooms for today's arrivals at the top. Housekeepers tap Start cleaning and Mark clean on their own phone.",
+    text: "When a guest checks out, the room moves to Needs cleaning, with rooms for today's arrivals at the top. Staff tap Start cleaning and Mark clean from any phone.",
     points: ["Assign a housekeeper and leave a note", "Today's arrivals prepared first", "Front desk sees the moment a room is ready"],
   },
   {
@@ -175,6 +192,8 @@ const COMPARISON: Array<{ row: string; paper: Cell; typical: Cell; ours: Cell }>
   { row: "New staff confident in one shift", paper: true, typical: "Often needs training", ours: true },
   { row: "Clear, everyday language", paper: true, typical: false, ours: true },
   { row: "Zero double bookings", paper: false, typical: true, ours: true },
+  { row: "Guest details sent ahead on WhatsApp", paper: false, typical: "Rarely", ours: true },
+  { row: "Shift handover and staff reports", paper: false, typical: "Sometimes", ours: "Included" },
   { row: "Polished GST invoice in one tap", paper: false, typical: true, ours: true },
   { row: "Runs fully on a phone or tablet", paper: false, typical: "Sometimes", ours: true },
   { row: "Your own commission-free booking website", paper: false, typical: "Often extra cost", ours: "Included" },
@@ -197,15 +216,27 @@ const FAQS = [
   },
   {
     q: "How is guest data protected?",
-    a: "Each property's data is kept completely separate, and guest ID photos can only be opened by your signed-in team.",
+    a: "Each property's data is kept completely separate, and guest ID photos can only be opened by your signed-in team. Nothing from an Aadhaar is saved: staff look at the original and tick that it was checked.",
   },
   {
     q: "Does it handle GST?",
-    a: "Yes. It picks the GST slab from the room rate automatically (you can change the slabs), adds tax to dining and extras, and prints tax invoices with CGST, SGST and SAC codes.",
+    a: "Yes. It picks the GST slab from the room rate automatically (you can change the slabs, use one flat rate, or change it for a single booking), adds tax to extras, and prints tax invoices with CGST, SGST and SAC codes.",
   },
   {
     q: "Can I see my profit?",
     a: "Yes. Write down expenses as you pay them, and Reports show earnings minus expenses for any day, week, month or year, along with occupancy, the average price per room sold, and what each available room earns and costs you (RevPAR).",
+  },
+  {
+    q: "Can guests send their details before they arrive?",
+    a: "Yes. Send a guest form on WhatsApp. The guest fills in their address, journey, vehicle and every adult's name on their phone, and uploads an ID other than Aadhaar if they want. You get a pop-up, choose the room and the booking is ready.",
+  },
+  {
+    q: "We are in Gujarat. Does it help with Pathik?",
+    a: "Yes. A small Chrome helper fills Pathik's Add Guest form from the booking, every adult included. Staff type only the Aadhaar details, press Submit in Pathik, and Today shows who is still to enter.",
+  },
+  {
+    q: "Can I see what each shift did?",
+    a: "Yes. Every shift ends with a handover note and a report of check-ins, check-outs and money taken, sent to your WhatsApp. Staff shifts shows attendance and hours per person, with a staff report for Excel.",
   },
   {
     q: "What about international guests?",
@@ -213,7 +244,7 @@ const FAQS = [
   },
   {
     q: "Does it connect to Booking.com, MakeMyTrip or Airbnb?",
-    a: "Not automatically yet. Bookings from those sites are added in a few taps and tagged by source, so your reports show which channels bring you the most guests.",
+    a: "Not automatically yet. Bookings from those sites are added in a few taps and tagged by source, so your reports show which channels bring you the most guests. Booking-site payouts tracks the commission, TCS and TDS each site takes and which payouts have reached your bank.",
   },
   {
     q: "Can guests pay online?",
@@ -346,7 +377,8 @@ export default function WelcomePage() {
                 Effortless operations for exceptional stays
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
-                Reservations, arrivals, guest bills, GST invoices, housekeeping and owner reports in one refined app, on any device. With your own
+                Reservations, guest forms on WhatsApp, guest bills, GST invoices, housekeeping, staff shifts and owner reports in one refined app, on
+                any device. With your own
                 booking website, guests book you directly and you keep the commission.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
@@ -365,7 +397,7 @@ export default function WelcomePage() {
                 )}
               </div>
               <ul className="mt-8 grid max-w-lg grid-cols-2 gap-x-6 gap-y-2 text-[15px] text-slate-700">
-                {["Zero double bookings", "Polished GST invoices", "Profit & RevPAR reports", "WhatsApp guest updates"].map((t) => (
+                {["Zero double bookings", "Polished GST invoices", "Guest forms on WhatsApp", "Staff shifts & handover", "Profit & RevPAR reports", "Rate tips for empty rooms"].map((t) => (
                   <li key={t} className="flex items-center gap-2">
                     <Check className="h-5 w-5 shrink-0 text-emerald-600" /> {t}
                   </li>
@@ -550,9 +582,10 @@ export default function WelcomePage() {
               </table>
             </div>
             <h3 className="mt-12 font-display text-xl font-bold">Made for hotels in India</h3>
-            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
                 { k: "GST", v: "Slabs, CGST/SGST, SAC codes" },
+                { k: "Pathik", v: "Gujarat's police guest register, filled in for you" },
                 { k: "Form C", v: "Registration card for foreign guests" },
                 { k: "UPI + WhatsApp", v: "How your guests already pay and stay in touch" },
               ].map((x) => (
