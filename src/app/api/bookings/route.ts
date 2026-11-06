@@ -91,7 +91,7 @@ function addressData(d: z.infer<typeof addressFields> | undefined) {
 
 const createSchema = z.object({
   guestId: z.string().optional(),
-  // A guest form filled in on WhatsApp: the guest's details, ID copies and travel details come from it.
+  // A guest form filled in on WhatsApp: the guest's details and travel details come from it.
   guestFormId: z.string().optional(),
   guest: z
     .object({
@@ -302,7 +302,6 @@ export async function POST(request: NextRequest) {
 
       if (form) {
         await tx.guestForm.update({ where: { id: form.id }, data: { bookingId: created.id } });
-        await tx.guestDocument.updateMany({ where: { guestFormId: form.id }, data: { guestId: guest.id } });
       }
 
       if (body.checkInNow) await syncRoomStatus(room.id, tx);
@@ -339,7 +338,6 @@ async function claimGuestForm(tx: Tx, id: string, by: string) {
  */
 async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetails }, chosenId?: string) {
   const d = form.details;
-  const proof = await tx.guestDocument.findFirst({ where: { guestFormId: form.id, person: null }, orderBy: { createdAt: "asc" } });
   const data = {
     firstName: d.firstName,
     lastName: d.lastName || "",
@@ -358,8 +356,8 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
     ? await tx.guest.findUnique({ where: { id: chosenId } })
     : await tx.guest.findFirst({ where: { phone: d.phone, firstName: { equals: d.firstName, mode: "insensitive" } } });
   if (chosenId && !existing) fail("Guest not found", 404);
-  // The guest's ID: their Aadhaar (checked at the desk, nothing saved) or the copy they uploaded.
-  const idType = d.aadhaarAtDesk ? "aadhar" : (proof?.type ?? null);
+  // The guest said they will show their Aadhaar (checked at the desk, nothing saved).
+  const idType = d.aadhaarAtDesk ? "aadhar" : null;
   if (existing) {
     await tx.guest.update({
       where: { id: existing.id },

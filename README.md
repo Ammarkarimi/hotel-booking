@@ -2,7 +2,7 @@
 
 A complete, easy-to-use system for small and independent hotels, guest houses
 and homestays: bookings, a room calendar, check-in/check-out, guest records with
-ID photos, billing with GST invoices, payments, housekeeping, owner reports,
+ID checks, billing with GST invoices, payments, housekeeping, owner reports,
 staff accounts and a commission-free **online booking website** for guests.
 
 One installation serves **many hotels**. As the software provider you run your
@@ -36,13 +36,13 @@ works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from
 | **Extras** | Add food, laundry, minibar, taxi, extra bed or damage charges to the guest’s bill |
 | **Billing & GST** | Indian GST slabs (0% / 5% / 18% by nightly tariff, editable) or one flat tax rate; separate tax on extras; final invoice snapshot at checkout |
 | **Printables** | GST tax invoice (GSTINs, SAC codes, CGST/SGST, amount in words), proforma bill, booking confirmation, guest registration card with Form C fields for foreign guests |
-| **Guests** | Profiles with stays, nights, total paid and money owed; ID photo upload from the phone camera; passport/visa for foreigners; company & GSTIN; VIP and “do not allow” flags |
+| **Guests** | Profiles with stays, nights, total paid and money owed; passport/visa numbers for foreigners; company & GSTIN; VIP and “do not allow” flags |
 | **Housekeeping** | Needs cleaning / being cleaned / clean board; rooms become dirty automatically at checkout; rooms with guests arriving today shown first |
 | **Payments** | Cash, UPI, card, bank transfer, or prepaid on a booking site; refunds; daily cash-drawer totals (cash received minus cash expenses) |
 | **Booking-site payouts** | For MakeMyTrip, Goibibo, Booking.com and others: the bill stays on the gross amount while the owner records the site's booking ID, commission, GST on it, TCS, TDS, the net payout and when it reached the bank |
-| **Guest forms on WhatsApp** | Staff send a link; the guest fills in their details, address, journey, the other adults with them, and uploads copies of non-Aadhaar IDs (Aadhaar holders just show it at check-in). The desk is alerted, chooses the room, and the booking and guest profile are filled in from the form |
+| **Guest forms on WhatsApp** | Staff send a link; the guest fills in their details, address, journey, the other adults with them, and which ID each adult will show at check-in (nothing is uploaded). The desk is alerted, chooses the room, and the booking and guest profile are filled in from the form |
 | **WhatsApp messages to guests** | Booking confirmation, a welcome right after check-in (check-in and check-out times, room, bill, balance) and a thank-you after check-out, each in the owner's own wording from Settings, with a live preview and tap-to-add details |
-| **Pathik** | "Fill in Pathik" on a booking or guest: with the Pathik helper add-on for Chrome, Pathik's Add Guest form (the Gujarat police guest register) is filled in, with every other adult in the room and the ID copies made smaller than 250 KB. Aadhaar is typed by hand. Today lists stays not yet marked as entered |
+| **Pathik** | "Fill in Pathik" on a booking or guest: with the Pathik helper add-on for Chrome, Pathik's Add Guest form (the Gujarat police guest register) is filled in, with every other adult in the room. ID photos and Aadhaar numbers are added by hand. Today lists stays not yet marked as entered |
 | **Rate tips** | Later in the day, a pop-up suggests a lower price per room type for rooms that will probably stay empty tonight, from the hotel's own booking history (what usually still sells after this hour, same weekday), with the owner's biggest cut and lowest price per type. It closes only when the person types "I have seen"; the owner sees who saw it. A page shows how full each type was, the price it sold for, and when bookings come in |
 | **ID check at check-in** | The receptionist looks at each adult's original ID and ticks it as verified on the booking; check-in warns about adults not yet ticked. Only which ID, who and when is saved: no Aadhaar number, copy or photo is stored anywhere |
 | **Staff shifts** | Front desk start and end shifts: handover notes shown to the next person, compulsory note and a typed code at the end, a WhatsApp shift report to the owner (check-ins, check-outs, bookings, money, cash to hand over), and attendance for the owner |
@@ -126,9 +126,7 @@ Sign-in emails are unique across all hotels, so hotel staff simply sign in at
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection string |
 | `JWT_SECRET` | Production | Secret for sign-in sessions. Generate with `openssl rand -base64 32` |
-| `STORAGE_DRIVER` | No | `local` (default) or `blob`. Auto-selects `blob` when `BLOB_READ_WRITE_TOKEN` is set |
-| `UPLOAD_DIR` | No | Folder for ID uploads when `STORAGE_DRIVER=local` (default `./uploads`) |
-| `BLOB_READ_WRITE_TOKEN` | Vercel | Vercel Blob token for ID uploads |
+| `STORAGE_DRIVER`, `UPLOAD_DIR`, `BLOB_READ_WRITE_TOKEN` | No | Old file storage. The app stores no files; these are only used to delete ID copies saved before migration `20261127000000_remove_id_copies` |
 | `NEXT_PUBLIC_DEMO_MODE` | No | `true` shows the demo sign-in accounts on the login page in production |
 | `PLATFORM_ADMIN_EMAIL` | For `/platform` | The software provider's sign-in email for the owner panel |
 | `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Its password, at least 10 characters. Changing it signs out open owner-panel sessions |
@@ -140,13 +138,12 @@ Sign-in emails are unique across all hotels, so hotel staff simply sign in at
 
 1. Push to GitHub and import the repository at [vercel.com/new](https://vercel.com/new).
 2. **Storage → Create → Neon** (Postgres) and connect it to the project; this sets `DATABASE_URL`.
-3. **Storage → Create → Blob** and connect it; this sets `BLOB_READ_WRITE_TOKEN` (for ID photos).
-4. Add `JWT_SECRET` under *Settings → Environment Variables*.
-5. Deploy. Production builds run `prisma generate → prisma migrate deploy → next build`.
+3. Add `JWT_SECRET` under *Settings → Environment Variables*.
+4. Deploy. Production builds run `prisma generate → prisma migrate deploy → next build`.
    Preview builds (pull requests and branches) skip the migration step so they never
    change your live database; for fully working previews, add a separate preview
    database as `DATABASE_URL` for the *Preview* environment.
-6. Once, from your computer: `DATABASE_URL="<production url>" npm run db:seed`.
+5. Once, from your computer: `DATABASE_URL="<production url>" npm run db:seed`.
 
 ### Troubleshooting: build fails with `P1012 Environment variable not found: DATABASE_URL`
 
@@ -157,8 +154,7 @@ are connected to this repository, keep the one that has the database and delete 
 disconnect the other.
 
 Any Node host with PostgreSQL works (Railway, Render, a VPS): set the variables,
-run `npm run build` and `npm start`. For local file storage, keep `./uploads` on a
-persistent disk.
+run `npm run build` and `npm start`. No file storage is needed: the app stores no files.
 
 ### Upgrading an existing installation
 

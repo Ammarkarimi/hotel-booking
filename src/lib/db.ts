@@ -47,7 +47,6 @@ const HOTEL_MODELS = new Set([
   "SeasonalRate",
   "Room",
   "Guest",
-  "GuestDocument",
   "Booking",
   "Charge",
   "Payment",

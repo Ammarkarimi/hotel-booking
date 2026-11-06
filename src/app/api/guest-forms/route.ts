@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       view === "waiting" ? { status: "sent" } : view === "done" ? { status: { in: ["booked", "cancelled"] } } : view === "all" ? {} : { status: "submitted" };
     const forms = await prisma.guestForm.findMany({
       where,
-      include: { documents: { orderBy: { createdAt: "asc" } } },
       orderBy: view === "received" ? { submittedAt: "asc" } : { createdAt: "desc" },
       take: 200,
     });
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
         sentByName: user.name,
         expiresAt: new Date(Date.now() + FORM_DAYS * 24 * 60 * 60 * 1000),
       },
-      include: { documents: true },
     });
     await logActivity(user, "Guest form sent", `${body.guestName || "Guest"} (${body.phone})`);
     return NextResponse.json(serializeGuestForm(form), { status: 201 });

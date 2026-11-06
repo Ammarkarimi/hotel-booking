@@ -168,7 +168,6 @@ hotel**, type the hotel’s exact name, and press **Delete everything**.
 
 This removes the hotel’s bookings, guests, bills, payments, rooms, staff
 sign-ins, settings and your payment records for it. **It cannot be undone.**
-Uploaded ID photos stay in file storage but can no longer be opened from the app.
 If in doubt, pause the hotel instead.
 
 ## Monthly routine (suggested)

@@ -5,17 +5,6 @@ import { diffDays, isDateKey } from "./dates";
 
 /** How long a guest can use the link before the desk has to send it again. */
 export const FORM_DAYS = 7;
-/** Most ID copies one form can hold (front and back for several people). */
-export const MAX_FORM_FILES = 24;
-/** Most ID copies for one person. */
-export const MAX_FILES_PER_PERSON = 4;
-
-/**
- * ID proofs a guest can upload. Copies only: the form never asks for an ID number. Aadhaar is not
- * uploaded or saved at all: the front desk checks the card at check-in instead.
- */
-export const FORM_ID_TYPES = ["passport", "visa", "driving_licence", "voter_id", "pan", "other"] as const;
-
 export const INDIAN_STATES = [
   "Andaman and Nicobar Islands",
   "Andhra Pradesh",
@@ -120,7 +109,7 @@ function checkForm(d: FormFields, ctx: z.RefinementCtx) {
   if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) < 1) issue("The leaving date must be after the arrival date", "checkOut");
   if (isDateKey(d.checkIn) && isDateKey(d.checkOut) && diffDays(d.checkIn, d.checkOut) > 60) issue("For stays longer than 60 nights please call the hotel", "checkOut");
   if (d.companions.length !== d.adults - 1) issue("Please enter the name of each adult staying with you", "companions");
-  // ID copies and ID ticks say whose they are by name, so two adults cannot have the same name.
+  // ID ticks say whose they are by name, so two adults cannot have the same name.
   const names = d.companions.map((c) => c.name.trim().toLowerCase());
   if (new Set(names).size !== names.length) issue("Two adults have the same name. Please add a surname so they can be told apart", "companions");
   if (isIndian(d.nationality)) {
@@ -154,40 +143,13 @@ export function cleanDetails<T extends FormFields>(d: T): T {
   return { ...d, pinCode: d.pinCode.replace(/\s/g, ""), aadhaarAtDesk: isIndian(d.nationality) && d.aadhaarAtDesk };
 }
 
-/**
- * While the guest is filling in the form, each copy says whose it is by number:
- * "0" is the guest, "1" the first adult staying with them, and so on.
- */
-export type FormFile = { person: string | null; type: string };
-
-/**
- * What is still missing before the form can be sent: an ID for every adult (a copy, or their
- * Aadhaar shown at check-in), and a passport copy for a foreign guest.
- */
-export function missingDocuments(
-  details: Pick<GuestFormDetails, "nationality" | "firstName"> & { aadhaarAtDesk?: boolean; companions: { name: string; aadhaarAtDesk?: boolean }[] },
-  files: FormFile[]
-): string[] {
-  const missing: string[] = [];
-  const mine = files.filter((f) => f.person === "0");
-  if (!isIndian(details.nationality)) {
-    if (!mine.some((f) => f.type === "passport")) missing.push("Please upload a copy of your passport");
-  } else if (!details.aadhaarAtDesk && mine.length === 0) {
-    missing.push(`Please upload an ID proof for ${details.firstName || "yourself"}, or choose Aadhaar`);
-  }
-  details.companions.forEach((c, i) => {
-    if (!c.aadhaarAtDesk && !files.some((f) => f.person === String(i + 1))) missing.push(`Please upload an ID proof for ${c.name || `adult ${i + 2}`}, or choose Aadhaar`);
-  });
-  return missing;
-}
-
 /** The WhatsApp message that carries the link. */
 export function formMessage(o: { hotelName: string; guestName?: string | null; url: string; checkIn?: string | null; days?: number }) {
   const hello = o.guestName ? `Hello ${o.guestName.split(" ")[0]},` : "Hello,";
   return [
     `${hello} thank you for choosing ${o.hotelName}.`,
     "",
-    "Please fill in your details for everyone staying, and upload a copy of a passport, driving licence or other photo ID. If you have an Aadhaar card, just show it at check-in: nothing from it is saved. It takes about 2 minutes and saves time at check-in:",
+    "Please fill in your details for everyone staying. Bring an original photo ID for every adult (Aadhaar, driving licence, voter ID or passport) to show at check-in: nothing is uploaded. It takes about 2 minutes and saves time at check-in:",
     o.url,
     "",
     `The link works for ${o.days ?? FORM_DAYS} days.`,

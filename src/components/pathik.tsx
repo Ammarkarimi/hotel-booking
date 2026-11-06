@@ -154,7 +154,7 @@ export function PathikDialog({ open, onClose, bookingId, guestId, onChanged }: {
           )}
           {data.byHand.length > 0 && (
             <Tip>
-              <b>Type in Pathik by hand:</b> {data.byHand.join("; ")}. Nothing from an Aadhaar is saved in this software.
+              <b>Add in Pathik by hand:</b> {data.byHand.join("; ")}. No ID copies are kept in this software.
             </Tip>
           )}
 
@@ -162,7 +162,7 @@ export function PathikDialog({ open, onClose, bookingId, guestId, onChanged }: {
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-sm text-emerald-900">
                 Pathik opens in a new tab and the Add Guest form is filled in{data.others.length ? `, with the ${data.others.length + 1} adults` : ""}
-                {data.documents.length ? ` and ${data.documents.length} ID ${data.documents.length === 1 ? "copy" : "copies"} (made smaller than 250 KB)` : ""}. Sign in to Pathik first if it asks. Check everything, then press <b>Submit</b> in Pathik.
+. Attach the ID photos in Pathik yourself. Sign in to Pathik first if it asks. Check everything, then press <b>Submit</b> in Pathik.
               </p>
               <Button className="mt-3 w-full sm:w-auto" onClick={fill} loading={sending}>
                 <ExternalLink className="h-4 w-4" /> Open Pathik and fill the form

@@ -29,7 +29,6 @@ model Hotel {
   seasonalRates        SeasonalRate[]
   rooms                Room[]
   guests               Guest[]
-  guestDocuments       GuestDocument[]
   bookings             Booking[]
   charges              Charge[]
   payments             Payment[]
@@ -182,33 +181,12 @@ model Guest {
   blacklisted Boolean         @default(false)
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
-  documents   GuestDocument[]
   bookings    Booking[]
   hotel       Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, phone])
 }
 
-model GuestDocument {
-  id          String     @id @default(cuid())
-  hotelId     String
-  // A copy uploaded by the guest on a WhatsApp guest form belongs to the form until the
-  // desk makes the booking; then it moves to the guest's profile.
-  guestId     String?
-  guestFormId String?
-  person      String? // null = the guest; otherwise the name of someone staying with them
-  type        String // aadhar, pan, passport, driving_licence, voter_id, visa, other
-  fileName    String
-  filePath    String
-  mimeType    String?
-  createdAt   DateTime   @default(now())
-  guest       Guest?     @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  guestForm   GuestForm? @relation(fields: [guestFormId], references: [id], onDelete: SetNull)
-  hotel       Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@index([hotelId])
-  @@index([guestFormId])
-}
 
 // A form sent to a guest on WhatsApp. The guest fills in their details and uploads ID copies;
 // the front desk then picks the room and the booking is made from what they filled in.
@@ -230,7 +208,6 @@ model GuestForm {
   bookingId    String? // the booking made from it
   closedAt     DateTime?
   closedBy     String?
-  documents    GuestDocument[]
   hotel        Hotel           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, status])

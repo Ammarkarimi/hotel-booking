@@ -110,11 +110,6 @@ broken for users. Fix it and push again, or ask for help with the log.
 Look in Vercel → the project → *Logs* (runtime logs) at the time it happened to
 see the actual error.
 
-**ID photo upload fails on the live site.**
-
-Blob storage isn’t connected. Vercel → *Storage* → connect Blob, which sets
-`BLOB_READ_WRITE_TOKEN`, then redeploy.
-
 ## Data
 
 **A hotel says a booking or guest disappeared.**

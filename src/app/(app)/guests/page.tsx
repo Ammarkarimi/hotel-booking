@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FileCheck2, FileWarning, Search, UserPlus, Users } from "lucide-react";
+import { Search, UserPlus, Users } from "lucide-react";
 import { Badge, Button, Card, EmptyState, Input, Loading, PageHeader } from "@/components/ui";
 import { GuestFormDialog } from "@/components/guest-form";
 import { api } from "@/lib/client";
@@ -13,7 +13,6 @@ import type { GuestDTO } from "@/lib/types";
 type GuestRow = GuestDTO & {
   _count: { bookings: number };
   bookings: Array<{ checkInDate: string; room: { roomNumber: string } }>;
-  documents: Array<{ id: string }>;
 };
 
 export default function GuestsPage() {
@@ -73,15 +72,6 @@ export default function GuestsPage() {
                       {g._count.bookings} booking{g._count.bookings === 1 ? "" : "s"}
                       {g.bookings[0] && ` · last ${formatDate(g.bookings[0].checkInDate)}`}
                     </span>
-                    {g.documents.length > 0 ? (
-                      <span className="flex items-center gap-1 text-emerald-700">
-                        <FileCheck2 className="h-4 w-4" /> ID saved
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-1 text-amber-700">
-                        <FileWarning className="h-4 w-4" /> No ID photo
-                      </span>
-                    )}
                   </div>
                 </Link>
               </li>

@@ -36,12 +36,9 @@ const booking: NonNullable<PathikInput["booking"]> = {
   vehicleType: "four_wheeler",
   companions: JSON.stringify([{ name: "Anita Kumar", phone: "9845011224" }, { name: "Ravi", aadhaarAtDesk: true }]),
 };
-const docs = [
-  { id: "d1", person: null, type: "driving_licence", fileName: "dl.jpg" },
-  { id: "d2", person: "Anita Kumar", type: "passport", fileName: "p.jpg" },
-  { id: "d3", person: "Ravi", type: "aadhar", fileName: "old.jpg" }, // never sent
-];
-const base = (over: Partial<PathikInput> = {}): PathikInput => ({ guest, booking, documents: docs, hotel, documentUrl: (id) => `/api/documents/${id}`, ...over });
+// The desk ticked Anita's passport; Ravi said he would show his Aadhaar.
+const idChecks = [{ person: "Anita Kumar", idType: "passport" }];
+const base = (over: Partial<PathikInput> = {}): PathikInput => ({ guest, booking, idChecks, hotel, ...over });
 
 test("names, mobiles and countries the way Pathik asks for them", () => {
   assert.deepEqual(splitName("Ravi Kumar Shah"), { firstName: "Ravi", middleName: "Kumar", lastName: "Shah" });
@@ -86,10 +83,9 @@ test("a booking becomes the whole Add Guest form, with the other adults", () => 
       ["Ravi", "", "", "aadhar"],
     ]
   );
-  // Aadhaar copies are never sent; the Aadhaar number and photo are typed in Pathik by hand.
-  assert.deepEqual(r.documents.map((d) => d.id), ["d1", "d2"]);
-  assert.equal(r.documents[0].url, "/api/documents/d1");
-  assert.deepEqual(r.byHand, ["Aadhaar number and photo for Ravi"]);
+  // No ID copies are kept: Aadhaar numbers and every ID photo are added in Pathik by hand.
+  assert.ok(!("documents" in r));
+  assert.deepEqual(r.byHand, ["Aadhaar number and photo for Ravi", "Rajesh Kumar's ID photo"]);
   assert.deepEqual(r.missing, []);
 });
 
@@ -101,7 +97,7 @@ test("what is missing is listed, and a guest without a booking fills only their 
       idChecks: [],
     })
   );
-  assert.deepEqual(r.missing, ["Last name (surname)", "District", "Date of birth", "Email", "Going to", "How the guest travels (vehicle type)", "Names of the other adult"]);
+  assert.deepEqual(r.missing, ["Last name (surname)", "District", "Date of birth", "Email", "Going to", "How the guest travels (vehicle type)", "Names of the other adult", "ID proof type of Anita Kumar"]);
   assert.deepEqual(r.byHand, ["Aadhaar number and photo for Rajesh, Ravi"]);
   assert.equal(r.guest.docNumber, "");
 
@@ -114,7 +110,7 @@ test("what is missing is listed, and a guest without a booking fills only their 
   assert.equal(ticked.guest.docType, "passport");
   assert.equal(ticked.guest.docNumber, "X1234567");
   // Only the kind of ID was ticked at the desk: its number is typed in Pathik, and nothing is "missing".
-  const noNumber = pathikRecord(base({ guest: { ...guest, idType: "driving_licence", idNumber: null }, documents: [] }));
+  const noNumber = pathikRecord(base({ guest: { ...guest, idType: "driving_licence", idNumber: null } }));
   assert.ok(!noNumber.missing.some((m) => /number|copy/i.test(m)));
   assert.deepEqual(noNumber.byHand, ["Aadhaar number and photo for Ravi", "Rajesh Kumar's ID number and photo"]);
 });

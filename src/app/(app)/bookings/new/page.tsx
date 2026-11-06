@@ -280,11 +280,10 @@ function NewBookingWizard() {
   const formDetails = guestForm?.details;
   const nationality = formDetails?.nationality ?? guest?.nationality ?? newGuest.nationality;
   const firstId = isIndian(nationality) ? "aadhar" : "passport";
-  const docOf = (keys: (string | null)[]) => guestForm?.documents.find((d) => keys.includes(d.person ?? null) && ID_CHECK_TYPES.includes(d.type as never))?.type;
   const idPeople = formDetails
     ? [
-        { name: guestName || "Guest", defaultType: formDetails.aadhaarAtDesk ? "aadhar" : (docOf([null, "0"]) ?? firstId) },
-        ...formDetails.companions.map((c, i) => ({ name: c.name, defaultType: c.aadhaarAtDesk ? "aadhar" : (docOf([c.name, String(i + 1)]) ?? firstId) })),
+        { name: guestName || "Guest", defaultType: formDetails.aadhaarAtDesk ? "aadhar" : firstId },
+        ...formDetails.companions.map((c) => ({ name: c.name, defaultType: c.aadhaarAtDesk ? "aadhar" : firstId })),
       ]
     : [
         { name: guestName || "Guest", defaultType: guest?.idType && ID_CHECK_TYPES.includes(guest.idType as never) ? guest.idType : firstId },

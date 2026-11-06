@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
-import { Button, CountInput, Field, Input, Modal, Select, Textarea, Tip } from "@/components/ui";
+import { Button, CountInput, Field, Input, Modal, Select, Textarea } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { addDays } from "@/lib/dates";
@@ -40,7 +40,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 /** The front desk corrects what the guest filled in on the WhatsApp form, before the booking is made. */
 export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: GuestFormDTO; open: boolean; onClose: () => void; onSaved: (f: GuestFormDTO) => void }) {
-  const { toast, confirm } = useApp();
+  const { toast } = useApp();
   const [d, setD] = useState<Draft | null>(form.details ? draftOf(form.details) : null);
   const [saving, setSaving] = useState(false);
 
@@ -58,21 +58,8 @@ export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: Gu
     set({ adults, companions });
   }
 
-  // Adults taken off the form lose the ID copies they uploaded.
-  const before = form.details?.companions ?? [];
-  const dropped = before.slice(d.companions.length).filter((c) => form.documents.some((doc) => doc.person === c.name));
-
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (dropped.length) {
-      const ok = await confirm({
-        title: "Delete their ID copies?",
-        message: `${dropped.map((c) => c.name).join(", ")} ${dropped.length > 1 ? "are" : "is"} no longer on the form, so the ID copies they uploaded will be deleted.`,
-        confirmText: "Yes, save",
-        danger: true,
-      });
-      if (!ok) return;
-    }
     setSaving(true);
     try {
       const updated = await api<GuestFormDTO>(`/api/guest-forms/${form.id}`, { body: { action: "edit", details: d } });
@@ -235,11 +222,6 @@ export function EditGuestFormDialog({ form, open, onClose, onSaved }: { form: Gu
               ))}
             </div>
           </Section>
-        )}
-        {dropped.length > 0 && (
-          <Tip tone="warning">
-            {dropped.map((c) => c.name).join(", ")} will be taken off the form, and the ID copies they uploaded will be deleted.
-          </Tip>
         )}
 
         <Section title="Special requests">

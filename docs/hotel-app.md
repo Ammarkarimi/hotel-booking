@@ -8,7 +8,7 @@ under **Help & guide**.
 
 | | Owner / manager | Front desk |
 |---|:-:|:-:|
-| Bookings, check-in/out, payments, extras, guests, ID photos, guest forms, calendar, housekeeping | ✅ | ✅ |
+| Bookings, check-in/out, payments, extras, guests, ID checks, guest forms, calendar, housekeeping | ✅ | ✅ |
 | Write down expenses | ✅ all | ✅ their own, last 7 days |
 | Reports and CSV downloads | ✅ | — |
 | Settings (hotel details, prices & tax, online booking, staff, activity history) | ✅ | — |
@@ -126,16 +126,15 @@ Instead of typing a guest's details at the desk, send them a form:
    where they are coming from and going next, how they are travelling (car,
    two-wheeler, bus, auto-rickshaw, other vehicle or no vehicle) and the vehicle
    number, and the full name and mobile of every other adult.
-   For every adult they choose **Aadhaar** (shown at check-in, nothing uploaded)
-   or upload a photo or PDF of another ID (driving licence, voter ID; passport
-   and visa for foreign guests). No ID number is asked. They tick that they
-   agree and press Send.
+   For every adult they say which ID they will show at check-in: **Aadhaar** or
+   **another photo ID** (driving licence, voter ID, passport). Nothing is
+   uploaded and no ID number is asked. They tick that they agree and press Send.
 3. The front desk gets a pop-up within 30 seconds, a red number on **Guest
    forms** and a card on Today. Press **Choose room & book**: the dates, people
-   and special requests are already filled in, and the guest's details and ID
-   copies are shown. If the mobile number belongs to a returning guest, choose
+   and special requests are already filled in, and the guest's details are
+   shown. If the mobile number belongs to a returning guest, choose
    whether it is the same person. Pick the room, check the price and confirm.
-4. The guest profile, any ID copies (named by person) and the booking's
+4. The guest profile and the booking's
    journey, vehicle and companions are saved, and they print on the
    registration card.
 5. At check-in, check each adult's ID and tick it under **ID check** on the
@@ -144,24 +143,22 @@ Instead of typing a guest's details at the desk, send them a form:
 **Correcting the details:** if the guest made a mistake (a spelling, the wrong
 city, a missing vehicle number, the wrong number of adults), press **Edit
 details** on the form, either on **Guest forms** or on the booking screen when
-you choose the room. Everything the guest filled in can be changed. Renaming an
-adult keeps their ID copies with them; taking an adult off the form deletes the
-copies they uploaded (you are asked first). Changing the dates or people from
+you choose the room. Everything the guest filled in can be changed. Changing the dates or people from
 the booking screen updates the booking too, so check the room again.
 
 After the booking is made, change the guest's name, mobile, address and date of
 birth on their profile (**Edit**), and the journey, vehicle and other adults'
 names on the booking (**Stay → Change → Travel and other adults**). A corrected
-name keeps its ID tick and ID copies.
+name keeps its ID tick.
 
 A form can be sent again (another 7 days) or closed. Closing a filled-in form
-deletes the details and ID copies the guest sent. A form can make only one
+means it can no longer be used for a booking. A form can make only one
 booking.
 
 ### ID check at check-in
 
-**Nothing from an Aadhaar is saved anywhere in the software**: no number, no
-copy, no photo. The receptionist checks every adult's ID by hand:
+**No ID copies or photos are saved anywhere in the software**, and nothing
+from an Aadhaar (no number). The receptionist checks every adult's ID by hand:
 
 1. On the booking, **ID check** lists every adult (the guest, the others named
    on the guest form, and any more adults booked).
@@ -187,10 +184,8 @@ staying or already left who still owe money), **Past & cancelled**, and **All**.
 
 Guest profiles show every stay, nights, total paid and money owed. Each profile can hold:
 
-- ID photo uploads straight from the phone camera, or an existing photo or PDF
-  (PAN, passport, visa, driving licence, voter ID). Aadhaar copies are never
-  saved: check the card at check-in and tick it on the booking. Photos are shrunk
-  on the phone before sending, so they upload quickly; PDFs must be under 4 MB.
+- the ID type (and number, except for Aadhaar). No ID copies are kept: look at
+  the original at check-in and tick it on the booking.
 - passport and visa numbers for foreign guests
 - company name and GSTIN for business invoices
 - **VIP** and **do not allow** flags
@@ -388,15 +383,14 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
 3. Press **Open Pathik and fill the form**. Pathik opens in a new tab (sign in if it
    asks, then open Add Guest) and the form is filled in: name, company, address,
    locality, city, district, PIN, country and state, date of birth, mobile and phone,
-   email, coming from and going to, ID type and number, the ID copies (made smaller
-   than 250 KB, at most 6), room, check-in and check-out dates and times, adults and
+   email, coming from and going to, ID type and number, room, check-in and check-out dates and times, adults and
    children, vehicle type and number. When there are more adults, Pathik's extra
    blocks ("Other Guest Full Name", "Other Guest Mobile Number"…) are filled with
    each one's name, mobile and ID type. Pathik's vehicle list is Car, Bike, Bus,
    Auto and Other: "No vehicle" (train, flight, on foot) is chosen as Other.
 4. Filled boxes get a green border, boxes still empty an amber one, and a small panel
-   lists what is left. **Aadhaar is always typed by hand** (number and photo): nothing
-   from an Aadhaar is saved in the software.
+   lists what is left. **ID photos and Aadhaar numbers are always added by hand**:
+   the software keeps no ID copies and nothing from an Aadhaar.
 5. Check the form and press **Submit** in Pathik. Back in the software press
    **Entered in Pathik**: the booking shows who entered it and when.
 

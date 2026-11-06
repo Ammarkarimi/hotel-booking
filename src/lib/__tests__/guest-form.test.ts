@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { cleanDetails, deskPathikMissing, formMessage, formStatus, fullAddress, guestFormSchema, missingDocuments, parseCompanions, staffFormSchema } from "../guest-form";
+import { cleanDetails, deskPathikMissing, formMessage, formStatus, fullAddress, guestFormSchema, parseCompanions, staffFormSchema } from "../guest-form";
 
 const filled = {
   firstName: "Asha",
@@ -45,17 +45,6 @@ test("the guest form needs every adult's name, a state and PIN for Indian guests
   assert.match(fail({ consent: false }), /agree/);
   // A foreign guest has no Indian state or PIN code.
   assert.equal(guestFormSchema.safeParse({ ...filled, nationality: "British", state: "", locality: "", district: "", pinCode: "SW1A 1AA" }).success, true);
-});
-
-test("every adult shows an Aadhaar at check-in or uploads another ID, and a foreign guest a passport", () => {
-  const details = guestFormSchema.parse(filled);
-  assert.deepEqual(missingDocuments(details, []), ["Please upload an ID proof for Asha, or choose Aadhaar", "Please upload an ID proof for Ravi Rao, or choose Aadhaar"]);
-  assert.deepEqual(missingDocuments(details, [{ person: "0", type: "voter_id" }, { person: "1", type: "driving_licence" }]), []);
-  // Aadhaar at the desk: nothing to upload.
-  assert.deepEqual(missingDocuments({ ...details, aadhaarAtDesk: true, companions: [{ name: "Ravi Rao", aadhaarAtDesk: true }] }, []), []);
-  const foreign = { ...details, nationality: "British", aadhaarAtDesk: true, companions: [] };
-  assert.deepEqual(missingDocuments(foreign, [{ person: "0", type: "visa" }]), ["Please upload a copy of your passport"]);
-  assert.deepEqual(missingDocuments(foreign, [{ person: "0", type: "passport" }]), []);
 });
 
 test("the WhatsApp message carries the link, and an old link expires", () => {

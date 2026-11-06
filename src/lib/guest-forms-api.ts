@@ -1,6 +1,6 @@
 // Server side of the WhatsApp guest form: finding a form by its link, and the shape staff screens get.
 import { randomBytes } from "crypto";
-import type { GuestDocument, GuestForm, Hotel } from "@prisma/client";
+import type { GuestForm, Hotel } from "@prisma/client";
 import { rawPrisma, runForHotel } from "./db";
 import { fail } from "./api";
 import { toDateKey } from "./dates";
@@ -20,7 +20,7 @@ export function parseDetails(raw: string | null | undefined): GuestFormDetails |
   }
 }
 
-export function serializeGuestForm(form: GuestForm & { documents?: GuestDocument[] }) {
+export function serializeGuestForm(form: GuestForm) {
   return {
     id: form.id,
     token: form.token,
@@ -37,15 +37,6 @@ export function serializeGuestForm(form: GuestForm & { documents?: GuestDocument
     bookingId: form.bookingId,
     closedAt: form.closedAt,
     closedBy: form.closedBy,
-    documents: (form.documents ?? []).map((d) => ({
-      id: d.id,
-      type: d.type,
-      person: d.person,
-      fileName: d.fileName,
-      filePath: d.filePath,
-      mimeType: d.mimeType,
-      createdAt: d.createdAt,
-    })),
   };
 }
 

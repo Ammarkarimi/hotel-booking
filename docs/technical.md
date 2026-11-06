@@ -11,8 +11,8 @@ For whoever works on the code.
 - Sign-in sessions are signed JWT cookies (`jose`), and passwords are hashed with
   `bcryptjs`.
 - Validation uses `zod`, icons use `lucide-react`, and charts use `recharts`.
-- File storage is Vercel Blob in production, or the local disk in development
-  (`src/lib/storage.ts`).
+- The app stores no files. `src/lib/storage.ts` only deletes ID copies saved
+  before they were removed (Vercel Blob in production, the local disk in development).
 
 ## Folder map
 
@@ -74,12 +74,12 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings. `msgBooking`, `msgCheckIn`, `msgCheckOut`: the owner's wording for the guest WhatsApp messages (null = the default in `src/lib/messages.ts`). `rateTips`, `rateTipsFrom` (HH:MM), `rateTipsMaxDiscount` (%), `rateTipsFloors` (JSON: lowest price per room type), `rateTipsStaff` (front desk sees tips) |
 | `SeasonalRate` | Hotel | Price change % for a date range, optionally for one room type |
 | `Room` | Hotel | `roomNumber` is unique per hotel. `status` is available, occupied or maintenance; `housekeeping` is clean, dirty or cleaning |
-| `Guest`, `GuestDocument` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`) and ID copies. Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`), and Aadhaar copies cannot be uploaded (migration `20261104000000_aadhaar_qr_checks` removed earlier last-4 digits and copies; the files are queued in `FileCleanup`). A `GuestDocument` uploaded on a guest form has `guestFormId` and no `guestId` until the booking is made; `person` is null for the guest or the name of an adult staying with them |
+| `Guest` | Hotel | Guest profile (`address` is house and street, plus `city`, `state`, `pinCode`). No ID copies are stored (migration `20261127000000_remove_id_copies` dropped `GuestDocument` and queued its files in `FileCleanup`). Nothing from an Aadhaar is stored: `idType` can be `aadhar` but `idNumber` is always null for it (the desk ticks the card as seen, see `IdCheck`) |
 | Pathik fields | — | `Guest.locality`, `Guest.district`; `Booking.vehicleType` (four_wheeler, two_wheeler, bus, auto, other, none = no vehicle), `Booking.pathikAt` and `pathikByName` (marked as entered in Pathik); `HotelSettings.pathik` shows "Fill in Pathik" |
 | `RateTipSeen` | Hotel | Someone typed "I have seen" on a rate tip: `staffId`, `staffName`, `tipKey` (`date\|roomType\|price`, so a lower price later is a new tip), when. Unique per person and tip |
 | `IdCheck` | Hotel, Booking | An adult's ID ticked as verified at the desk after the receptionist looked at the original: `person` (null = the guest who booked), `idType` (aadhar, passport, driving_licence, voter_id, pan, other), who and when. `method` is `id_seen`; rows marked `aadhaar_qr` come from the earlier QR scanner. Nothing from the ID itself is stored |
-| `FileCleanup` | — | Uploaded files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
-| `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest, moves the ID copies to the guest and sets `bookingId`. Closing an unused form deletes its uploads |
+| `FileCleanup` | — | Old ID copy files waiting to be deleted from storage; `drainFileCleanup()` removes up to 25 every 5 minutes while the app is used |
+| `GuestForm` | Hotel | A form sent to a guest on WhatsApp. `token` is the secret in the link (`/form/<token>`), works for 7 days (`expiresAt`). `status` is sent, submitted, booked or cancelled; `details` is the JSON the guest sent (checked by `guestFormSchema` in `src/lib/guest-form.ts`). Making the booking (`POST /api/bookings` with `guestFormId`) claims it once, creates or updates the guest and sets `bookingId` |
 | `Booking` | Hotel | `number` is unique per hotel, from 1001. `publicToken` gives guests their confirmation link. `status` is reserved, checked_in, checked_out, cancelled or no_show. `gstRate` is the GST % on the room chosen for this booking (null = the default from Settings). `comingFrom`, `goingTo`, `vehicleNumber` and `companions` (JSON names of the other adults) are for police guest registration and usually come from the guest form |
 | `Charge` | Hotel, Booking | Extras on the bill |
 | `Payment` | Hotel, Booking | Payments and refunds |
@@ -120,8 +120,6 @@ This is the most important design rule. It lives in `src/lib/db.ts`.
   - the seed script
 
   Using it anywhere else is a bug.
-- Uploaded files are stored under `hotels/<hotelId>/…`. `/api/uploads` only serves
-  a file if it belongs to a document of the signed-in hotel.
 - Covered by `src/lib/__tests__/tenant.test.ts`. The multi-hotel change was also
   tested end-to-end with two hotels trying to reach each other’s data.
 
@@ -175,16 +173,15 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/auth/login`, `/api/auth/logout`, `/api/auth/me`, `/api/auth/password` | POST, POST, GET, POST |
 | `/api/dashboard`, `/api/calendar`, `/api/search`, `/api/availability` | GET |
 | `/api/bookings` | GET (filters: `view`, `status`, `q`, `from`, `to`, `guestId`), POST (also `comingFrom`, `goingTo`, `vehicleType`, `vehicleNumber`, `companions` [{ name, phone }], and the Pathik address fields `dateOfBirth`, `locality`, `city`, `district`, `state`, `pinCode` on `guest`, or on `guestDetails` for a returning guest, where only filled-in fields change, also `lastName`, `email`, `address`; `idChecks` [{ person, idType }] are the IDs seen at the desk, saved as `IdCheck` rows, and a walk-in (`checkInNow`) needs one for every adult). With `HotelSettings.pathik` on, a desk booking (not from a guest form) missing anything `deskPathikMissing` in `src/lib/guest-form.ts` lists is refused |
-| `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks and copies follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
+| `/api/bookings/[id]` | GET, PATCH (change stay; also `comingFrom`, `goingTo`, `vehicleNumber` and `companions` with `was`, the name before the change, so ID ticks follow a corrected name), POST (`action`: `check_in`, `check_out`, `cancel`, `no_show`, `undo_check_in`), DELETE ⓐ |
 | `/api/bookings/[id]/charges` | POST, DELETE |
 | `/api/bookings/[id]/bill` | PATCH (`ratePerNight`, `discount`, `gstRate` or null, `reason`, `refundMethod`): Edit bill for a checked-in stay, or a checked-out one by an admin (owner) only. Sets a fixed rate; a final `Bill` keeps its invoice number and gets the new amounts; while staying payments are not touched; after check-out money paid above the new total is saved as a `refund` payment (`refundMethod`, reference "Bill edited"). The printed invoice hides "Balance/Refund due" at 0 and its payment list when there is a refund. The first edit saves the price first agreed in `Booking.originalPrice` (JSON `{ ratePerNight, fixedRate, discount, gstRate }`). Logged as "Bill edited" |
 | `/api/payments` | GET, POST, DELETE ⓐ |
 | `/api/guests`, `/api/guests/[id]` | GET, POST / GET, PUT, DELETE ⓐ |
-| `/api/guests/[id]/documents`, `/api/uploads?path=` | POST, GET, DELETE / GET |
 | `/api/rooms`, `/api/rooms/[id]` | GET, POST ⓐ / GET, PUT ⓐ, DELETE ⓐ |
 | `/api/rooms/[id]/housekeeping` | POST |
 | `/api/settings` | GET, PUT ⓐ |
-| `/api/pathik` | GET `?bookingId=` (or `?guestId=`: their stay now, else the next arrival, else the guest only): the values of Pathik's Add Guest form (`pathikRecord` in `src/lib/pathik.ts`), the other adults, ID copies to attach (never Aadhaar), `missing` and `byHand` |
+| `/api/pathik` | GET `?bookingId=` (or `?guestId=`: their stay now, else the next arrival, else the guest only): the values of Pathik's Add Guest form (`pathikRecord` in `src/lib/pathik.ts`), the other adults, `missing` and `byHand` (ID photos and Aadhaar numbers, added in Pathik by hand) |
 | `/api/bookings/[id]/pathik` | POST `{ entered }`: mark the stay as entered in Pathik (or take the mark off) |
 | `/api/rate-tips` | GET: tonight's rooms by type with tips (`tonightByType` in `src/lib/rate-tips.ts`), the tips this person has not confirmed (`unseen`), who confirmed today's tips (owner), `?insights=30` adds sales by type and booking times (owner). POST `{ keys, text }`: `text` must be "I have seen" |
 | `/api/settings/seasonal-rates` | POST ⓐ, DELETE ⓐ |
@@ -196,7 +193,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/activity` | ⓐ GET |
 | `/api/guest-forms` | GET (`?count=1` for the badge; `view`: received, waiting, done, all), POST (phone, name, dates: makes the link) |
 | `/api/bookings/[id]/id-checks` | POST (`person`, `idType`): tick an adult's ID as verified; DELETE `?checkId=` (owner, or the same person within 12 hours) |
-| `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it and deletes uploads, `edit` with `details` lets the desk correct a filled-in form before booking, checked by `staffFormSchema`; renamed adults keep their ID copies, removed adults lose them) |
+| `/api/guest-forms/[id]` | GET, POST (`action`: `resend` gives the link 7 more days, `cancel` closes it, `edit` with `details` lets the desk correct a filled-in form before booking, checked by `staffFormSchema`) |
 
 ### Public booking website (no sign-in; `?hotel=<slug>` required)
 
@@ -206,7 +203,7 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 | `/api/public/availability?checkIn=&checkOut=&guests=` | GET |
 | `/api/public/bookings` | POST |
 | `/api/public/bookings/[token]` | GET: confirmation (token only, no `hotel` needed) |
-| `/api/public/guest-forms/[token]` | GET: hotel, suggested dates, uploads so far; POST: send the form (locks it) |
+| `/api/public/guest-forms/[token]` | GET: hotel and suggested dates; POST: send the form (locks it) |
 | `/api/public/guest-forms/[token]/documents` | POST (one photo or PDF up to 4 MB; `type`, `person` 0 = the guest, 1… = other adults), DELETE `?docId=` (only before sending) |
 
 ### Owner panel (owner-panel session)
@@ -297,9 +294,8 @@ this deployment's own address from `VERCEL_PROJECT_PRODUCTION_URL` to the pages 
 
 - `app-bridge.js` runs on the software's pages: it marks the page
   (`data-pathik-helper`) so "Fill in Pathik" shows the fill button, takes the record the
-  page posts (`window.postMessage`, same origin only), fetches the ID copies with the
-  page's sign-in and makes each a JPEG under 250 KB, then hands everything to the
-  background worker.
+  page posts (`window.postMessage`, same origin only) and hands it to the background
+  worker. No ID copies are sent: staff attach ID photos in Pathik by hand.
 - `background.js` keeps it in `chrome.storage.session` for 30 minutes, opens
   `pathik.guru/dashboard/add`, and refreshes jQuery select plug-ins in the page.
 - `pathik-fill.js` runs on pathik.guru. When the Add Guest form is there it fills each

@@ -5,7 +5,6 @@ import { logActivity } from "@/lib/activity";
 import { guestData, guestUpdateSchema } from "@/lib/guests";
 import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
-import { deleteStoredFile } from "@/lib/storage";
 import { assertOnShift } from "@/lib/shift-api";
 
 type Params = { params: Promise<{ id: string }> };
@@ -13,7 +12,7 @@ type Params = { params: Promise<{ id: string }> };
 export async function GET(_request: NextRequest, { params }: Params) {
   return withAuth(async () => {
     const { id } = await params;
-    const guest = await prisma.guest.findUnique({ where: { id }, include: { documents: { orderBy: { createdAt: "desc" } } } });
+    const guest = await prisma.guest.findUnique({ where: { id } });
     if (!guest) fail("Guest not found", 404);
     const ctx = await getBillingContext();
     const bookings = await prisma.booking.findMany({
@@ -43,7 +42,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     const body = guestUpdateSchema.parse(await request.json());
     const guest = await prisma.guest.findUnique({ where: { id } });
     if (!guest) fail("Guest not found", 404);
-    const updated = await prisma.guest.update({ where: { id }, data: guestData(body), include: { documents: true } });
+    const updated = await prisma.guest.update({ where: { id }, data: guestData(body) });
     await logActivity(user, "Guest updated", `${updated.firstName} ${updated.lastName}`.trim());
     return NextResponse.json(updated);
   });
@@ -52,12 +51,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   return withAdmin(async (user) => {
     const { id } = await params;
-    const guest = await prisma.guest.findUnique({ where: { id }, include: { documents: true, _count: { select: { bookings: true } } } });
+    const guest = await prisma.guest.findUnique({ where: { id }, include: { _count: { select: { bookings: true } } } });
     if (!guest) fail("Guest not found", 404);
     if (guest._count.bookings > 0) fail("This guest has bookings, so the record is kept for your accounts.");
-    for (const doc of guest.documents) {
-      await deleteStoredFile(doc.filePath).catch(() => undefined);
-    }
     await prisma.guest.delete({ where: { id } });
     await logActivity(user, "Guest deleted", `${guest.firstName} ${guest.lastName}`.trim());
     return NextResponse.json({ success: true });
