@@ -6,7 +6,7 @@
 //   3. Playwright + ffmpeg:    npm i --no-save playwright && npx playwright install chromium
 //
 // Then:  node scripts/tour/record-tour.mjs http://localhost:3000
-// It writes public/welcome/hotel-manager-tour.mp4 and .webm and prints the chapter
+// It writes public/welcome/innvero-tour.mp4 and .webm and prints the chapter
 // times to paste into CHAPTERS in src/app/welcome/tour.tsx.
 // The demo hotel's data is changed by the recording, so re-seed before recording again.
 import fs from "node:fs";
@@ -38,7 +38,8 @@ const OVERLAY = `
     #demo-caption .t { font-weight: 800; font-size: 20px; line-height: 1.2; }
     #demo-caption .s { font-size: 15px; color: #cbd5e1; margin-top: 3px; line-height: 1.35; }
     #demo-card { position: fixed; inset: 0; z-index: 2147483647; display: grid; place-items: center; text-align: center; color: #fff;
-      background: linear-gradient(135deg, #1d37d8, #2548eb 45%, #1e2d8a); font-family: Inter, system-ui, sans-serif; transition: opacity .6s; }
+      background: radial-gradient(circle at 30% 20%, #1e2d8a, #0f172a 60%); font-family: Inter, system-ui, sans-serif; transition: opacity .6s; }
+    #demo-card .m svg { display: block; width: 96px; height: 96px; margin: 0 auto 14px; }
     #demo-card[hidden] { display: none !important; }
     #demo-card .k { letter-spacing: .14em; text-transform: uppercase; font-size: 15px; font-weight: 700; opacity: .8; }
     #demo-card .h { font-size: 56px; font-weight: 800; margin: 10px 0 8px; letter-spacing: -.02em; }
@@ -53,7 +54,7 @@ const OVERLAY = `
     const cap = document.createElement('div'); cap.id = 'demo-caption'; cap.hidden = true;
     cap.innerHTML = '<span class="n"></span><div><div class="t"></div><div class="s"></div></div>';
     const card = document.createElement('div'); card.id = 'demo-card'; card.hidden = true;
-    card.innerHTML = '<div><div class="k"></div><div class="h"></div><div class="p"></div></div>';
+    card.innerHTML = '<div><div class="m"><svg viewBox="0 0 64 64"><path d="M10 30L32 12l22 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 33l13 19 13-19" fill="none" stroke="#7c93ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="k"></div><div class="h"></div><div class="p"></div></div>';
     document.body.append(cur, ripple, cap, card);
     const saved = JSON.parse(sessionStorage.getItem('demo-state') || '{}');
     cur.style.transition = 'none';
@@ -141,7 +142,7 @@ const addDays = (key, n) => {
 
 // ---------------- Intro + 1. Guest books online ----------------
 await page.goto(base + "/book/sunrise-residency", { waitUntil: "networkidle" });
-await page.evaluate(() => window.__demo.card("A 3-minute tour", "Hotel Manager", "Effortless operations for boutique hotels, resorts and premium stays."));
+await page.evaluate(() => window.__demo.card("A 3-minute tour", "Innvero", "Effortless operations for boutique hotels, resorts and premium stays."));
 await wait(3200);
 await page.evaluate(() => window.__demo.card(null));
 await wait(700);
@@ -317,7 +318,7 @@ await wait(1400);
 // ---------------- End card ----------------
 await page.evaluate(() => window.__demo.caption(null));
 chapters.push({ n: "end", title: "End", at: Date.now() / 1000 });
-await page.evaluate(() => window.__demo.card("Hotel Manager", "Effortless operations for exceptional stays", "Reservations, check-in, GST invoices, housekeeping, expenses and profit reports, on any device."));
+await page.evaluate(() => window.__demo.card("Innvero", "Effortless operations for exceptional stays", "Reservations, check-in, GST invoices, housekeeping, expenses and profit reports, on any device."));
 await wait(4000);
 
 await cdp.send("Page.stopScreencast");
@@ -338,12 +339,12 @@ frames.forEach((ts, i) => {
 lines.push(`file '${outDir}/frames/${String(frames.length - 1).padStart(6, "0")}.jpg'`);
 fs.writeFileSync(`${outDir}/list.txt`, lines.join("\n") + "\n");
 const input = ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", `${outDir}/list.txt`, "-vf", "fps=30,format=yuv420p", "-an"];
-execFileSync("ffmpeg", [...input, "-c:v", "libx264", "-preset", "slow", "-crf", "24", "-movflags", "+faststart", `${publicDir}/hotel-manager-tour.mp4`], { stdio: "inherit" });
-execFileSync("ffmpeg", [...input, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "38", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", `${publicDir}/hotel-manager-tour.webm`], { stdio: "inherit" });
+execFileSync("ffmpeg", [...input, "-c:v", "libx264", "-preset", "slow", "-crf", "24", "-movflags", "+faststart", `${publicDir}/innvero-tour.mp4`], { stdio: "inherit" });
+execFileSync("ffmpeg", [...input, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "38", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", `${publicDir}/innvero-tour.webm`], { stdio: "inherit" });
 fs.rmSync(outDir, { recursive: true, force: true });
 
 const times = chapters.filter((c) => c.n !== "end").map((c) => ({ t: Math.round((c.at - first - start) * 10) / 10, title: c.title }));
 times[0].t = 0;
-console.log(`Saved public/welcome/hotel-manager-tour.mp4 and .webm (${(frames.at(-1) - first - start).toFixed(0)}s).`);
+console.log(`Saved public/welcome/innvero-tour.mp4 and .webm (${(frames.at(-1) - first - start).toFixed(0)}s).`);
 console.log("Paste these into CHAPTERS in src/app/welcome/tour.tsx:");
 for (const c of times) console.log(`  { t: ${c.t}, title: ${JSON.stringify(c.title)} },`);

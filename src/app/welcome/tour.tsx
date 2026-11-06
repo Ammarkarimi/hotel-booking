@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Chapter start times (seconds) in public/welcome/hotel-manager-tour.mp4.
+// Chapter start times (seconds) in public/welcome/innvero-tour.mp4.
 export const CHAPTERS = [
   { t: 0, title: "Guests book on your own website" },
   { t: 17.3, title: "Staff start their shift" },
@@ -113,9 +113,9 @@ export function TourPlayer() {
           }}
         >
           {/* MP4 (H.264) for Safari, iPhone and Chrome; WebM (VP9) for browsers without H.264. */}
-          <source src="/welcome/hotel-manager-tour.mp4" type='video/mp4; codecs="avc1.64001F"' />
-          <source src="/welcome/hotel-manager-tour.webm" type='video/webm; codecs="vp9"' />
-          A video tour of Hotel Manager.
+          <source src="/welcome/innvero-tour.mp4" type='video/mp4; codecs="avc1.64001F"' />
+          <source src="/welcome/innvero-tour.webm" type='video/webm; codecs="vp9"' />
+          A video tour of Innvero.
         </video>
         {!started && (
           <button

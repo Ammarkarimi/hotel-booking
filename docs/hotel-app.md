@@ -1,4 +1,4 @@
-# Hotel software guide
+# Innvero: hotel software guide
 
 What a hotel can do once it signs in at `/login`. Use this to demo the software
 and to answer customers’ questions. The same short guide is built into the app

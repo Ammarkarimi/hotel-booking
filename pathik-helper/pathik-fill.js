@@ -1,4 +1,4 @@
-// Pathik helper, on pathik.guru: fills the Add Guest form with the guest Hotel Manager sent.
+// Pathik helper, on pathik.guru: fills the Add Guest form with the guest Innvero sent.
 // Fields are found by the words of their labels ("First Name*", "Zip Code*", "No. of Adult*"),
 // so small changes to Pathik's page do not break it. Nothing is submitted: staff check the form,
 // add the Aadhaar by hand and press Submit themselves.
@@ -497,7 +497,7 @@
       ${res.emptyRequired.length ? `<div class="warn"><b>Still empty (amber):</b><ul>${res.emptyRequired.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
       ${res.otherNotes.length ? `<div class="warn"><b>Other adults:</b><ul>${res.otherNotes.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
       ${res.skipped.length ? `<div class="warn">Not attached (not a photo, or could not be opened): ${esc(res.skipped.join(", "))}. Attach a JPG or PNG by hand.</div>` : ""}
-      <p class="small">Check every field (green = filled), then press <b>Submit</b> on the Pathik page. Afterwards mark the stay as entered in Hotel Manager.</p>
+      <p class="small">Check every field (green = filled), then press <b>Submit</b> on the Pathik page. Afterwards mark the stay as entered in Innvero.</p>
       <p class="small">Dates wrong? Date format:
         <select id="df">${["dd/mm/yyyy", "dd-mm-yyyy", "yyyy-mm-dd", "mm/dd/yyyy"].map((f) => `<option ${f === dateFormat ? "selected" : ""}>${f}</option>`).join("")}</select>
         Time: <select id="tf">${[["12h", "02:05 PM"], ["24h", "14:05"]].map(([v, t]) => `<option value="${v}" ${v === timeFormat ? "selected" : ""}>${t}</option>`).join("")}</select>

@@ -251,6 +251,16 @@ Demo sign-ins:
 | `npm run db:seed` | Starter sign-ins for the first hotel (safe for production) |
 | `npm run db:seed:demo` | Also demo rooms, guests and bookings (never in production) |
 
+## Brand
+
+The product is **Innvero**. The logo (a roof over a V, navy `#0f172a` and blue
+`#2548eb`, or white and `#7c93ff` on dark) is drawn in `src/components/brand.tsx`
+(`Logo`, `LogoMark`, `LogoIcon`, `Wordmark`; the wordmark uses Bricolage Grotesque,
+loaded in `src/app/layout.tsx` as `--font-brand`). The same drawing is in
+`src/app/icon.svg` (browser tab) and `src/app/apple-icon.png` (phone home screen).
+`docs/brand/` has logo files for use outside the app: SVG mark and icon, and PNG
+logos for light and dark backgrounds.
+
 ## Landing page and video tour
 
 Signed-out visitors to `/` see the landing page (`src/app/welcome/`); the middleware
@@ -261,7 +271,7 @@ public.
 The page reads `SALES_WHATSAPP` and `SALES_EMAIL` at build time, so redeploy after
 changing them.
 
-The video (`public/welcome/hotel-manager-tour.mp4`, plus a WebM copy for browsers
+The video (`public/welcome/innvero-tour.mp4`, plus a WebM copy for browsers
 without H.264) and the screenshots are recorded from the real app with the demo hotel.
 Re-record them after changing the screens:
 
