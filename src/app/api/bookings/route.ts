@@ -102,7 +102,6 @@ const createSchema = z.object({
       nationality: z.string().trim().optional(),
       address: z.string().trim().optional(),
       idType: z.string().optional(),
-      idNumber: z.string().trim().optional(),
     })
     .merge(addressFields)
     .optional(),
@@ -197,8 +196,6 @@ export async function POST(request: NextRequest) {
                 address: body.guest.address || null,
                 ...addressData(body.guest),
                 idType: body.guest.idType || null,
-                // Nothing from an Aadhaar is saved: the front desk checks the card at check-in.
-                idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
               },
             })
           ).id;
@@ -207,9 +204,9 @@ export async function POST(request: NextRequest) {
       const mainCheck = body.idChecks.find((c) => c.person === null);
       const extra = form ? {} : addressData(body.guestId ? body.guestDetails : body.guest);
       if (body.guestId && mainCheck) {
-        // The ID seen now: the number saved before belongs to another ID, so it goes when the kind changes.
+        // The ID seen now becomes the guest's ID type.
         const before = await tx.guest.findUnique({ where: { id: guestId! }, select: { idType: true } });
-        if (before && before.idType !== mainCheck.idType) Object.assign(extra, { idType: mainCheck.idType, idNumber: null });
+        if (before && before.idType !== mainCheck.idType) Object.assign(extra, { idType: mainCheck.idType });
       }
       const guest = Object.keys(extra).length
         ? await tx.guest.update({ where: { id: guestId! }, data: extra }).catch(() => null)
@@ -361,8 +358,7 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
   if (existing) {
     await tx.guest.update({
       where: { id: existing.id },
-      // The ID number saved before belongs to the old proof, so it goes when the proof changes.
-      data: { ...data, ...(idType && idType !== existing.idType && { idType, idNumber: null }), ...(idType === "aadhar" && { idNumber: null }) },
+      data: { ...data, ...(idType && { idType }) },
     });
     return existing.id;
   }

@@ -21,12 +21,9 @@ const EMPTY = {
   state: "",
   pinCode: "",
   idType: "aadhar",
-  idNumber: "",
   company: "",
   gstin: "",
   dateOfBirth: "",
-  passportNo: "",
-  visaNo: "",
   notes: "",
   vip: false,
   blacklisted: false,
@@ -56,14 +53,13 @@ export function GuestFormDialog({
         ...Object.fromEntries(Object.entries(guest).filter(([k, v]) => k in EMPTY && v !== null)),
         dateOfBirth: guest.dateOfBirth ? guest.dateOfBirth.slice(0, 10) : "",
       } as typeof EMPTY);
-      setMore(!!(guest.company || guest.gstin || guest.passportNo || guest.notes));
+      setMore(!!(guest.company || guest.gstin || guest.notes));
     } else {
       setForm(EMPTY);
       setMore(false);
     }
   }, [open, guest]);
 
-  const foreign = form.nationality.trim().toLowerCase() !== "indian";
   const set = (k: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
 
   async function save(e: React.FormEvent) {
@@ -100,18 +96,14 @@ export function GuestFormDialog({
           <Field label="Nationality">
             <Input value={form.nationality} onChange={set("nationality")} />
           </Field>
-          <Field label="ID proof" optional>
-            <div className="flex gap-2">
-              <Select value={form.idType} onChange={(e) => setForm({ ...form, idType: e.target.value, idNumber: "" })} className="w-44 shrink-0">
-                {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
-                  <option key={t} value={t}>
-                    {label(t)}
-                  </option>
-                ))}
-              </Select>
-              {form.idType !== "aadhar" && <Input value={form.idNumber} onChange={set("idNumber")} placeholder="ID number" />}
-            </div>
-            {form.idType === "aadhar" && <p className="mt-1 text-xs text-slate-500">Nothing from the Aadhaar is saved. Check the card at check-in and tick it under “ID check” on the booking.</p>}
+          <Field label="ID proof" optional hint="Only which ID the guest has. No ID number is saved: check the original at check-in and tick it under “ID check” on the booking.">
+            <Select value={form.idType} onChange={set("idType")}>
+              {["aadhar", "passport", "driving_licence", "voter_id", "pan", "other"].map((t) => (
+                <option key={t} value={t}>
+                  {label(t)}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Field label="Address" optional className="sm:col-span-2" hint="House and street">
             <Input value={form.address} onChange={set("address")} />
@@ -138,16 +130,6 @@ export function GuestFormDialog({
               <option key={s} value={s} />
             ))}
           </datalist>
-          {foreign && (
-            <>
-              <Field label="Passport number" hint="Needed for foreign guest registration (Form C).">
-                <Input value={form.passportNo} onChange={set("passportNo")} />
-              </Field>
-              <Field label="Visa number" optional>
-                <Input value={form.visaNo} onChange={set("visaNo")} />
-              </Field>
-            </>
-          )}
         </div>
 
         <button type="button" onClick={() => setMore((m) => !m)} className="text-sm font-semibold text-primary-600 hover:underline">

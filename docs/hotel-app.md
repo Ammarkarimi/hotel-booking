@@ -184,9 +184,10 @@ staying or already left who still owe money), **Past & cancelled**, and **All**.
 
 Guest profiles show every stay, nights, total paid and money owed. Each profile can hold:
 
-- the ID type (and number, except for Aadhaar). No ID copies are kept: look at
-  the original at check-in and tick it on the booking.
-- passport and visa numbers for foreign guests
+- the ID type only (Aadhaar, passport, driving licence…). No ID, passport or visa
+  numbers and no copies are kept: look at the original at check-in and tick it on
+  the booking. The registration card has a Form C box for foreign guests that is
+  filled in by hand, and the hotel keeps it.
 - company name and GSTIN for business invoices
 - **VIP** and **do not allow** flags
 

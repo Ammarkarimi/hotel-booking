@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             { lastName: { contains: w, mode: "insensitive" } },
             { phone: { contains: w } },
             { email: { contains: w, mode: "insensitive" } },
-            { idNumber: { contains: w, mode: "insensitive" } },
             { company: { contains: w, mode: "insensitive" } },
           ],
         })),

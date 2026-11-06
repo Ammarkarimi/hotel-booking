@@ -73,8 +73,6 @@ export interface PathikInput {
     pinCode: string | null;
     dateOfBirth: Date | string | null;
     idType: string | null;
-    idNumber: string | null;
-    passportNo: string | null;
   };
   booking?: {
     number: number;
@@ -182,9 +180,9 @@ export function pathikRecord(input: PathikInput): PathikRecord {
   const checks = input.idChecks ?? [];
   // The guest's ID: what is on their record, else the type ticked at the desk.
   const docType = g.idType ?? checks.find((c) => c.person === null)?.idType ?? null;
-  const docNumber = docType === "aadhar" ? "" : docType === "passport" ? (g.passportNo ?? g.idNumber ?? "") : (g.idNumber ?? "");
   const mobile = mobileFor(g.phone, indian);
-  const main = person(g, mobile, docType, docNumber);
+  // No ID numbers are kept in the software: they are typed in Pathik.
+  const main = person(g, mobile, docType, "");
 
   const guest: PathikGuest = {
     ...main,
@@ -247,12 +245,10 @@ export function pathikRecord(input: PathikInput): PathikRecord {
     others.forEach((o) => need(o.docType, `ID proof type of ${o.fullName}`));
   }
 
-  // The desk only ticks which ID it saw and keeps no copies, so ID numbers and photos are added in Pathik.
+  // The desk only ticks which ID it saw: no numbers or copies are kept, so they are added in Pathik.
   const byHand: string[] = [];
-  const aadhaarPeople = [...(docType === "aadhar" ? [guest.fullName] : []), ...others.filter((o) => o.docType === "aadhar").map((o) => o.fullName)];
-  if (aadhaarPeople.length) byHand.push(`Aadhaar number and photo for ${aadhaarPeople.join(", ")}`);
-  if (docType && docType !== "aadhar" && !docNumber) byHand.push(`${guest.fullName}'s ID number and photo`);
-  else if (docType && docType !== "aadhar") byHand.push(`${guest.fullName}'s ID photo`);
+  const withId = [...(docType ? [guest.fullName] : []), ...others.filter((o) => o.docType).map((o) => o.fullName)];
+  if (withId.length) byHand.push(`ID number and photo for ${withId.join(", ")}`);
 
   const title = b ? `Booking #${b.number} · Room ${b.roomNumber} · ${guest.fullName}` : guest.fullName;
   return { title, guest, stay, others, missing, byHand };

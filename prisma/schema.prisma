@@ -170,12 +170,9 @@ model Guest {
   state       String?
   pinCode     String?
   idType      String?
-  idNumber    String?
   company     String?
   gstin       String?
   dateOfBirth DateTime?       @db.Date
-  passportNo  String?
-  visaNo      String?
   notes       String?
   vip         Boolean         @default(false)
   blacklisted Boolean         @default(false)

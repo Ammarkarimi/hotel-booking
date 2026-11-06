@@ -35,7 +35,6 @@ export default function GuestProfilePage() {
   if (!g) return <Loading />;
 
   const name = `${g.firstName} ${g.lastName}`.trim();
-  const foreign = g.nationality.toLowerCase() !== "indian";
 
   async function removeGuest() {
     const ok = await confirm({ title: `Delete ${name}?`, message: "The guest record will be removed permanently.", confirmText: "Yes, delete", danger: true });
@@ -96,9 +95,7 @@ export default function GuestProfilePage() {
             </Row>
             {g.email && <Row label="Email">{g.email}</Row>}
             <Row label="Nationality">{g.nationality}</Row>
-            <Row label="ID">{g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : "—"}</Row>
-            {foreign && <Row label="Passport">{g.passportNo || "—"}</Row>}
-            {foreign && <Row label="Visa">{g.visaNo || "—"}</Row>}
+            <Row label="ID">{g.idType ? label(g.idType) : "—"}</Row>
             {g.dateOfBirth && <Row label="Date of birth">{formatDate(g.dateOfBirth.slice(0, 10))}</Row>}
             {(g.address || g.city) && (
               <Row label="Address">

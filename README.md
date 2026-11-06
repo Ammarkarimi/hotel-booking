@@ -36,7 +36,7 @@ works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from
 | **Extras** | Add food, laundry, minibar, taxi, extra bed or damage charges to the guest’s bill |
 | **Billing & GST** | Indian GST slabs (0% / 5% / 18% by nightly tariff, editable) or one flat tax rate; separate tax on extras; final invoice snapshot at checkout |
 | **Printables** | GST tax invoice (GSTINs, SAC codes, CGST/SGST, amount in words), proforma bill, booking confirmation, guest registration card with Form C fields for foreign guests |
-| **Guests** | Profiles with stays, nights, total paid and money owed; passport/visa numbers for foreigners; company & GSTIN; VIP and “do not allow” flags |
+| **Guests** | Profiles with stays, nights, total paid and money owed; the ID type only (no ID, passport or visa numbers); company & GSTIN; VIP and “do not allow” flags |
 | **Housekeeping** | Needs cleaning / being cleaned / clean board; rooms become dirty automatically at checkout; rooms with guests arriving today shown first |
 | **Payments** | Cash, UPI, card, bank transfer, or prepaid on a booking site; refunds; daily cash-drawer totals (cash received minus cash expenses) |
 | **Booking-site payouts** | For MakeMyTrip, Goibibo, Booking.com and others: the bill stays on the gross amount while the owner records the site's booking ID, commission, GST on it, TCS, TDS, the net payout and when it reached the bank |

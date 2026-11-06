@@ -8,7 +8,7 @@ import {
   BedDouble,
   CalendarDays,
   CalendarPlus,
-  Plane,
+  Printer,
   Check,
   ClipboardCheck,
   Clock,
@@ -81,7 +81,7 @@ const FEATURE_GROUPS = [
     items: [
       { icon: Send, name: "Guest forms on WhatsApp", text: "Send a link and guests fill in their details, journey and every adult's name on their phone. You only choose the room." },
       { icon: UserCheck, name: "ID check at check-in", text: "Tick each adult's original ID at the desk, with who checked it and when. Nothing from an Aadhaar is ever saved." },
-      { icon: Plane, name: "Foreign guests and Form C", text: "Passport and visa numbers on the guest profile print on the registration card for Form C. No ID copies are stored." },
+      { icon: Printer, name: "Registration card", text: "A card for every stay with each adult and the ID they showed, ready to sign. Form C details for foreign guests are written on it by hand." },
       { icon: IdCard, name: "Pathik filled in for you", text: "For hotels in Gujarat, a Chrome helper fills Pathik's Add Guest form with every adult, and Today shows who is still to enter." },
       { icon: Star, name: "Guest history and VIP flags", text: "Every stay and payment on record, returning guests recognised by phone, and VIP or “do not allow” flags." },
       { icon: MessageSquareText, name: "WhatsApp messages in your words", text: "Booking confirmation, welcome at check-in and thank-you at check-out, ready to send in one tap." },
@@ -216,7 +216,7 @@ const FAQS = [
   },
   {
     q: "How is guest data protected?",
-    a: "Each property's data is kept completely separate. No ID copies or photos are stored, and nothing from an Aadhaar is saved: staff look at the original ID and tick that it was checked.",
+    a: "Each property's data is kept completely separate. No ID numbers, copies or photos are stored, and nothing from an Aadhaar is saved: staff look at the original ID and tick which one they checked.",
   },
   {
     q: "Does it handle GST?",
@@ -240,7 +240,7 @@ const FAQS = [
   },
   {
     q: "What about international guests?",
-    a: "Save their passport and visa details and print a guest registration card with the fields you need for Form C.",
+    a: "Print a guest registration card with a Form C box to fill in by hand. Passport and visa numbers are not stored in the software, so they stay with your hotel.",
   },
   {
     q: "Does it connect to Booking.com, MakeMyTrip or Airbnb?",

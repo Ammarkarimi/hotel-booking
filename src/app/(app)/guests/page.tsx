@@ -34,7 +34,7 @@ export default function GuestsPage() {
     <div>
       <PageHeader
         title="Guests"
-        description="Everyone who has stayed or booked. Search by name, phone, ID number or company."
+        description="Everyone who has stayed or booked. Search by name, phone or company."
         actions={
           <Button onClick={() => setAddOpen(true)}>
             <UserPlus className="h-5 w-5" /> Add guest

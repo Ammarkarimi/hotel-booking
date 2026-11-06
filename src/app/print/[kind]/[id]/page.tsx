@@ -301,7 +301,7 @@ function Registration({
             {b.adults} adult(s){b.children ? `, ${b.children} child(ren)` : ""}
           </Info>
           <Info label="Rate / night">{formatCurrency(b.ratePerNight, s.currency)}</Info>
-          <Info label="ID proof">{idLine(b, null) || (g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : "")}</Info>
+          <Info label="ID proof">{idLine(b, null) || (g.idType ? label(g.idType) : "")}</Info>
           <Info label="Coming from">{b.comingFrom}</Info>
           <Info label="Going to">{b.goingTo}</Info>
           <Info label="Vehicle no.">{b.vehicleNumber}</Info>
@@ -309,10 +309,10 @@ function Registration({
       </div>
       {foreign && (
         <div className="mt-6 rounded-lg border border-slate-300 p-4">
-          <p className="mb-2 text-xs font-bold uppercase text-slate-500">Foreign national details (for Form C)</p>
+          <p className="mb-2 text-xs font-bold uppercase text-slate-500">Foreign national details (for Form C, filled in by hand)</p>
           <div className="grid grid-cols-2 gap-x-8">
-            <Info label="Passport no.">{g.passportNo}</Info>
-            <Info label="Visa no.">{g.visaNo}</Info>
+            <Info label="Passport no.">{" "}</Info>
+            <Info label="Visa no.">{" "}</Info>
             <Info label="Place of issue">{" "}</Info>
             <Info label="Visa valid till">{" "}</Info>
             <Info label="Arrived in India">{" "}</Info>
