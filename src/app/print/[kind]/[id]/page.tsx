@@ -269,11 +269,9 @@ function idLine(b: SerializedBooking, person: string | null) {
 function Registration({
   b,
   s,
-  docs,
 }: {
   b: SerializedBooking & { guest: SerializedBooking["guest"] & { dateOfBirth: Date | null } };
   s: HotelSettingsRecord;
-  docs: { person: string | null; type: string }[];
 }) {
   const g = b.guest;
   const foreign = g.nationality.toLowerCase() !== "indian";
@@ -303,7 +301,7 @@ function Registration({
             {b.adults} adult(s){b.children ? `, ${b.children} child(ren)` : ""}
           </Info>
           <Info label="Rate / night">{formatCurrency(b.ratePerNight, s.currency)}</Info>
-          <Info label="ID proof">{idLine(b, null) || (g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : "")}</Info>
+          <Info label="ID proof">{idLine(b, null) || (g.idType ? label(g.idType) : "")}</Info>
           <Info label="Coming from">{b.comingFrom}</Info>
           <Info label="Going to">{b.goingTo}</Info>
           <Info label="Vehicle no.">{b.vehicleNumber}</Info>
@@ -311,10 +309,10 @@ function Registration({
       </div>
       {foreign && (
         <div className="mt-6 rounded-lg border border-slate-300 p-4">
-          <p className="mb-2 text-xs font-bold uppercase text-slate-500">Foreign national details (for Form C)</p>
+          <p className="mb-2 text-xs font-bold uppercase text-slate-500">Foreign national details (for Form C, filled in by hand)</p>
           <div className="grid grid-cols-2 gap-x-8">
-            <Info label="Passport no.">{g.passportNo}</Info>
-            <Info label="Visa no.">{g.visaNo}</Info>
+            <Info label="Passport no.">{" "}</Info>
+            <Info label="Visa no.">{" "}</Info>
             <Info label="Place of issue">{" "}</Info>
             <Info label="Visa valid till">{" "}</Info>
             <Info label="Arrived in India">{" "}</Info>
@@ -328,7 +326,6 @@ function Registration({
       <div className="mt-6 grid grid-cols-2 gap-x-8">
         {Array.from({ length: Math.max(0, b.adults - 1) }).map((_, i) => {
           const c = b.companions[i];
-          const ids = [...new Set(docs.filter((d) => c && d.person === c.name).map((d) => label(d.type)))];
           return (
             <div key={i} className="mb-3 text-sm">
               <p className="text-slate-500">Accompanying guest {i + 1}: name & ID</p>
@@ -336,11 +333,7 @@ function Registration({
                 <p className="mt-1 border-b border-slate-300 pb-1 font-semibold">
                   {c.name}
                   {c.phone && ` · ${c.phone}`}
-                  {idLine(b, c.name) ? (
-                    <span className="font-normal text-slate-600"> · {idLine(b, c.name)}</span>
-                  ) : (
-                    ids.length > 0 && <span className="font-normal text-slate-600"> · {ids.join(", ")} copy saved</span>
-                  )}
+                  {idLine(b, c.name) && <span className="font-normal text-slate-600"> · {idLine(b, c.name)}</span>}
                 </p>
               ) : (
                 <div className="mt-6 border-b border-slate-300" />
@@ -373,8 +366,7 @@ export default async function PrintPage({ params }: Params) {
   const data = await runForHotel(session.hotelId, async () => {
     const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
     if (!booking) return null;
-    const docs = await prisma.guestDocument.findMany({ where: { guestId: booking.guestId }, select: { person: true, type: true } });
-    return { booking, docs, ctx: await getBillingContext() };
+    return { booking, ctx: await getBillingContext() };
   });
   if (!data) notFound();
   const { ctx } = data;
@@ -387,7 +379,7 @@ export default async function PrintPage({ params }: Params) {
         <div className="print-page mx-auto my-6 min-w-[640px] max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow sm:p-10">
           {kind === "invoice" && <Invoice b={b} s={ctx.settings} />}
           {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} />}
-          {kind === "registration" && <Registration b={b} s={ctx.settings} docs={data.docs} />}
+          {kind === "registration" && <Registration b={b} s={ctx.settings} />}
         </div>
       </div>
     </div>

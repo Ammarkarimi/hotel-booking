@@ -144,7 +144,7 @@ export const LABELS: Record<string, string> = {
   expedia: "Expedia",
   travel_agent: "Travel agent",
   corporate: "Company",
-  // documents
+  // ID types
   aadhar: "Aadhaar card",
   pan: "PAN card",
   passport: "Passport",

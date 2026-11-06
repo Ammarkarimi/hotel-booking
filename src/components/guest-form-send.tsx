@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Copy, FileText, MessageCircle } from "lucide-react";
+import { Copy, MessageCircle } from "lucide-react";
 import { Button, Field, Input, Modal, Row, Tip } from "@/components/ui";
 import { useApp } from "@/components/app-provider";
 import { api, whatsappLink } from "@/lib/client";
 import { addDays } from "@/lib/dates";
 import { VEHICLE_LABELS, formMessage, fullAddress, isIndian } from "@/lib/guest-form";
 import { formatDate, label } from "@/lib/utils";
-import type { DocumentDTO, GuestFormDTO } from "@/lib/types";
+import type { GuestFormDTO } from "@/lib/types";
 
 export function formUrl(token: string) {
   return `${window.location.origin}/form/${token}`;
@@ -94,7 +94,7 @@ export function SendGuestFormDialog({
       open={open}
       onClose={onClose}
       title="Send guest form on WhatsApp"
-      description="The guest fills in their details and uploads ID copies. You then choose the room."
+      description="The guest fills in their details on their phone. You then choose the room."
     >
       {created ? (
         <SendLink form={created} onDone={onClose} />
@@ -136,38 +136,12 @@ export function SendGuestFormDialog({
   );
 }
 
-/** Opens an ID copy the guest uploaded. */
-export function DocumentLinks({ documents, fallbackName }: { documents: DocumentDTO[]; fallbackName?: string }) {
-  if (documents.length === 0) return <p className="text-sm text-amber-700">No ID copies.</p>;
-  return (
-    <ul className="space-y-1.5">
-      {documents.map((d) => (
-        <li key={d.id}>
-          <a
-            href={`/api/uploads?path=${encodeURIComponent(d.filePath)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm hover:bg-primary-50"
-          >
-            <FileText className="h-4 w-4 shrink-0 text-primary-600" />
-            <span className="min-w-0">
-              <span className="font-semibold">{label(d.type)}</span>
-              <span className="text-slate-500"> · {d.person ?? fallbackName ?? "Guest"}</span>
-            </span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** Everything the guest filled in, for the desk to check before choosing a room. */
 export function FormDetails({ form }: { form: GuestFormDTO }) {
   const d = form.details;
   if (!d) return null;
-  const name = `${d.firstName} ${d.lastName}`.trim();
   return (
-    <div className="grid gap-x-8 gap-y-1 text-[15px] lg:grid-cols-2">
+    <div className="text-[15px]">
       <div>
         <Row label="Stay">
           {formatDate(d.checkIn)} → {formatDate(d.checkOut)}
@@ -197,10 +171,6 @@ export function FormDetails({ form }: { form: GuestFormDTO }) {
           </Row>
         )}
         {d.requests && <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">“{d.requests}”</p>}
-      </div>
-      <div className="mt-3 lg:mt-0">
-        <p className="mb-2 text-sm font-semibold text-slate-700">ID copies</p>
-        <DocumentLinks documents={form.documents} fallbackName={name} />
       </div>
     </div>
   );

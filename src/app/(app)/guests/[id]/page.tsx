@@ -2,114 +2,21 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Camera, CalendarPlus, FileText, MessageCircle, Pencil, Phone, Trash2, Upload } from "lucide-react";
-import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Field, Loading, Modal, Row, Select, StatCard, StatusBadge, Tip } from "@/components/ui";
+import { useCallback, useEffect, useState } from "react";
+import { ArrowLeft, CalendarPlus, MessageCircle, Pencil, Phone, Trash2 } from "lucide-react";
+import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Loading, Row, StatCard, StatusBadge, Tip } from "@/components/ui";
 import { GuestFormDialog } from "@/components/guest-form";
 import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
-import { api, shrinkPhoto, whatsappLink } from "@/lib/client";
-import { DOCUMENT_TYPES, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
+import { api, whatsappLink } from "@/lib/client";
+import { formatCurrency, formatDate, label } from "@/lib/utils";
 import { fullAddress } from "@/lib/guest-form";
-import type { BookingDTO, DocumentDTO, GuestDTO } from "@/lib/types";
+import type { BookingDTO, GuestDTO } from "@/lib/types";
 
 type GuestDetail = GuestDTO & {
-  documents: DocumentDTO[];
   bookings: BookingDTO[];
   summary: { stays: number; nights: number; spent: number; owed: number };
 };
-
-function UploadDialog({ guest, open, onClose, onDone }: { guest: GuestDetail; open: boolean; onClose: () => void; onDone: () => void }) {
-  const { toast } = useApp();
-  const foreign = guest.nationality.toLowerCase() !== "indian";
-  const [type, setType] = useState(foreign ? "passport" : "driving_licence");
-  const [file, setFile] = useState<File | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [preparing, setPreparing] = useState(false);
-  // On phones an input with `capture` only opens the camera, so choosing an existing photo or PDF needs its own input.
-  const cameraInput = useRef<HTMLInputElement>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (open) {
-      setFile(null);
-      setType(foreign ? "passport" : "driving_licence");
-    }
-  }, [open, foreign]);
-
-  async function pick(chosen: File | undefined) {
-    if (!chosen) return;
-    setPreparing(true);
-    setFile(await shrinkPhoto(chosen));
-    setPreparing(false);
-  }
-
-  async function save() {
-    if (!file) return;
-    setSaving(true);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("type", type);
-      await api(`/api/guests/${guest.id}/documents`, { body: fd });
-      toast("ID document saved");
-      onDone();
-      onClose();
-    } catch (e) {
-      toast((e as Error).message, "error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="Save ID proof"
-      description="Take a photo with your phone camera, or choose a photo or PDF you already have."
-      footer={
-        <>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={save} loading={saving || preparing} disabled={!file}>
-            Save document
-          </Button>
-        </>
-      }
-    >
-      <div className="space-y-4">
-        <Field label="Which document?">
-          <Select value={type} onChange={(e) => setType(e.target.value)}>
-            {DOCUMENT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {label(t)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <input ref={cameraInput} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
-        <input ref={fileInput} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => pick(e.target.files?.[0])} />
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => cameraInput.current?.click()} className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 px-3 py-6 text-slate-600 hover:border-primary-400 hover:bg-primary-50">
-            <Camera className="h-8 w-8 text-primary-600" />
-            <span className="font-semibold">Take a photo</span>
-          </button>
-          <button type="button" onClick={() => fileInput.current?.click()} className="flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 px-3 py-6 text-slate-600 hover:border-primary-400 hover:bg-primary-50">
-            <FileText className="h-8 w-8 text-primary-600" />
-            <span className="font-semibold">Choose a photo or PDF</span>
-          </button>
-        </div>
-        {file && (
-          <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            <b>{file.name}</b> · {(file.size / 1024 / 1024).toFixed(1)} MB. Tap a button above to change it.
-          </p>
-        )}
-      </div>
-    </Modal>
-  );
-}
 
 export default function GuestProfilePage() {
   const { id } = useParams<{ id: string }>();
@@ -118,7 +25,6 @@ export default function GuestProfilePage() {
   const [g, setG] = useState<GuestDetail | null>(null);
   const [error, setError] = useState("");
   const [editOpen, setEditOpen] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
 
   const load = useCallback(() => {
     api<GuestDetail>(`/api/guests/${id}`).then(setG).catch((e) => setError(e.message));
@@ -129,22 +35,9 @@ export default function GuestProfilePage() {
   if (!g) return <Loading />;
 
   const name = `${g.firstName} ${g.lastName}`.trim();
-  const foreign = g.nationality.toLowerCase() !== "indian";
-
-  async function removeDoc(doc: DocumentDTO) {
-    const ok = await confirm({ title: "Delete this document?", message: `${label(doc.type)} — ${doc.fileName}`, confirmText: "Yes, delete", danger: true });
-    if (!ok) return;
-    try {
-      await api(`/api/guests/${id}/documents?docId=${doc.id}`, { method: "DELETE" });
-      toast("Document deleted");
-      load();
-    } catch (e) {
-      toast((e as Error).message, "error");
-    }
-  }
 
   async function removeGuest() {
-    const ok = await confirm({ title: `Delete ${name}?`, message: "The guest record and their ID documents will be removed permanently.", confirmText: "Yes, delete", danger: true });
+    const ok = await confirm({ title: `Delete ${name}?`, message: "The guest record will be removed permanently.", confirmText: "Yes, delete", danger: true });
     if (!ok) return;
     try {
       await api(`/api/guests/${id}`, { method: "DELETE" });
@@ -191,7 +84,7 @@ export default function GuestProfilePage() {
         <StatCard title="Owes" value={formatCurrency(g.summary.owed)} tone={g.summary.owed > 0 ? "red" : "green"} />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader title="Details" />
           <CardContent className="text-[15px]">
@@ -202,9 +95,7 @@ export default function GuestProfilePage() {
             </Row>
             {g.email && <Row label="Email">{g.email}</Row>}
             <Row label="Nationality">{g.nationality}</Row>
-            <Row label="ID">{g.idType ? `${label(g.idType)} ${g.idNumber ?? ""}` : "—"}</Row>
-            {foreign && <Row label="Passport">{g.passportNo || "—"}</Row>}
-            {foreign && <Row label="Visa">{g.visaNo || "—"}</Row>}
+            <Row label="ID">{g.idType ? label(g.idType) : "—"}</Row>
             {g.dateOfBirth && <Row label="Date of birth">{formatDate(g.dateOfBirth.slice(0, 10))}</Row>}
             {(g.address || g.city) && (
               <Row label="Address">
@@ -225,48 +116,6 @@ export default function GuestProfilePage() {
               </Button>
             )}
           </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader
-            title="ID documents"
-            description={foreign ? "Passport and visa are required for foreign guests." : "A copy of a driving licence, voter ID or other photo ID. Aadhaar is never saved: check the card at check-in and tick it on the booking."}
-            action={
-              <Button size="sm" onClick={() => setUploadOpen(true)}>
-                <Upload className="h-4 w-4" /> Add
-              </Button>
-            }
-          />
-          {g.documents.length === 0 ? (
-            <div className="px-5 py-6 text-center">
-              <p className="text-sm text-amber-700">No ID photo saved yet.</p>
-              <Button variant="outline" size="sm" className="mt-3" onClick={() => setUploadOpen(true)}>
-                <Camera className="h-4 w-4" /> Take photo of ID
-              </Button>
-            </div>
-          ) : (
-            <ul className="divide-y divide-slate-100">
-              {g.documents.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-2 px-5 py-3">
-                  <a href={`/api/uploads?path=${encodeURIComponent(d.filePath)}`} target="_blank" rel="noopener noreferrer" className="flex min-w-0 items-center gap-2 hover:underline">
-                    <FileText className="h-5 w-5 shrink-0 text-primary-600" />
-                    <span className="min-w-0">
-                      <span className="block font-semibold">
-                        {label(d.type)}
-                        {d.person && <span className="font-normal text-slate-500"> · {d.person}</span>}
-                      </span>
-                      <span className="block truncate text-xs text-slate-500">
-                        {d.fileName} · {formatDateTime(d.createdAt)}
-                      </span>
-                    </span>
-                  </a>
-                  <button onClick={() => removeDoc(d)} className="rounded p-1.5 text-slate-300 hover:bg-red-50 hover:text-red-600" aria-label="Delete document">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
         </Card>
 
         <Card>
@@ -301,7 +150,6 @@ export default function GuestProfilePage() {
       </div>
 
       <GuestFormDialog open={editOpen} onClose={() => setEditOpen(false)} guest={g} onSaved={() => load()} />
-      <UploadDialog guest={g} open={uploadOpen} onClose={() => setUploadOpen(false)} onDone={load} />
     </div>
   );
 }

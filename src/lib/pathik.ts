@@ -44,15 +44,6 @@ export interface PathikStay {
   vehicleNumber: string;
 }
 
-export interface PathikDocument {
-  id: string;
-  /** null = the guest; otherwise the name of another adult. */
-  person: string | null;
-  type: string;
-  fileName: string;
-  url: string;
-}
-
 export interface PathikRecord {
   /** What this is, for the add-on's panel: "Booking #1023 · Room 204". */
   title: string;
@@ -60,11 +51,9 @@ export interface PathikRecord {
   stay: PathikStay | null;
   /** The other adults in the room, in order. */
   others: PathikPerson[];
-  /** ID copies to attach (never Aadhaar: nothing from it is saved). */
-  documents: PathikDocument[];
   /** Details Pathik needs that are not in the software yet: fill them in here first, or type them in Pathik. */
   missing: string[];
-  /** What is always typed in Pathik by hand (the Aadhaar number and photo). */
+  /** What is always done in Pathik by hand (ID numbers the desk does not keep, and every ID photo). */
   byHand: string[];
 }
 
@@ -84,8 +73,6 @@ export interface PathikInput {
     pinCode: string | null;
     dateOfBirth: Date | string | null;
     idType: string | null;
-    idNumber: string | null;
-    passportNo: string | null;
   };
   booking?: {
     number: number;
@@ -102,12 +89,9 @@ export interface PathikInput {
     vehicleType: string | null;
     companions: string | null;
   };
-  documents: Array<{ id: string; person: string | null; type: string; fileName: string }>;
   /** The ID types ticked at the desk, by person (null = the guest). */
   idChecks?: Array<{ person: string | null; idType: string | null }>;
   hotel: { timezone: string; checkInTime: string; checkOutTime: string };
-  /** Where a document can be downloaded, given its id. */
-  documentUrl: (id: string) => string;
 }
 
 const COUNTRIES: Record<string, string> = {
@@ -194,12 +178,11 @@ export function pathikRecord(input: PathikInput): PathikRecord {
   const b = input.booking;
   const indian = isIndian(g.nationality);
   const checks = input.idChecks ?? [];
-  const guestDocs = input.documents.filter((d) => d.person === null && d.type !== "aadhar");
-  // The guest's ID: what is on their record, else the type ticked at the desk, else their uploaded copy.
-  const docType = g.idType ?? checks.find((c) => c.person === null)?.idType ?? guestDocs[0]?.type ?? null;
-  const docNumber = docType === "aadhar" ? "" : docType === "passport" ? (g.passportNo ?? g.idNumber ?? "") : (g.idNumber ?? "");
+  // The guest's ID: what is on their record, else the type ticked at the desk.
+  const docType = g.idType ?? checks.find((c) => c.person === null)?.idType ?? null;
   const mobile = mobileFor(g.phone, indian);
-  const main = person(g, mobile, docType, docNumber);
+  // No ID numbers are kept in the software: they are typed in Pathik.
+  const main = person(g, mobile, docType, "");
 
   const guest: PathikGuest = {
     ...main,
@@ -236,14 +219,10 @@ export function pathikRecord(input: PathikInput): PathikRecord {
       vehicleNumber: b.vehicleNumber ?? "",
     };
     others = parseCompanions(b.companions).map((c) => {
-      const type = c.aadhaarAtDesk ? "aadhar" : (checks.find((x) => x.person === c.name)?.idType ?? input.documents.find((d) => d.person === c.name)?.type ?? null);
+      const type = c.aadhaarAtDesk ? "aadhar" : (checks.find((x) => x.person === c.name)?.idType ?? null);
       return person({ firstName: c.name }, mobileFor(c.phone, indian), type, "");
     });
   }
-
-  const documents = input.documents
-    .filter((d) => d.type !== "aadhar")
-    .map((d) => ({ id: d.id, person: d.person, type: d.type, fileName: d.fileName, url: input.documentUrl(d.id) }));
 
   const missing: string[] = [];
   const need = (ok: unknown, label: string) => !ok && missing.push(label);
@@ -266,12 +245,11 @@ export function pathikRecord(input: PathikInput): PathikRecord {
     others.forEach((o) => need(o.docType, `ID proof type of ${o.fullName}`));
   }
 
-  // The desk only ticks which ID it saw, so ID numbers (and photos not uploaded) are typed in Pathik.
+  // The desk only ticks which ID it saw: no numbers or copies are kept, so they are added in Pathik.
   const byHand: string[] = [];
-  const aadhaarPeople = [...(docType === "aadhar" ? [guest.fullName] : []), ...others.filter((o) => o.docType === "aadhar").map((o) => o.fullName)];
-  if (aadhaarPeople.length) byHand.push(`Aadhaar number and photo for ${aadhaarPeople.join(", ")}`);
-  if (docType && docType !== "aadhar" && !docNumber) byHand.push(`${guest.fullName}'s ID number${guestDocs.length ? "" : " and photo"}`);
+  const withId = [...(docType ? [guest.fullName] : []), ...others.filter((o) => o.docType).map((o) => o.fullName)];
+  if (withId.length) byHand.push(`ID number and photo for ${withId.join(", ")}`);
 
   const title = b ? `Booking #${b.number} · Room ${b.roomNumber} · ${guest.fullName}` : guest.fullName;
-  return { title, guest, stay, others, documents, missing, byHand };
+  return { title, guest, stay, others, missing, byHand };
 }

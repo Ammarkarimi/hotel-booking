@@ -24,7 +24,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     steps: [
       "Open the Today screen. Guests arriving today are listed under “Arriving today”.",
       "Press “Check in” next to the guest's name and confirm.",
-      "Take a photo of their ID: open the guest's profile and press “Take photo of ID”.",
+      "Look at each adult's original ID and tick it under “ID check” on the booking. No copy is kept.",
     ],
   },
   {
@@ -92,7 +92,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     q: "How do I get a guest's details and ID before they arrive?",
     steps: [
       "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
-      "The guest fills in their details. For each adult they choose Aadhaar (shown at check-in) or upload a photo of another ID.",
+      "The guest fills in their details, and for each adult says which ID they will show at check-in. Nothing is uploaded.",
       "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
       "Something wrong in what the guest filled in? Press “Edit details” on the form and correct it. After booking, use “Change” on the booking for the journey, vehicle and other adults' names, and “Edit” on the guest's profile for their own details.",
     ],
@@ -103,7 +103,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     steps: [
       "Once: in Settings → Hotel details, download the Pathik helper, unzip it, open chrome://extensions in Chrome, turn on Developer mode and press Load unpacked to choose the pathik-helper folder.",
       "On the booking (or the guest's page, or Today → Not entered in Pathik yet) press “Fill in Pathik”, then “Open Pathik and fill the form”. Pathik opens and the Add Guest form is filled in, with every other adult.",
-      "Type the Aadhaar number and photo by hand (nothing from an Aadhaar is saved here), check the form, press Submit in Pathik, then press “Entered in Pathik” in this software.",
+      "Attach the ID photos and type any Aadhaar number by hand in Pathik (no ID copies are kept here), check the form, press Submit in Pathik, then press “Entered in Pathik” in this software.",
     ],
   },
   {

@@ -44,7 +44,7 @@ export default function GuestFormsPage() {
   async function close(f: GuestFormDTO) {
     const ok = await confirm({
       title: `Close the form for ${title(f)}?`,
-      message: f.status === "submitted" ? "The details and ID copies the guest sent will be deleted." : "The link will stop working.",
+      message: f.status === "submitted" ? "The details the guest sent will no longer be used." : "The link will stop working.",
       confirmText: "Yes, close it",
       danger: true,
     });
@@ -72,7 +72,7 @@ export default function GuestFormsPage() {
     <div>
       <PageHeader
         title="Guest forms"
-        description="Send a form on WhatsApp. The guest fills in their details and uploads ID copies; you choose the room."
+        description="Send a form on WhatsApp. The guest fills in their details on their phone; you choose the room."
         actions={
           <Button onClick={() => setSendOpen(true)}>
             <Send className="h-5 w-5" /> Send a form

@@ -8,19 +8,18 @@ import { api } from "@/lib/client";
 import { DOCUMENT_TYPES, cn, formatDateTime, label } from "@/lib/utils";
 import type { BookingDTO, IdCheckDTO } from "@/lib/types";
 
-type Person = { key: string | null; name: string; aadhaar: boolean; copies: string[] };
+type Person = { key: string | null; name: string; aadhaar: boolean };
 
 /** IDs the front desk can tick as verified: Aadhaar (seen, never saved) and the other photo IDs. */
 const CHECK_TYPES = ["aadhar", ...DOCUMENT_TYPES.filter((t) => t !== "visa")];
 
 /** Every adult in the room: the guest, the others named on the guest form, then any unnamed adults. */
 export function bookingAdults(b: Pick<BookingDTO, "guestName" | "guest" | "companions" | "adults">): Person[] {
-  const copiesOf = (key: string | null) => [...new Set((b.guest.documents ?? []).filter((d) => (d.person ?? null) === key).map((d) => d.type))];
   const people: Person[] = [
-    { key: null, name: b.guestName, aadhaar: b.guest.idType === "aadhar", copies: copiesOf(null) },
-    ...b.companions.map((c) => ({ key: c.name, name: c.name, aadhaar: !!c.aadhaarAtDesk, copies: copiesOf(c.name) })),
+    { key: null, name: b.guestName, aadhaar: b.guest.idType === "aadhar" },
+    ...b.companions.map((c) => ({ key: c.name, name: c.name, aadhaar: !!c.aadhaarAtDesk })),
   ];
-  for (let i = people.length; i < b.adults; i++) people.push({ key: `Adult ${i + 1}`, name: `Adult ${i + 1}`, aadhaar: false, copies: [] });
+  for (let i = people.length; i < b.adults; i++) people.push({ key: `Adult ${i + 1}`, name: `Adult ${i + 1}`, aadhaar: false });
   return people;
 }
 
@@ -31,7 +30,7 @@ function checkText(c: IdCheckDTO) {
 function PersonRow({ b, p, onChanged }: { b: BookingDTO; p: Person; onChanged: () => void }) {
   const { toast, confirm, user, isAdmin, settings } = useApp();
   const check = [...b.idChecks].reverse().find((c) => (c.person ?? null) === p.key);
-  const [idType, setIdType] = useState(p.aadhaar ? "aadhar" : (p.copies.find((t) => CHECK_TYPES.includes(t)) ?? "aadhar"));
+  const [idType, setIdType] = useState(p.aadhaar ? "aadhar" : "driving_licence");
   const [busy, setBusy] = useState(false);
   const closed = b.status === "cancelled" || b.status === "no_show";
   const canUndo = check && (isAdmin || (check.checkedById === user.id && Date.now() - new Date(check.createdAt).getTime() < 12 * 3600 * 1000));
@@ -84,11 +83,7 @@ function PersonRow({ b, p, onChanged }: { b: BookingDTO; p: Person; onChanged: (
           ) : (
             <>
               <p className="text-sm text-amber-700">
-                {p.aadhaar
-                  ? "Will show Aadhaar at check-in."
-                  : p.copies.length
-                    ? `Copy uploaded: ${p.copies.map(label).join(", ")}. Check the original.`
-                    : "Not verified yet."}
+                {p.aadhaar ? "Will show Aadhaar at check-in." : "Not verified yet."}
               </p>
               {!closed && (
                 <Select value={idType} onChange={(e) => setIdType(e.target.value)} className="mt-2 h-10 w-full max-w-56 py-1.5 text-sm" aria-label={`Which ID ${p.name} showed`}>

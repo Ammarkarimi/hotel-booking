@@ -91,7 +91,7 @@ function addressData(d: z.infer<typeof addressFields> | undefined) {
 
 const createSchema = z.object({
   guestId: z.string().optional(),
-  // A guest form filled in on WhatsApp: the guest's details, ID copies and travel details come from it.
+  // A guest form filled in on WhatsApp: the guest's details and travel details come from it.
   guestFormId: z.string().optional(),
   guest: z
     .object({
@@ -102,7 +102,6 @@ const createSchema = z.object({
       nationality: z.string().trim().optional(),
       address: z.string().trim().optional(),
       idType: z.string().optional(),
-      idNumber: z.string().trim().optional(),
     })
     .merge(addressFields)
     .optional(),
@@ -197,8 +196,6 @@ export async function POST(request: NextRequest) {
                 address: body.guest.address || null,
                 ...addressData(body.guest),
                 idType: body.guest.idType || null,
-                // Nothing from an Aadhaar is saved: the front desk checks the card at check-in.
-                idNumber: body.guest.idType === "aadhar" ? null : body.guest.idNumber || null,
               },
             })
           ).id;
@@ -207,9 +204,9 @@ export async function POST(request: NextRequest) {
       const mainCheck = body.idChecks.find((c) => c.person === null);
       const extra = form ? {} : addressData(body.guestId ? body.guestDetails : body.guest);
       if (body.guestId && mainCheck) {
-        // The ID seen now: the number saved before belongs to another ID, so it goes when the kind changes.
+        // The ID seen now becomes the guest's ID type.
         const before = await tx.guest.findUnique({ where: { id: guestId! }, select: { idType: true } });
-        if (before && before.idType !== mainCheck.idType) Object.assign(extra, { idType: mainCheck.idType, idNumber: null });
+        if (before && before.idType !== mainCheck.idType) Object.assign(extra, { idType: mainCheck.idType });
       }
       const guest = Object.keys(extra).length
         ? await tx.guest.update({ where: { id: guestId! }, data: extra }).catch(() => null)
@@ -302,7 +299,6 @@ export async function POST(request: NextRequest) {
 
       if (form) {
         await tx.guestForm.update({ where: { id: form.id }, data: { bookingId: created.id } });
-        await tx.guestDocument.updateMany({ where: { guestFormId: form.id }, data: { guestId: guest.id } });
       }
 
       if (body.checkInNow) await syncRoomStatus(room.id, tx);
@@ -339,7 +335,6 @@ async function claimGuestForm(tx: Tx, id: string, by: string) {
  */
 async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetails }, chosenId?: string) {
   const d = form.details;
-  const proof = await tx.guestDocument.findFirst({ where: { guestFormId: form.id, person: null }, orderBy: { createdAt: "asc" } });
   const data = {
     firstName: d.firstName,
     lastName: d.lastName || "",
@@ -358,13 +353,12 @@ async function guestFromForm(tx: Tx, form: { id: string; details: GuestFormDetai
     ? await tx.guest.findUnique({ where: { id: chosenId } })
     : await tx.guest.findFirst({ where: { phone: d.phone, firstName: { equals: d.firstName, mode: "insensitive" } } });
   if (chosenId && !existing) fail("Guest not found", 404);
-  // The guest's ID: their Aadhaar (checked at the desk, nothing saved) or the copy they uploaded.
-  const idType = d.aadhaarAtDesk ? "aadhar" : (proof?.type ?? null);
+  // The guest said they will show their Aadhaar (checked at the desk, nothing saved).
+  const idType = d.aadhaarAtDesk ? "aadhar" : null;
   if (existing) {
     await tx.guest.update({
       where: { id: existing.id },
-      // The ID number saved before belongs to the old proof, so it goes when the proof changes.
-      data: { ...data, ...(idType && idType !== existing.idType && { idType, idNumber: null }), ...(idType === "aadhar" && { idNumber: null }) },
+      data: { ...data, ...(idType && { idType }) },
     });
     return existing.id;
   }

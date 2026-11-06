@@ -933,16 +933,7 @@ export default function BookingDetailPage() {
                 {b.guest.idType === "aadhar" ? (
                   <>ID: Aadhaar · checked at the desk (see ID check)</>
                 ) : (
-                  <>
-                    ID: {b.guest.idType ? `${label(b.guest.idType)} ${b.guest.idNumber ?? ""}` : "not entered"} ·{" "}
-                    {b.guest.documents.length > 0 ? (
-                      <span className="text-emerald-700">{b.guest.documents.length} document(s) uploaded</span>
-                    ) : (
-                      <Link href={`/guests/${b.guest.id}`} className="font-semibold text-amber-700 hover:underline">
-                        Upload ID photo
-                      </Link>
-                    )}
-                  </>
+                  <>ID: {b.guest.idType ? label(b.guest.idType) : "not entered"}</>
                 )}
               </p>
               {(b.companions.length > 0 || b.comingFrom || b.goingTo || b.vehicleNumber || b.vehicleType) && (

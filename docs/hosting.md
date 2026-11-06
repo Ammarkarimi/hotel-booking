@@ -1,7 +1,7 @@
 # Hosting & deployment
 
 The app runs on **Vercel** (project **hotel-booking-8fzz**) with a **PostgreSQL**
-database. ID photos are stored in **Vercel Blob**.
+database. The app stores no files: no ID copies or photos are kept.
 
 ## How updates go live
 
@@ -31,7 +31,7 @@ After changing any of them, **redeploy**: *Deployments* → latest → ⋯ → *
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection. Set automatically when a database is connected under *Storage* |
 | `JWT_SECRET` | Yes | Secret used to sign everyone’s sign-in sessions. A long random string |
-| `BLOB_READ_WRITE_TOKEN` | Yes, for ID photos | Set automatically when Blob storage is connected under *Storage* |
+| `BLOB_READ_WRITE_TOKEN` | Only until old ID copies are deleted | Vercel Blob, where ID copies used to be saved. The app deletes the old files in the background after migration `20261127000000_remove_id_copies`; once the Blob store is empty it can be disconnected |
 | `PLATFORM_ADMIN_EMAIL` | For `/platform` | Your owner-panel email |
 | `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Your owner-panel password, at least 10 characters |
 | `PLATFORM_TIMEZONE` | No | Decides what “this month” is for subscriptions. Default `Asia/Kolkata` |
@@ -111,6 +111,4 @@ links.
 Any Node.js host with PostgreSQL works (Railway, Render, a VPS):
 
 1. Set the same environment variables.
-2. Run `npm run build`, then `npm start`.
-3. For ID photos, either connect Vercel Blob (`BLOB_READ_WRITE_TOKEN`) or use
-   `STORAGE_DRIVER=local` with `UPLOAD_DIR` on a disk that survives restarts.
+2. Run `npm run build`, then `npm start`. No file storage is needed.

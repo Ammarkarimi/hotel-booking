@@ -3,12 +3,12 @@ Pathik helper for Innvela
 
 Fills Pathik's "Add Guest" form (pathik.guru) with a guest from Innvela:
 name, address, date of birth, mobile, email, journey, room, dates and times,
-adults and children, vehicle, ID type and number, the ID copies (made smaller
-than 250 KB), and the details of every other adult in the room.
+adults and children, vehicle, ID type and number, and the details of every
+other adult in the room.
 
-Aadhaar is always added by hand in Pathik: nothing from an Aadhaar is saved
-in Innvela. Nothing is submitted for you: check the form, then press
-Submit in Pathik.
+ID photos and Aadhaar numbers are always added by hand in Pathik: Innvela
+keeps no ID copies and nothing from an Aadhaar. Nothing is submitted for you:
+check the form, then press Submit in Pathik.
 
 Install (once, in Google Chrome on the front-desk computer)
 1. Unzip this file (right-click > Extract all). Keep the pathik-helper folder.

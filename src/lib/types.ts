@@ -18,27 +18,12 @@ export interface GuestDTO {
   state: string | null;
   pinCode: string | null;
   idType: string | null;
-  idNumber: string | null;
   company: string | null;
   gstin: string | null;
   dateOfBirth: string | null;
-  passportNo: string | null;
-  visaNo: string | null;
   notes: string | null;
   vip: boolean;
   blacklisted: boolean;
-  createdAt: string;
-  documents?: DocumentDTO[];
-}
-
-export interface DocumentDTO {
-  id: string;
-  type: string;
-  /** null = the guest; otherwise the name of someone staying with them. */
-  person: string | null;
-  fileName: string;
-  filePath: string;
-  mimeType: string | null;
   createdAt: string;
 }
 
@@ -177,7 +162,7 @@ export interface SettingsDTO {
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 
-export type BookingDetailDTO = BookingDTO & { guest: GuestDTO & { documents: DocumentDTO[] }; settings: SettingsDTO };
+export type BookingDetailDTO = BookingDTO & { guest: GuestDTO; settings: SettingsDTO };
 
 export interface ShiftDTO {
   id: string;
@@ -248,7 +233,6 @@ export interface GuestFormDTO {
   bookingId: string | null;
   closedAt: string | null;
   closedBy: string | null;
-  documents: DocumentDTO[];
 }
 
 export interface IdCheckDTO {

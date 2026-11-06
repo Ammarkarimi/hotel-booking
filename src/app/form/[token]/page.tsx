@@ -1,13 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-import { Camera, CheckCircle2, Clock, FileText, Loader2, MapPin, Phone, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CheckCircle2, Clock, MapPin, Phone, ShieldCheck, UserRound } from "lucide-react";
 import { Button, Card, CardContent, CountInput, Field, Input, Loading, Select, Textarea, Tip } from "@/components/ui";
 import { addDays, diffDays } from "@/lib/dates";
-import { shrinkPhoto } from "@/lib/client";
-import { cn, formatDate, label } from "@/lib/utils";
-import { FORM_ID_TYPES, INDIAN_STATES, MAX_FILES_PER_PERSON, VEHICLE_LABELS, VEHICLE_TYPES, hasOwnVehicle, isIndian, missingDocuments } from "@/lib/guest-form";
+import { cn, formatDate } from "@/lib/utils";
+import { INDIAN_STATES, VEHICLE_LABELS, VEHICLE_TYPES, hasOwnVehicle, isIndian } from "@/lib/guest-form";
 
 interface FormInfo {
   hotel: { name: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string };
@@ -18,14 +17,6 @@ interface FormInfo {
   checkIn: string | null;
   checkOut: string | null;
   expiresAt: string;
-  documents: Doc[];
-}
-
-interface Doc {
-  id: string;
-  person: string | null;
-  type: string;
-  fileName: string;
 }
 
 async function getJson<T>(url: string, init?: RequestInit): Promise<T> {
@@ -57,161 +48,35 @@ function readDraft(token: string): Draft | null {
   }
 }
 
-/** The ID copies for one person: take a photo or choose a photo / PDF, then they upload straight away. */
-function IdUpload({
-  token,
-  person,
-  title,
-  foreign,
-  docs,
-  onAdded,
-  onRemoved,
-  aadhaar,
-  onAadhaar,
-}: {
-  token: string;
-  person: string;
-  title: string;
-  foreign: boolean;
-  docs: Doc[];
-  onAdded: (d: Doc) => void;
-  onRemoved: (id: string) => void;
-  /** Showing an Aadhaar at check-in instead of uploading an ID. Not offered when null. */
-  aadhaar: boolean | null;
-  onAadhaar: (v: boolean) => void;
-}) {
-  const [type, setType] = useState(foreign ? "passport" : "driving_licence");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  // On phones an input with `capture` only opens the camera, so choosing a saved photo or PDF needs its own input.
-  const camera = useRef<HTMLInputElement>(null);
-  const picker = useRef<HTMLInputElement>(null);
-  const mine = docs.filter((d) => d.person === person);
-  const full = mine.length >= MAX_FILES_PER_PERSON;
-
-  useEffect(() => setType(foreign ? "passport" : "driving_licence"), [foreign]);
-  const done = aadhaar === true || mine.length > 0;
-
-  async function upload(chosen: File | undefined) {
-    if (!chosen) return;
-    setBusy(true);
-    setError("");
-    try {
-      const file = await shrinkPhoto(chosen);
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("type", type);
-      fd.append("person", person);
-      onAdded(await getJson<Doc>(`/api/public/guest-forms/${token}/documents`, { method: "POST", body: fd }));
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-      if (camera.current) camera.current.value = "";
-      if (picker.current) picker.current.value = "";
-    }
-  }
-
-  async function remove(id: string) {
-    try {
-      await getJson(`/api/public/guest-forms/${token}/documents?docId=${id}`, { method: "DELETE" });
-      onRemoved(id);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }
-
+/** Which ID one adult will show at check-in. Nothing is uploaded: the front desk looks at the original. */
+function IdChoice({ title, aadhaar, onAadhaar }: { title: string; aadhaar: boolean; onAadhaar: (v: boolean) => void }) {
   return (
-    <div className={cn("rounded-2xl border p-4", done ? "border-emerald-200 bg-emerald-50/40" : "border-slate-200")}>
+    <div className="rounded-2xl border border-slate-200 p-4">
       <p className="mb-3 flex items-center gap-2 font-semibold">
-        {done ? <CheckCircle2 className="h-5 w-5 text-emerald-600" /> : <UserRound className="h-5 w-5 text-slate-400" />}
-        ID proof for {title}
+        <UserRound className="h-5 w-5 text-slate-400" />
+        ID for {title}
       </p>
-      {aadhaar !== null && (
-        <div className="mb-3 grid grid-cols-2 gap-2" role="radiogroup" aria-label={`ID for ${title}`}>
-          {[
-            { v: true, t: "Aadhaar", d: "Show it at check-in" },
-            { v: false, t: "Other ID", d: "Upload a copy" },
-          ].map((o) => (
-            <button
-              key={o.t}
-              type="button"
-              role="radio"
-              aria-checked={aadhaar === o.v}
-              onClick={() => onAadhaar(o.v)}
-              className={cn(
-                "rounded-xl border-2 px-3 py-2 text-left",
-                aadhaar === o.v ? "border-primary-500 bg-primary-50" : "border-slate-200 bg-white hover:border-slate-300"
-              )}
-            >
-              <span className="block font-semibold">{o.t}</span>
-              <span className="block text-xs text-slate-500">{o.d}</span>
-            </button>
-          ))}
-        </div>
-      )}
-      {aadhaar === true ? (
-        <p className="rounded-xl bg-white px-3 py-2 text-sm text-slate-600 ring-1 ring-slate-200">
-          Nothing to upload. Show your Aadhaar card, e-Aadhaar or Aadhaar app at check-in. Nothing from the Aadhaar is saved.
-        </p>
-      ) : (
-        <>
-      {mine.length > 0 && (
-        <ul className="mb-3 space-y-2">
-          {mine.map((d) => (
-            <li key={d.id} className="flex items-center justify-between gap-2 rounded-xl bg-white px-3 py-2 text-sm ring-1 ring-slate-200">
-              <span className="flex min-w-0 items-center gap-2">
-                <FileText className="h-4 w-4 shrink-0 text-primary-600" />
-                <span className="min-w-0">
-                  <span className="block font-semibold">{label(d.type)}</span>
-                  <span className="block truncate text-xs text-slate-500">{d.fileName}</span>
-                </span>
-              </span>
-              <button type="button" onClick={() => remove(d.id)} className="rounded p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600" aria-label={`Remove ${d.fileName}`}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!full && (
-        <>
-          <Field label={mine.length ? "Add another page (for example the back side)" : "Which ID?"}>
-            <Select value={type} onChange={(e) => setType(e.target.value)}>
-              {FORM_ID_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {label(t)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <input ref={camera} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
-          <input ref={picker} type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => upload(e.target.files?.[0])} />
-          <div className="mt-3 grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => camera.current?.click()}
-              className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-slate-300 bg-white px-2 py-4 text-sm font-semibold text-slate-700 hover:border-primary-400 disabled:opacity-50"
-            >
-              {busy ? <Loader2 className="h-6 w-6 animate-spin text-primary-600" /> : <Camera className="h-6 w-6 text-primary-600" />}
-              Take a photo
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => picker.current?.click()}
-              className="flex flex-col items-center gap-1 rounded-xl border-2 border-dashed border-slate-300 bg-white px-2 py-4 text-sm font-semibold text-slate-700 hover:border-primary-400 disabled:opacity-50"
-            >
-              <FileText className="h-6 w-6 text-primary-600" />
-              Choose photo or PDF
-            </button>
-          </div>
-        </>
-      )}
-        </>
-      )}
-      {error && <p className="mt-2 text-sm font-semibold text-red-600">{error}</p>}
+      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={`ID for ${title}`}>
+        {[
+          { v: true, t: "Aadhaar", d: "Card, e-Aadhaar or app" },
+          { v: false, t: "Other photo ID", d: "Driving licence, voter ID, passport" },
+        ].map((o) => (
+          <button
+            key={o.t}
+            type="button"
+            role="radio"
+            aria-checked={aadhaar === o.v}
+            onClick={() => onAadhaar(o.v)}
+            className={cn(
+              "rounded-xl border-2 px-3 py-2 text-left",
+              aadhaar === o.v ? "border-primary-500 bg-primary-50" : "border-slate-200 bg-white hover:border-slate-300"
+            )}
+          >
+            <span className="block font-semibold">{o.t}</span>
+            <span className="block text-xs text-slate-500">{o.d}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -220,7 +85,6 @@ export default function GuestFormPage() {
   const { token } = useParams<{ token: string }>();
   const [info, setInfo] = useState<FormInfo | null>(null);
   const [loadError, setLoadError] = useState("");
-  const [docs, setDocs] = useState<Doc[]>([]);
   const [f, setF] = useState({
     firstName: "",
     lastName: "",
@@ -257,7 +121,6 @@ export default function GuestFormPage() {
     getJson<FormInfo>(`/api/public/guest-forms/${token}`)
       .then((i) => {
         setInfo(i);
-        setDocs(i.documents);
         const checkIn = i.checkIn && i.checkIn >= i.today ? i.checkIn : i.today;
         const draft = readDraft(token);
         setF((old) => ({
@@ -278,7 +141,7 @@ export default function GuestFormPage() {
       .catch((e) => setLoadError(e.message));
   }, [token]);
 
-  // Phones sometimes reload the page after taking a photo, so what was typed is kept on the phone until the form is sent.
+  // What was typed is kept on the phone until the form is sent, in case the page reloads.
   useEffect(() => {
     if (!ready || sent) return;
     try {
@@ -394,8 +257,6 @@ export default function GuestFormPage() {
     };
     if (f.foreign && !f.country.trim()) return setError("Please enter your country");
     if (companions.some((c) => !c.name.trim())) return setError("Please enter the name of each adult staying with you");
-    const missing = missingDocuments({ firstName: f.firstName, nationality, aadhaarAtDesk: !f.foreign && f.aadhaarAtDesk, companions }, docs);
-    if (missing.length) return setError(missing[0]);
     setSending(true);
     try {
       await getJson(`/api/public/guest-forms/${token}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -592,34 +453,24 @@ export default function GuestFormPage() {
           <Card>
             <CardContent className="space-y-4 py-5">
               <div>
-                <h2 className="text-xl font-bold">ID proof</h2>
+                <h2 className="text-xl font-bold">ID at check-in</h2>
                 <p className="text-sm text-slate-500">
                   {f.foreign
-                    ? "Upload a photo or PDF of your passport and visa page."
-                    : "For each adult: choose Aadhaar and show it at check-in (nothing is uploaded or saved), or upload a photo or PDF of another photo ID such as a driving licence or voter ID."}
+                    ? "Please bring your passport and visa, and a photo ID for every adult with you. The front desk checks them at check-in."
+                    : "Every adult shows an original photo ID at check-in. Nothing is uploaded, and nothing from an Aadhaar is saved."}
                 </p>
               </div>
-              <IdUpload
-                token={token}
-                person="0"
-                title={f.firstName.trim() ? `${f.firstName.trim()} (you)` : "yourself"}
-                foreign={f.foreign}
-                docs={docs}
-                onAdded={(d) => setDocs((x) => [...x, d])}
-                onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
-                aadhaar={f.foreign ? null : f.aadhaarAtDesk}
-                onAadhaar={(v) => setF({ ...f, aadhaarAtDesk: v })}
-              />
+              {!f.foreign && (
+                <IdChoice
+                  title={f.firstName.trim() ? `${f.firstName.trim()} (you)` : "yourself"}
+                  aadhaar={f.aadhaarAtDesk}
+                  onAadhaar={(v) => setF({ ...f, aadhaarAtDesk: v })}
+                />
+              )}
               {companions.map((c, i) => (
-                <IdUpload
+                <IdChoice
                   key={i}
-                  token={token}
-                  person={String(i + 1)}
                   title={c.name.trim() || `adult ${i + 2}`}
-                  foreign={f.foreign}
-                  docs={docs}
-                  onAdded={(d) => setDocs((x) => [...x, d])}
-                  onRemoved={(id) => setDocs((x) => x.filter((d) => d.id !== id))}
                   aadhaar={c.aadhaarAtDesk ?? false}
                   onAadhaar={(v) => setCompanions(companions.map((x, j) => (j === i ? { ...x, aadhaarAtDesk: v } : x)))}
                 />
@@ -635,7 +486,7 @@ export default function GuestFormPage() {
               <label className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700">
                 <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-primary-600" />
                 <span>
-                  I confirm these details are correct. I agree that {hotel.name} keeps them and the ID copies for guest registration, and shares them with the police
+                  I confirm these details are correct. I agree that {hotel.name} keeps them for guest registration, and shares them with the police
                   where the law asks for it.
                 </span>
               </label>

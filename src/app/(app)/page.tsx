@@ -285,7 +285,7 @@ export default function TodayPage() {
                   {f.details && (
                     <span className="block text-sm text-slate-500">
                       {formatDate(f.details.checkIn)} → {formatDate(f.details.checkOut)} · {f.details.adults + f.details.children} guest
-                      {f.details.adults + f.details.children > 1 ? "s" : ""} · {f.documents.length} ID cop{f.documents.length === 1 ? "y" : "ies"}
+                      {f.details.adults + f.details.children > 1 ? "s" : ""}
                     </span>
                   )}
                 </span>

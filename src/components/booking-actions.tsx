@@ -12,7 +12,6 @@ import { SendGuestMessageDialog } from "@/components/guest-message";
 
 type MinimalBooking = Pick<BookingDTO, "id" | "number" | "guestName" | "status" | "checkInDate" | "checkOutDate" | "folio"> & {
   room: { roomNumber: string; housekeeping?: string };
-  guest?: { documents?: unknown[] };
   adults?: number;
   idChecks?: { person: string | null }[];
 };
@@ -388,7 +387,7 @@ export function useBookingActions(onChanged: (b?: BookingDTO) => void) {
       const checked = new Set(b.idChecks.map((c) => c.person ?? "")).size;
       if (checked < b.adults)
         warnings.push(`ID verified for ${checked} of ${b.adults} adult${b.adults > 1 ? "s" : ""}. Check each adult's ID and tick it under “ID check” on the booking.`);
-    } else if (b.guest?.documents && b.guest.documents.length === 0) warnings.push("No ID proof uploaded yet — remember to collect it.");
+    }
     const earlyNights = diffDays(settings.today, b.checkInDate);
     if (earlyNights > 0) {
       warnings.push(

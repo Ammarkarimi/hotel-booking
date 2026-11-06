@@ -23,16 +23,13 @@ export async function GET(request: NextRequest) {
           (await prisma.booking.findFirst({ where: { guestId, status: "reserved", checkInDate: { lte: dateFromKey(addDays(todayKey(s.timezone), 1)) } }, orderBy: { checkInDate: "asc" }, include })))
         : null;
     if (bookingId && !booking) fail("Booking not found", 404);
-    const guest = await prisma.guest.findUnique({ where: { id: booking?.guestId ?? guestId ?? "" }, include: { documents: { orderBy: { createdAt: "asc" } } } });
+    const guest = await prisma.guest.findUnique({ where: { id: booking?.guestId ?? guestId ?? "" } });
     if (!guest) fail("Guest not found", 404);
-    const paths = new Map(guest.documents.map((d) => [d.id, d.filePath]));
     const record = pathikRecord({
       guest,
       booking: booking ? { ...booking, roomNumber: booking.room.roomNumber } : undefined,
-      documents: guest.documents,
       idChecks: booking?.idChecks,
       hotel: { timezone: s.timezone, checkInTime: s.checkInTime, checkOutTime: s.checkOutTime },
-      documentUrl: (id) => `/api/uploads?path=${encodeURIComponent(paths.get(id) ?? "")}`,
     });
     return NextResponse.json({ ...record, bookingId: booking?.id ?? null, pathikAt: booking?.pathikAt ?? null, pathikByName: booking?.pathikByName ?? null });
   });

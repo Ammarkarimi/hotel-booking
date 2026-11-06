@@ -29,7 +29,7 @@ export async function GET(request: NextRequest, { params }: Params) {
     const { id } = await params;
     const ctx = await getBillingContext();
     const booking = await loadBooking(id);
-    const guest = await prisma.guest.findUnique({ where: { id: booking.guestId }, include: { documents: true } });
+    const guest = await prisma.guest.findUnique({ where: { id: booking.guestId } });
     // ?checkout=1 adds the bill as it would be at check-out today, so the screen shows exactly what will be charged.
     const query = new URL(request.url).searchParams;
     const wantsCheckout = query.get("checkout") === "1" && booking.status === "checked_in";
@@ -165,8 +165,8 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 /**
- * ID ticks and ID copies say whose they are by name. When a name is corrected they follow it; the
- * ticks of an adult taken off the booking are removed (their copies stay on the guest's profile).
+ * ID ticks say whose they are by name. When a name is corrected they follow it; the ticks of an
+ * adult taken off the booking are removed.
  */
 async function followRenamedPeople(
   tx: Db,
@@ -182,13 +182,11 @@ async function followRenamedPeople(
     renamed.map(async (p) => ({
       name: p.name,
       checks: (await tx.idCheck.findMany({ where: { bookingId: booking.id, person: p.was }, select: { id: true } })).map((c) => c.id),
-      copies: (await tx.guestDocument.findMany({ where: { guestId: booking.guestId, person: p.was }, select: { id: true } })).map((d) => d.id),
     }))
   );
   if (gone.length) await tx.idCheck.deleteMany({ where: { bookingId: booking.id, person: { in: gone } } });
   for (const m of moves) {
     if (m.checks.length) await tx.idCheck.updateMany({ where: { id: { in: m.checks } }, data: { person: m.name } });
-    if (m.copies.length) await tx.guestDocument.updateMany({ where: { id: { in: m.copies } }, data: { person: m.name } });
   }
 }
 

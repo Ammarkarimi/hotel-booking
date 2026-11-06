@@ -328,12 +328,12 @@
       }
     }
 
-    // The guest's ID copies (never Aadhaar: that photo is added by hand).
+    // ID photos: Innvela keeps no copies, so staff attach them by hand (older app versions may still send some).
     const imageField = pick(fields, MAIN.docImage);
     const guestFiles = files.filter((f) => f.person === null);
     let attached = 0;
-    if (imageField && guestFiles.length) {
-      attached = attach(imageField.el, guestFiles);
+    if (imageField) {
+      attached = guestFiles.length ? attach(imageField.el, guestFiles) : 0;
       highlight(imageField.el, attached > 0);
     }
 

@@ -22,7 +22,6 @@ export async function GET(request: NextRequest) {
             { lastName: { contains: w, mode: "insensitive" } },
             { phone: { contains: w } },
             { email: { contains: w, mode: "insensitive" } },
-            { idNumber: { contains: w, mode: "insensitive" } },
             { company: { contains: w, mode: "insensitive" } },
           ],
         })),
@@ -34,7 +33,6 @@ export async function GET(request: NextRequest) {
       orderBy: { updatedAt: "desc" },
       take: limit,
       include: {
-        documents: true,
         _count: { select: { bookings: true } },
         bookings: { orderBy: { checkInDate: "desc" }, take: 1, include: { room: true } },
       },
@@ -50,7 +48,6 @@ export async function POST(request: NextRequest) {
     const data = guestData(body);
     const guest = await prisma.guest.create({
       data: { hotelId: currentHotelId(), ...data, firstName: body.firstName, phone: body.phone },
-      include: { documents: true },
     });
     await logActivity(user, "Guest added", `${guest.firstName} ${guest.lastName}`.trim());
     return NextResponse.json(guest, { status: 201 });
