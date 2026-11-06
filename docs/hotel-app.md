@@ -9,8 +9,6 @@ under **Help & guide**.
 | | Owner / manager | Front desk |
 |---|:-:|:-:|
 | Bookings, check-in/out, payments, extras, guests, ID photos, guest forms, calendar, housekeeping | ✅ | ✅ |
-| Banquets: functions, enquiries, advances, final bills, function sheets | ✅ | ✅ (not after the final bill) |
-| Banquet halls, menus, GST and terms; delete a function | ✅ | — |
 | Write down expenses | ✅ all | ✅ their own, last 7 days |
 | Reports and CSV downloads | ✅ | — |
 | Settings (hotel details, prices & tax, online booking, staff, activity history) | ✅ | — |
@@ -204,63 +202,10 @@ cleaning it and notes. Rooms become *Needs cleaning* automatically at check-out.
 Rooms with guests arriving today are shown first. A room can also be set to
 **maintenance**, which stops anyone booking it.
 
-### Banquets (functions in the halls)
-
-Weddings, receptions, parties and meetings in the hotel's halls, from the first
-enquiry to the final tax invoice. **Banquets** in the menu (the owner always sees
-it; front-desk staff once a hall is added).
-
-- **Halls & menus** (owner): each hall, lawn or meeting room with the guests it
-  holds and its usual rent; menus (packages) with veg / non-veg, price per plate
-  and the dishes; the default GST on food (5%), hall rent (18%) and services
-  (18%); the banquet invoice prefix (`BQ`, so bills are BQ-1, BQ-2…); and the
-  terms printed on quotations (advance, cancellation, music timings…). A hall
-  with functions can only be switched off, not deleted.
-- **New function**: customer (name, mobile, company and GSTIN for a company
-  bill, address), kind of function (wedding, reception, engagement, sangeet /
-  mehndi, birthday, anniversary, corporate event, conference, religious, kitty
-  party, other), date, session (breakfast, lunch, hi-tea, dinner, full day: the
-  usual times fill in and can be changed; an end before the start runs past
-  midnight), the hall (each shows Free or who has it then), guests expected,
-  **guaranteed plates** (charged even if fewer come), seating style, the menu
-  (fills in the price and dishes), hall rent, discount, GST, extra items
-  (decoration, DJ, lighting, photography, equipment, extra plates, drinks,
-  extra hours, rooms, damage…, each with its own GST), requirements for the
-  staff and a follow-up date. The bill is worked out as you type.
-- **Status**: **Enquiry** (a quotation; does not hold the hall), **On hold**
-  (holds the hall until the follow-up date), **Confirmed**, **Done · final
-  bill**, **Cancelled**. Two functions that hold the same hall can never
-  overlap (also checked when two people save at once); an enquiry can be made
-  for a busy slot but cannot be confirmed into it.
-- **Money**: take an advance (cash, UPI, card, bank transfer, other) when it is on
-  hold or confirmed, more payments later, and give money back. Banquet money is
-  counted in **Payments**, the cash drawer, the staff shift report and the
-  reports.
-- **Final bill**: on or after the function day, type the plates served. The food
-  is charged on the plates served, but never fewer than the guaranteed plates.
-  The bill gets its invoice number. After it only the owner can change the
-  function; if the owner lowers it below what was paid, the extra is recorded as
-  given back (choose how) and the invoice shows no refund.
-- **Discount** is on the whole bill and shared across the GST rates, so each
-  rate is charged on what is really billed at it.
-- **Cancel**: write why; give back part or all of the advance. What is kept is a
-  cancellation charge and counts as banquet earnings on the day of cancelling.
-- **Prints**: **Quotation** (enquiry), **Function confirmation** (on hold or
-  confirmed, with the terms) or **Tax invoice** (after the final bill: SAC codes,
-  CGST and SGST per rate, amount in words); and the **Function sheet** for the
-  kitchen and staff (hall, time, guests, plates to prepare, seating, menu,
-  services and requirements; no prices).
-- **WhatsApp**: sends the customer the quotation, confirmation or bill summary.
-- **Lists**: Coming, Today, Enquiries (with "follow up today / overdue"), Not
-  fully paid, Past, Cancelled, All; search by name, mobile, company or number.
-  **Hall calendar**: every hall for two weeks; tap + to book a hall on a day.
-- **Today** lists the functions in the halls today; the search box at the top
-  finds functions too.
-
 ### Payments
 
 Every payment and refund for today, yesterday, this week, this month or any
-dates, with totals per method, including banquet advances and payments. The **Cash drawer** box shows cash received minus
+dates, with totals per method. The **Cash drawer** box shows cash received minus
 cash paid for expenses: the cash that should be in the drawer at the end of a shift.
 
 ### Expenses
@@ -350,12 +295,7 @@ before GST.
 - expenses by kind, money in and out (received by method, expenses paid, cash
   left), guests arriving and leaving, people, average stay, new bookings,
   cancellations and no-shows
-- extras sold, a GST summary (room and banquet invoices), and who still owes
-  money (guests and functions)
-- **Banquets**: functions held in the period (counted on the function day,
-  before GST): food, hall rent, extras, discounts, cancellation charges kept,
-  GST, by hall and by kind of function. Banquet earnings are part of total
-  earnings and profit (room numbers such as ADR and RevPAR stay rooms only)
+- extras sold, a GST summary, and who still owes money
 - **Booking site payouts** for stays ending in the period, by site and per stay:
   bills (gross), commission and fees, TCS + TDS, what the sites pay you, and how
   much has been received or is still waiting. Stays with no payout entered yet
@@ -364,10 +304,7 @@ before GST.
 
 **Print / save PDF** prints the report without the menu. **CSV downloads for
 Excel:** the summary (by day, week or month, with a total row), expenses,
-bookings, payments, GST invoices (room and banquet bills), room types,
-**banquets** (one row per function with plates, food, hall rent, extras,
-discount, taxable value, GST by rate, CGST, SGST, total, paid and balance, plus
-cancellation charges kept), and **booking site payouts** (one
+bookings, payments, GST invoices, room types, and **booking site payouts** (one
 row per stay with the site's booking ID, gross bill, each deduction, net, and
 received date and UTR, to tick off against the site's own statement).
 

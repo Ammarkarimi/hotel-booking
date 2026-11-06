@@ -26,7 +26,6 @@ import {
   X,
   Hotel,
   Lightbulb,
-  PartyPopper,
 } from "lucide-react";
 import { cn, label } from "@/lib/utils";
 import { api } from "@/lib/client";
@@ -40,8 +39,6 @@ const NAV = [
   { href: "/", label: "Today", icon: Home, hint: "What is happening now" },
   { href: "/calendar", label: "Room Calendar", icon: CalendarDays, hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", icon: ClipboardList, hint: "All reservations" },
-  // Owners always see it (to add halls); staff once the hotel has a hall.
-  { href: "/banquets", label: "Banquets", icon: PartyPopper, hint: "Halls & functions", banquet: true },
   { href: "/guests", label: "Guests", icon: Users, hint: "Guest records & IDs" },
   { href: "/guest-forms", label: "Guest forms", icon: ClipboardCheck, hint: "Details sent on WhatsApp" },
   { href: "/housekeeping", label: "Housekeeping", icon: Sparkles, hint: "Room cleaning" },
@@ -99,7 +96,7 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
       </div>
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-        {NAV.filter((n) => (!n.admin || isAdmin) && (!n.banquet || isAdmin || settings.banquets)).map((item) => {
+        {NAV.filter((n) => !n.admin || isAdmin).map((item) => {
           const Icon = item.icon;
           const active = isActive(pathname, item.href);
           return (
@@ -182,7 +179,6 @@ interface SearchResults {
   guests: Array<{ id: string; name: string; phone: string }>;
   bookings: Array<{ id: string; number: number; guestName: string; room: string; status: string; checkIn: string; checkOut: string }>;
   rooms: Array<{ id: string; roomNumber: string; type: string }>;
-  functions?: Array<{ id: string; number: number; customerName: string; hall: string; date: string; status: string }>;
 }
 
 function GlobalSearch() {
@@ -218,7 +214,7 @@ function GlobalSearch() {
     router.push(href);
   }
 
-  const empty = results && !results.guests.length && !results.bookings.length && !results.rooms.length && !results.functions?.length;
+  const empty = results && !results.guests.length && !results.bookings.length && !results.rooms.length;
 
   return (
     <div ref={box} className="relative w-full max-w-md">
@@ -244,16 +240,6 @@ function GlobalSearch() {
                 <span className="block text-xs text-slate-500">Room {b.room} · {b.checkIn} → {b.checkOut}</span>
               </span>
               <StatusBadge status={b.status} />
-            </button>
-          ))}
-          {!!results.functions?.length && <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400">Functions (banquets)</p>}
-          {results.functions?.map((f) => (
-            <button key={f.id} onClick={() => go(`/banquets/${f.id}`)} className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-slate-50">
-              <span>
-                <span className="block text-sm font-semibold">Function #{f.number} · {f.customerName}</span>
-                <span className="block text-xs text-slate-500">{f.hall} · {f.date}</span>
-              </span>
-              <StatusBadge status={f.status} />
             </button>
           ))}
           {results.guests.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400">Guests</p>}

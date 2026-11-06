@@ -10,9 +10,6 @@ import { todayKey } from "@/lib/dates";
 import { formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { HotelSettingsRecord } from "@/lib/settings";
 import { PrintButton } from "@/components/print-button";
-import { loadBanquet, serializeBanquet } from "@/lib/banquets";
-import { getSettings } from "@/lib/settings";
-import { BanquetBillPrint, FunctionSheet } from "./banquet";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Print" };
@@ -371,26 +368,7 @@ export default async function PrintPage({ params }: Params) {
   const session = await getSession();
   if (!session) redirect("/api/auth/expired");
   const { kind, id } = await params;
-  if (!["invoice", "confirmation", "registration", "banquet", "function-sheet"].includes(kind)) notFound();
-  // Banquets (functions in the halls): the customer's bill and the staff's function sheet.
-  if (kind === "banquet" || kind === "function-sheet") {
-    const found = await runForHotel(session.hotelId, async () => {
-      const banquet = await prisma.banquet.findUnique({ where: { id }, select: { id: true } });
-      if (!banquet) return null;
-      return { banquet: serializeBanquet(await loadBanquet(id)), settings: await getSettings() };
-    });
-    if (!found) notFound();
-    return (
-      <div className="min-h-screen overflow-x-hidden bg-slate-100">
-        <PrintButton />
-        <div className="overflow-x-auto px-2 sm:px-4">
-          <div className="print-page mx-auto my-6 min-w-[640px] max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow sm:p-10">
-            {kind === "banquet" ? <BanquetBillPrint b={found.banquet} s={found.settings} /> : <FunctionSheet b={found.banquet} s={found.settings} />}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  if (!["invoice", "confirmation", "registration"].includes(kind)) notFound();
 
   const data = await runForHotel(session.hotelId, async () => {
     const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });

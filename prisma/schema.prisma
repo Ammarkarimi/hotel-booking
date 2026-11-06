@@ -22,7 +22,6 @@ model Hotel {
   billingStart         String // first month that is charged, "YYYY-MM"
   notes                String?
   bookingSeq           Int                   @default(1000) // last booking number handed out
-  banquetSeq           Int                   @default(0) // last banquet (function) number handed out
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   staff                Staff[]
@@ -43,10 +42,6 @@ model Hotel {
   idChecks             IdCheck[]
   rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
-  banquetHalls         BanquetHall[]
-  banquetMenus         BanquetMenu[]
-  banquets             Banquet[]
-  banquetItems         BanquetItem[]
 }
 
 // Money a hotel paid the software provider for its monthly subscription.
@@ -122,12 +117,6 @@ model HotelSettings {
   rateTipsFloors      String   @default("{}") // JSON { roomType: lowest price per night the owner accepts }
   rateTipsStaff       Boolean  @default(true) // front-desk staff see the tips too, not only the owner
   pathik              Boolean  @default(true) // show "Fill in Pathik" (the Gujarat police guest register)
-  // Banquets (functions in the hotel's halls): default GST % for new functions, invoice series and terms
-  banquetFoodGst      Float    @default(5) // food and drinks served at a function
-  banquetHallGst      Float    @default(18) // hall rent
-  banquetItemGst      Float    @default(18) // decoration, DJ, sound and other services
-  banquetPrefix       String   @default("BQ") // banquet invoice numbers: BQ-1, BQ-2…
-  banquetTerms        String? // printed on banquet quotations and confirmations (advance, cancellation, timings…)
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -324,9 +313,7 @@ model Charge {
 model Payment {
   id         String   @id @default(cuid())
   hotelId    String
-  // A payment is for a room booking or for a banquet (function): exactly one of the two is set.
-  bookingId  String?
-  banquetId  String?
+  bookingId  String
   amount     Float
   method     String // cash, card, upi, bank_transfer, other
   type       String   @default("advance") // advance, balance, full, refund
@@ -336,12 +323,10 @@ model Payment {
   receivedBy String?
   paidAt     DateTime @default(now())
   createdAt  DateTime @default(now())
-  booking    Booking? @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  banquet    Banquet? @relation(fields: [banquetId], references: [id], onDelete: Cascade)
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, paidAt])
-  @@index([banquetId])
 }
 
 // Final invoice snapshot created when the guest checks out.
@@ -483,107 +468,4 @@ model RateTipSeen {
 
   @@unique([hotelId, staffId, tipKey])
   @@index([hotelId, createdAt])
-}
-
-// ---------- Banquets: functions (weddings, parties, meetings) in the hotel's halls ----------
-
-model BanquetHall {
-  id        String    @id @default(cuid())
-  hotelId   String
-  name      String // "Crystal Hall", "Lawn"
-  capacity  Int       @default(0) // most guests it holds; 0 = not set
-  rent      Float     @default(0) // usual hall rent for one function, before GST
-  notes     String? // AC, stage, parking…
-  active    Boolean   @default(true) // switched off = no new functions, old ones keep it
-  createdAt DateTime  @default(now())
-  banquets  Banquet[]
-  hotel     Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@unique([hotelId, name])
-}
-
-model BanquetMenu {
-  id            String   @id @default(cuid())
-  hotelId       String
-  name          String // "Gujarati thali", "Gold non-veg buffet"
-  foodType      String   @default("veg") // veg, non_veg, jain, mixed
-  pricePerPlate Float
-  items         String? // the dishes, one per line
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  hotel         Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@unique([hotelId, name])
-}
-
-model Banquet {
-  id            String        @id @default(cuid())
-  hotelId       String
-  number        Int // counts up per hotel: 1, 2, 3…
-  status        String        @default("enquiry") // enquiry, tentative, confirmed, completed, cancelled
-  // The customer (the host who books and pays)
-  customerName  String
-  phone         String
-  email         String?
-  company       String?
-  gstin         String?
-  address       String?
-  // The function
-  eventType     String        @default("wedding") // wedding, reception, engagement, birthday, anniversary, corporate, conference, religious, other
-  eventName     String? // "Sharma–Verma reception"
-  hallId        String
-  eventDate     DateTime      @db.Date
-  session       String        @default("dinner") // breakfast, lunch, hi_tea, dinner, full_day
-  startTime     String // "19:00"
-  endTime       String // "23:00"; earlier than the start = after midnight
-  expectedPax   Int // guests expected
-  guaranteedPax Int           @default(0) // plates the host pays for even if fewer come
-  actualPax     Int? // plates actually served, entered after the function
-  seating       String? // round tables, theatre, classroom, U-shape, cocktail
-  // Food: one menu at a price per plate (other plates go in the extra items)
-  menuName      String?
-  foodType      String        @default("veg")
-  menuItems     String? // the dishes, one per line (copied from the menu, can be changed)
-  platePrice    Float         @default(0)
-  foodGst       Float         @default(5)
-  hallRent      Float         @default(0)
-  hallGst       Float         @default(18)
-  discount      Float         @default(0) // on the whole bill, before GST
-  requirements  String? // decoration, stage, DJ, flowers… for the staff
-  notes         String?
-  followUpOn    DateTime?     @db.Date // enquiry: call back on; tentative: hold the hall until
-  invoiceNumber String? // set when the final bill is made
-  billedAt      DateTime?
-  cancelReason  String?
-  cancelledAt   DateTime?
-  createdById   String?
-  createdByName String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  hall          BanquetHall   @relation(fields: [hallId], references: [id])
-  items         BanquetItem[]
-  payments      Payment[]
-  hotel         Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@unique([hotelId, number])
-  @@unique([hotelId, invoiceNumber])
-  @@index([hotelId, eventDate])
-  @@index([hallId, eventDate])
-}
-
-model BanquetItem {
-  id          String   @id @default(cuid())
-  hotelId     String
-  banquetId   String
-  category    String   @default("other") // extra_plates, drinks, decoration, sound_dj, lighting, photography, equipment, extra_hours, rooms, damage, other
-  description String
-  quantity    Float    @default(1)
-  unitPrice   Float
-  amount      Float
-  gstRate     Float    @default(18)
-  createdAt   DateTime @default(now())
-  banquet     Banquet  @relation(fields: [banquetId], references: [id], onDelete: Cascade)
-  hotel       Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@index([hotelId])
 }
