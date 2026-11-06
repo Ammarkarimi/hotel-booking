@@ -93,7 +93,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff. Owners can ask their software provider.</p>
           <p className="mt-3 text-center text-sm text-slate-500">
-            New to Innvero?{" "}
+            New to Innvela?{" "}
             <Link href="/welcome" className="font-semibold text-primary-600 hover:underline">
               See how it works
             </Link>

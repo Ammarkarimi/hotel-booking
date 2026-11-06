@@ -46,11 +46,11 @@ import { PlayTourButton, TourPlayer } from "./tour";
 const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
-  title: { absolute: "Innvero · Hotel software for boutique and premium hotels" },
+  title: { absolute: "Innvela · Hotel software for boutique and premium hotels" },
   description:
     "Reservations, guest forms on WhatsApp, ID checks, polished GST invoices, housekeeping, staff shifts, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
   openGraph: {
-    title: "Innvero · Hotel software for boutique and premium hotels",
+    title: "Innvela · Hotel software for boutique and premium hotels",
     description: "Effortless front desk software for boutique hotels, resorts and premium stays, with your own commission-free booking website.",
     images: [{ url: "/welcome/og-image.jpg", width: 1280, height: 720 }],
   },
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
 const salesWhatsapp = (process.env.SALES_WHATSAPP || "").replace(/[^\d]/g, "");
 const salesEmail = (process.env.SALES_EMAIL || "").trim();
 const whatsappHref = salesWhatsapp
-  ? `https://wa.me/${salesWhatsapp}?text=${encodeURIComponent("Hello, I'd like a demo of Innvero for my property.")}`
+  ? `https://wa.me/${salesWhatsapp}?text=${encodeURIComponent("Hello, I'd like a demo of Innvela for my property.")}`
   : null;
-const emailHref = salesEmail ? `mailto:${salesEmail}?subject=${encodeURIComponent("Innvero demo for my property")}` : null;
+const emailHref = salesEmail ? `mailto:${salesEmail}?subject=${encodeURIComponent("Innvela demo for my property")}` : null;
 
 const FEATURE_GROUPS = [
   {
@@ -554,7 +554,7 @@ export default function WelcomePage() {
                       Typical hotel software
                     </th>
                     <th className="bg-primary-600 px-4 py-3 text-center font-bold text-white" scope="col">
-                      Innvero
+                      Innvela
                     </th>
                   </tr>
                 </thead>
@@ -628,7 +628,7 @@ export default function WelcomePage() {
               <ContactButtons dark />
             </div>
             <p className="mt-6 text-sm text-slate-400">
-              Already using Innvero?{" "}
+              Already using Innvela?{" "}
               <Link href="/login" className="font-semibold text-white underline underline-offset-4">
                 Sign in
               </Link>
@@ -640,7 +640,7 @@ export default function WelcomePage() {
       <footer className="border-t border-slate-200 bg-white py-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <p className="flex items-center gap-2">
-            <LogoMark className="h-5 w-5" /> Innvero · Hotel software for boutique and premium hotels
+            <LogoMark className="h-5 w-5" /> Innvela · Hotel software for boutique and premium hotels
           </p>
           <div className="flex gap-5">
             <a href="#tour" className="hover:text-slate-900">

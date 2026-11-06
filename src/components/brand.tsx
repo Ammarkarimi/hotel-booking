@@ -1,7 +1,7 @@
-// The Innvero logo: a roof over a V. Used on the landing page, sign-in, the menu and the owner panel.
+// The Innvela logo: a roof over a V. Used on the landing page, sign-in, the menu and the owner panel.
 // The same drawing is in src/app/icon.svg (browser tab) and src/app/apple-icon.png (phone home screen).
 
-export const BRAND = "Innvero";
+export const BRAND = "Innvela";
 
 const ROOF = "M10 30L32 12l22 18";
 const V = "M19 33l13 19 13-19";
@@ -28,13 +28,13 @@ export function LogoIcon({ className = "h-10 w-10" }: { className?: string }) {
   );
 }
 
-/** "Inn" + "vero" in the brand colours. */
+/** "Inn" + "vela" in the brand colours. */
 export function Wordmark({ className = "text-xl", tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const dark = tone === "dark";
   return (
     <span className={"font-extrabold tracking-tight " + className} style={{ fontFamily: "var(--font-brand), Inter, system-ui, sans-serif" }}>
       <span className={dark ? "text-white" : "text-slate-900"}>Inn</span>
-      <span style={{ color: dark ? "#7c93ff" : "#2548eb" }}>vero</span>
+      <span style={{ color: dark ? "#7c93ff" : "#2548eb" }}>vela</span>
     </span>
   );
 }

@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Pathik helper for Innvero",
+  "name": "Pathik helper for Innvela",
   "short_name": "Pathik helper",
   "version": "1.1.1",
-  "description": "Fills Pathik's Add Guest form (pathik.guru) with a guest from Innvero, including the other adults in the room.",
+  "description": "Fills Pathik's Add Guest form (pathik.guru) with a guest from Innvela, including the other adults in the room.",
   "permissions": ["storage", "scripting"],
   "host_permissions": ["https://pathik.guru/*", "https://www.pathik.guru/*"],
   "background": { "service_worker": "background.js" },

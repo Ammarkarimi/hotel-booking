@@ -1,4 +1,4 @@
-// Pathik helper, on Innvero's pages: tells the page the helper is installed, and passes the
+// Pathik helper, on Innvela's pages: tells the page the helper is installed, and passes the
 // guest to Pathik when staff press "Open Pathik and fill the form".
 (() => {
   const VERSION = chrome.runtime.getManifest().version;

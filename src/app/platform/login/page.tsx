@@ -45,7 +45,7 @@ export default function PlatformLoginPage() {
           <div className="mb-8 text-center">
             <LogoIcon className="mx-auto mb-4 h-16 w-16" />
             <h1 className="text-2xl font-bold text-slate-900">Owner panel</h1>
-            <p className="mt-1 text-[15px] text-slate-500">Manage the hotels that use Innvero</p>
+            <p className="mt-1 text-[15px] text-slate-500">Manage the hotels that use Innvela</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

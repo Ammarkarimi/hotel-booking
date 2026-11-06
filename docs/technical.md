@@ -253,7 +253,7 @@ Demo sign-ins:
 
 ## Brand
 
-The product is **Innvero**. The logo (a roof over a V, navy `#0f172a` and blue
+The product is **Innvela**. The logo (a roof over a V, navy `#0f172a` and blue
 `#2548eb`, or white and `#7c93ff` on dark) is drawn in `src/components/brand.tsx`
 (`Logo`, `LogoMark`, `LogoIcon`, `Wordmark`; the wordmark uses Bricolage Grotesque,
 loaded in `src/app/layout.tsx` as `--font-brand`). The same drawing is in
@@ -271,7 +271,7 @@ public.
 The page reads `SALES_WHATSAPP` and `SALES_EMAIL` at build time, so redeploy after
 changing them.
 
-The video (`public/welcome/innvero-tour.mp4`, plus a WebM copy for browsers
+The video (`public/welcome/innvela-tour.mp4`, plus a WebM copy for browsers
 without H.264) and the screenshots are recorded from the real app with the demo hotel.
 Re-record them after changing the screens:
 

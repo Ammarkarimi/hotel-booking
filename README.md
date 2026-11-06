@@ -1,4 +1,4 @@
-# Innvero — simple hotel booking & front-desk software
+# Innvela — simple hotel booking & front-desk software
 
 A complete, easy-to-use system for small and independent hotels, guest houses
 and homestays: bookings, a room calendar, check-in/check-out, guest records with
