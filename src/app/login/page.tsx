@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Hotel } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
+import { Logo } from "@/components/brand";
 import { Button, Card, CardContent, Field, Input } from "@/components/ui";
 
 const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -52,9 +53,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-2xl">
         <CardContent className="px-6 py-8 sm:px-8">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 text-primary-600">
-              <Hotel className="h-8 w-8" />
-            </div>
+            <Logo className="mb-5" markClassName="h-10 w-10" wordClassName="text-3xl" />
             <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
             <p className="mt-1 text-[15px] text-slate-500">Sign in to manage your hotel</p>
           </div>
@@ -94,7 +93,7 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">Forgot your password? Ask the hotel owner to reset it in Settings → Staff. Owners can ask their software provider.</p>
           <p className="mt-3 text-center text-sm text-slate-500">
-            New to Hotel Manager?{" "}
+            New to Innvero?{" "}
             <Link href="/welcome" className="font-semibold text-primary-600 hover:underline">
               See how it works
             </Link>

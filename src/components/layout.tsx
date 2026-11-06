@@ -24,7 +24,6 @@ import {
   Users,
   Wallet,
   X,
-  Hotel,
   Lightbulb,
 } from "lucide-react";
 import { cn, label } from "@/lib/utils";
@@ -33,6 +32,7 @@ import { AppProvider, useApp, type ShellSettings } from "@/components/app-provid
 import { Button, StatusBadge } from "@/components/ui";
 import { ShiftControl } from "@/components/shift";
 import { RateTipPopup } from "@/components/rate-tips";
+import { LogoIcon, Wordmark } from "@/components/brand";
 import type { SessionUser } from "@/lib/session";
 
 const NAV = [
@@ -86,12 +86,10 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
   return (
     <div className="flex h-full flex-col bg-white">
       <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <div className="rounded-xl bg-primary-600 p-2 text-white">
-          <Hotel className="h-6 w-6" />
-        </div>
+        <LogoIcon className="h-10 w-10 shrink-0" />
         <div className="min-w-0">
           <p className="truncate text-base font-bold text-slate-900">{settings.hotelName}</p>
-          <p className="text-xs text-slate-500">Hotel manager</p>
+          <Wordmark className="text-xs" />
         </div>
       </div>
 

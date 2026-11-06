@@ -1,4 +1,4 @@
-// Pathik helper: keeps the guest that Hotel Manager sent until Pathik's Add Guest form asks for it.
+// Pathik helper: keeps the guest that Innvero sent until Pathik's Add Guest form asks for it.
 const ADD_GUEST_URL = "https://pathik.guru/dashboard/add";
 const KEEP_FOR_MS = 30 * 60 * 1000; // a guest waits at most 30 minutes (time to sign in to Pathik)
 
