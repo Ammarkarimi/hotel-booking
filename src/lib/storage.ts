@@ -1,23 +1,11 @@
-// The app no longer stores any files. ID copies used to be uploaded; they were removed, and the
-// files already saved are deleted a few at a time through the FileCleanup table (see file-cleanup.ts).
-// Only deleting is left here, for those old files.
-import path from "path";
-
-function usesBlob(): boolean {
-  const configured = process.env.STORAGE_DRIVER?.toLowerCase();
-  if (configured === "local" || configured === "blob") return configured === "blob";
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
-}
+// The app no longer stores any files. ID copies used to be uploaded to Vercel Blob; they were removed,
+// and the files already saved are deleted a few at a time through the FileCleanup table (file-cleanup.ts).
+// Only deleting from Blob is left here. There is deliberately no local-disk code: a path built from
+// process.cwd() makes the build copy the whole project into every function that imports this file.
 
 export async function deleteStoredFile(filePath: string): Promise<void> {
-  const sanitized = filePath.replace(/\.\./g, "").replace(/\\/g, "/");
-
-  if (usesBlob()) {
-    const { del } = await import("@vercel/blob");
-    await del(sanitized);
-    return;
-  }
-
-  const { unlink } = await import("fs/promises");
-  await unlink(path.join(process.cwd(), process.env.UPLOAD_DIR || "./uploads", sanitized));
+  // Without Blob (local development) there is nothing to delete: the entry just leaves the queue.
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return;
+  const { del } = await import("@vercel/blob");
+  await del(filePath.replace(/\.\./g, "").replace(/\\/g, "/"));
 }
