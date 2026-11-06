@@ -68,7 +68,7 @@ export function CredentialsCard({
   const [copied, setCopied] = useState(false);
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const message = [
-    `Hello${name ? ` ${name}` : ""}, your Innvero account for ${hotelName} is ready.`,
+    `Hello${name ? ` ${name}` : ""}, your Innvela account for ${hotelName} is ready.`,
     "",
     `Sign in: ${origin}/login`,
     `Email: ${email}`,

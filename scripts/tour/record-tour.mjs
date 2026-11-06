@@ -6,7 +6,7 @@
 //   3. Playwright + ffmpeg:    npm i --no-save playwright && npx playwright install chromium
 //
 // Then:  node scripts/tour/record-tour.mjs http://localhost:3000
-// It writes public/welcome/innvero-tour.mp4 and .webm and prints the chapter
+// It writes public/welcome/innvela-tour.mp4 and .webm and prints the chapter
 // times to paste into CHAPTERS in src/app/welcome/tour.tsx.
 // The demo hotel's data is changed by the recording, so re-seed before recording again.
 import fs from "node:fs";
@@ -142,7 +142,7 @@ const addDays = (key, n) => {
 
 // ---------------- Intro + 1. Guest books online ----------------
 await page.goto(base + "/book/sunrise-residency", { waitUntil: "networkidle" });
-await page.evaluate(() => window.__demo.card("A 3-minute tour", "Innvero", "Effortless operations for boutique hotels, resorts and premium stays."));
+await page.evaluate(() => window.__demo.card("A 3-minute tour", "Innvela", "Effortless operations for boutique hotels, resorts and premium stays."));
 await wait(3200);
 await page.evaluate(() => window.__demo.card(null));
 await wait(700);
@@ -318,7 +318,7 @@ await wait(1400);
 // ---------------- End card ----------------
 await page.evaluate(() => window.__demo.caption(null));
 chapters.push({ n: "end", title: "End", at: Date.now() / 1000 });
-await page.evaluate(() => window.__demo.card("Innvero", "Effortless operations for exceptional stays", "Reservations, check-in, GST invoices, housekeeping, expenses and profit reports, on any device."));
+await page.evaluate(() => window.__demo.card("Innvela", "Effortless operations for exceptional stays", "Reservations, check-in, GST invoices, housekeeping, expenses and profit reports, on any device."));
 await wait(4000);
 
 await cdp.send("Page.stopScreencast");
@@ -339,12 +339,12 @@ frames.forEach((ts, i) => {
 lines.push(`file '${outDir}/frames/${String(frames.length - 1).padStart(6, "0")}.jpg'`);
 fs.writeFileSync(`${outDir}/list.txt`, lines.join("\n") + "\n");
 const input = ["-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", `${outDir}/list.txt`, "-vf", "fps=30,format=yuv420p", "-an"];
-execFileSync("ffmpeg", [...input, "-c:v", "libx264", "-preset", "slow", "-crf", "24", "-movflags", "+faststart", `${publicDir}/innvero-tour.mp4`], { stdio: "inherit" });
-execFileSync("ffmpeg", [...input, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "38", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", `${publicDir}/innvero-tour.webm`], { stdio: "inherit" });
+execFileSync("ffmpeg", [...input, "-c:v", "libx264", "-preset", "slow", "-crf", "24", "-movflags", "+faststart", `${publicDir}/innvela-tour.mp4`], { stdio: "inherit" });
+execFileSync("ffmpeg", [...input, "-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "38", "-row-mt", "1", "-deadline", "good", "-cpu-used", "2", `${publicDir}/innvela-tour.webm`], { stdio: "inherit" });
 fs.rmSync(outDir, { recursive: true, force: true });
 
 const times = chapters.filter((c) => c.n !== "end").map((c) => ({ t: Math.round((c.at - first - start) * 10) / 10, title: c.title }));
 times[0].t = 0;
-console.log(`Saved public/welcome/innvero-tour.mp4 and .webm (${(frames.at(-1) - first - start).toFixed(0)}s).`);
+console.log(`Saved public/welcome/innvela-tour.mp4 and .webm (${(frames.at(-1) - first - start).toFixed(0)}s).`);
 console.log("Paste these into CHAPTERS in src/app/welcome/tour.tsx:");
 for (const c of times) console.log(`  { t: ${c.t}, title: ${JSON.stringify(c.title)} },`);

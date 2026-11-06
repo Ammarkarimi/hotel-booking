@@ -1,4 +1,4 @@
-# Innvero — reference guide
+# Innvela — reference guide
 
 Everything about the software in one place: how to sell it, how hotels use it,
 how it is hosted, how to fix common problems, and how it is built.
@@ -11,7 +11,7 @@ how it is hosted, how to fix common problems, and how it is built.
 | [Troubleshooting](troubleshooting.md) | Fix “can’t sign in”, “booking page not found”, failed deploys and more |
 | [Technical reference](technical.md) | Work on the code: architecture, data model, API, tests, local setup |
 | [Market research](RESEARCH.md) | See what competitors offer and what small hotels ask for |
-| [Logo files](brand/) | Put the Innvero logo on a WhatsApp profile, visiting card, letterhead or slide |
+| [Logo files](brand/) | Put the Innvela logo on a WhatsApp profile, visiting card, letterhead or slide |
 
 ## Quick facts
 
