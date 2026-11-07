@@ -21,6 +21,7 @@ interface DashboardRoom {
   status: string;
   housekeeping: string;
   houseKeeperName: string | null;
+  priceTonight: number;
   freeTonight: boolean;
   guestName: string | null;
   arrivingGuest: string | null;
@@ -143,6 +144,62 @@ function Figures({ data }: { data: Dashboard }) {
 }
 
 /** Every room as a small box: grey when a guest is in tonight, white when not. */
+/** How many rooms of each category are still free tonight, and tonight's price. */
+function FreeByCategory({ rooms }: { rooms: DashboardRoom[] }) {
+  const rows = new Map<string, { type: string; total: number; free: number; ready: number; prices: number[] }>();
+  for (const r of rooms) {
+    const row = rows.get(r.type) ?? { type: r.type, total: 0, free: 0, ready: 0, prices: [] };
+    row.total += 1;
+    if (r.freeTonight) {
+      row.free += 1;
+      if (r.housekeeping === "clean") row.ready += 1;
+      row.prices.push(r.priceTonight);
+    }
+    rows.set(r.type, row);
+  }
+  const list = [...rows.values()].sort((a, b) => Math.min(...a.prices, Infinity) - Math.min(...b.prices, Infinity) || a.type.localeCompare(b.type));
+  const free = list.reduce((s, r) => s + r.free, 0);
+  const price = (prices: number[]) => {
+    if (prices.length === 0) return "";
+    const low = Math.min(...prices);
+    return low === Math.max(...prices) ? formatCurrency(low) : `from ${formatCurrency(low)}`;
+  };
+  return (
+    <div className="border-t border-slate-200 lg:border-l lg:border-t-0">
+      <table className="w-full">
+        <thead>
+          <tr>
+            <th className={TH}>Free tonight</th>
+            <th className={cn(TH, "text-right")}>Rooms</th>
+            <th className={cn(TH, "text-right")}>Price</th>
+          </tr>
+        </thead>
+        <tbody>
+          {list.map((r) => (
+            <tr key={r.type} className={r.free === 0 ? "text-slate-400" : undefined}>
+              <td className={TD}>
+                <span className={r.free === 0 ? "" : "font-semibold text-slate-900"}>{label(r.type)}</span>
+                {r.free > r.ready && <span className="block text-xs text-red-700">{r.free - r.ready} need{r.free - r.ready === 1 ? "s" : ""} cleaning</span>}
+              </td>
+              <td className={cn(TD, "whitespace-nowrap text-right")}>
+                <b className={r.free === 0 ? "" : "text-slate-900"}>{r.free}</b> of {r.total}
+              </td>
+              <td className={cn(TD, "whitespace-nowrap text-right")}>{r.free === 0 ? "Full" : price(r.prices)}</td>
+            </tr>
+          ))}
+          <tr>
+            <td className={cn(TD, "font-bold")}>All rooms</td>
+            <td className={cn(TD, "whitespace-nowrap text-right")}>
+              <b>{free}</b> of {rooms.length}
+            </td>
+            <td className={TD} />
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function RoomsTonight({ data }: { data: Dashboard }) {
   const router = useRouter();
   if (data.rooms.length === 0) return null;
@@ -160,7 +217,8 @@ function RoomsTonight({ data }: { data: Dashboard }) {
           </Link>
         }
       />
-      <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_17rem]">
+      <div className="grid content-start grid-cols-2 gap-2 p-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
         {data.rooms.map((r) => {
           const dirty = r.housekeeping !== "clean";
           const booking = staying.get(r.id);
@@ -168,7 +226,7 @@ function RoomsTonight({ data }: { data: Dashboard }) {
           let line: React.ReactNode;
           if (r.status === "maintenance") {
             state = "Not usable";
-            line = label(r.type);
+            line = "Cannot be booked";
           } else if (r.guestName) {
             state = firstName(r.guestName);
             line = leaving.has(r.id) ? "Leaves today" : booking ? `Till ${shortDate(booking.checkOutDate)}` : label(r.type);
@@ -199,11 +257,17 @@ function RoomsTonight({ data }: { data: Dashboard }) {
               </span>
               <span className={cn("block truncate", r.status === "maintenance" ? "" : "text-slate-500")}>{line}</span>
               {occupied && dirty && <span className="block truncate text-red-700">Needs cleaning</span>}
+              <span className={cn("mt-0.5 flex justify-between gap-2 border-t border-slate-200 pt-0.5 text-xs", r.status === "maintenance" ? "" : "text-slate-600")}>
+                <span className="truncate">{label(r.type)}</span>
+                <span className="shrink-0 font-semibold">{formatCurrency(r.priceTonight)}</span>
+              </span>
             </button>
           );
         })}
       </div>
-      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight.</p>
+      <FreeByCategory rooms={data.rooms} />
+      </div>
+      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight. Prices are for tonight.</p>
     </Card>
   );
 }
