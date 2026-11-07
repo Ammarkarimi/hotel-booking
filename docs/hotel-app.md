@@ -29,15 +29,17 @@ The home screen shows what needs attention now:
 - **Leaving today**, each with a *Check out* button
 - guests staying, free rooms tonight, rooms to clean, money received today, and
   money still to collect
-- **All rooms right now**: your hotel drawn as a building, top floor first. Each
-  room is a window: yellow (lit) has a guest in, plain is free, a yellow top edge
-  means a guest arrives today, light purple is booked tonight, a red bottom edge
-  means the guest leaves today, stripes mean it needs cleaning and dark means not
-  usable. Rooms are grouped by the **Floor** set in Rooms; without one, a number
-  like 204 goes on floor 2. Tap a free room to book it, any other room to open it.
+- **Rooms tonight**: a small box for every room. Grey means a guest is in
+  tonight (with their first name and "Leaves today" or "Till 9 Nov"), white means
+  no guest tonight ("Free" with Ready or Needs cleaning, or "Arriving" with the
+  guest's name). Click a free room to book it, any other room to see it in the
+  calendar.
 - a **Getting started** checklist for new hotels
 
-Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
+The screen works like desktop software: section tabs along the top, and a
+toolbar on every page with **New booking** (key **F2**), **Walk-in** (**F3**),
+**Calendar** (**F4**), **Send guest form** and the search box (press **/** to
+jump to it). The bar at the bottom shows the date, time and these keys.
 
 ### New booking (4 steps)
 
@@ -467,9 +469,8 @@ several hotels, it asks guests to use the link their hotel gave them.
 
 ## Colours used everywhere
 
-- **Yellow** (a lit window): guest staying
-- **Light purple**: booked
-- **Green**: clean or paid
-- **Orange**: part paid
+- **Green**: free, clean or paid
+- **Blue**: guest staying
+- **Yellow**: booked, arriving or part paid
 - **Red**: needs cleaning or money owed
-- **Stripes**: room waiting to be cleaned
+- On Today, a **grey** room box has a guest in tonight and a **white** one does not

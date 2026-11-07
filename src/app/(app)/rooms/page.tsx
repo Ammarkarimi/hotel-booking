@@ -244,7 +244,7 @@ export default function RoomsPage() {
                   </div>
                 )}
                 {r.currentGuest && (
-                  <Link href={`/bookings/${r.currentGuest.bookingId}`} className="rounded-lg bg-lamp-50 px-3 py-2 text-sm text-lamp-900 hover:underline">
+                  <Link href={`/bookings/${r.currentGuest.bookingId}`} className="rounded-lg bg-primary-50 px-3 py-2 text-sm text-primary-900 hover:underline">
                     Now: <b>{r.currentGuest.name}</b> until {formatDate(r.currentGuest.checkOut)}
                   </Link>
                 )}

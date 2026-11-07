@@ -14,7 +14,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 bg-wall text-white">
+      <header className="sticky top-0 z-20 bg-primary-700 text-white">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/platform" className="flex min-w-0 items-center gap-2">
             <Logo tone="dark" markClassName="h-7 w-7" wordClassName="text-lg" />

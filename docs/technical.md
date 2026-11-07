@@ -250,20 +250,20 @@ Demo sign-ins:
 
 ## Brand
 
-The product is **Innvela**. The look is "the building": a plum wall with lit
-yellow windows. The logo (a roof over a V, plum `#3b2350` and gold `#e0a800`, or
-white and `#ffcf5a` on dark) is drawn in `src/components/brand.tsx` (`Logo`,
-`LogoMark`, `LogoIcon`, `Wordmark`). Headings and the wordmark use Gabarito
-(`--font-brand`), body text uses Figtree (`--font-body`); both are loaded in
-`src/app/layout.tsx`.
+The product is **Innvela**. The logo (a roof over a V, navy `#0f172a` and blue
+`#2548eb`, or white and `#7c93ff` on dark) is drawn in `src/components/brand.tsx`
+(`Logo`, `LogoMark`, `LogoIcon`, `Wordmark`; the wordmark uses Bricolage Grotesque,
+loaded in `src/app/layout.tsx` as `--font-brand`).
 
-The colours live in `src/app/globals.css` (`@theme`): `primary-*` is the plum
-scale (buttons, links), `slate-*` is overridden with plum-tinted greys (text,
-lines, page background), `lamp-*` is the window yellow (rooms with a guest in,
-the active menu item), and `wall` / `roof` are the building colours. The class
-`stripes` draws a room waiting to be cleaned. Changing these values reskins the
-whole app. `src/components/building-art.tsx` is the decorative building on the
-sign-in and landing pages. The same drawing is in
+The app looks like desktop software. `src/components/layout.tsx` draws the window:
+a blue title bar, section tabs, a toolbar (New booking F2, Walk-in F3, Calendar F4,
+Send guest form, search on `/`, the shift button) and a status bar. All other text
+uses the computer's own fonts (Tahoma / Segoe UI). The look is set in
+`src/app/globals.css` (`@theme`): `primary-*` is the blue for actions and links,
+`chrome` / `chrome-line` are the panel title strips and borders, and the radius and
+shadow values are overridden so every corner is square and nothing floats.
+`src/components/ui.tsx` has the panels, buttons, fields, tabs and windows. The logo
+drawing is also in
 `src/app/icon.svg` (browser tab) and `src/app/apple-icon.png` (phone home screen).
 `docs/brand/` has logo files for use outside the app: SVG mark and icon, and PNG
 logos for light and dark backgrounds.

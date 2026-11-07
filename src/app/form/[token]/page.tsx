@@ -172,10 +172,10 @@ export default function GuestFormPage() {
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
 
   const header = (
-    <header className="bg-wall text-white">
+    <header className="bg-primary-600 text-white">
       <div className="mx-auto max-w-2xl px-4 pb-20 pt-8">
-        <p className="text-sm font-semibold text-lamp-300">Guest registration</p>
-        <h1 className="mt-1 text-4xl font-extrabold tracking-tight">{hotel.name}</h1>
+        <p className="text-sm font-semibold text-primary-100">Guest registration</p>
+        <h1 className="mt-1 text-3xl font-bold">{hotel.name}</h1>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-primary-100">
           {(hotel.address || hotel.city) && (
             <span className="flex items-center gap-1.5">

@@ -42,11 +42,11 @@ export function HandoverNotes({ notes, timeZone, className }: { notes: HandoverD
     <div className={className}>
       <ul className="space-y-2">
         {notes.map((n) => (
-          <li key={n.id} className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <li key={n.id} className="border border-amber-300 bg-amber-50 px-3 py-2">
             <p className="text-xs font-semibold text-amber-800">
               {n.staffName} · shift ended {dayTimeOf(n.endedAt, timeZone)}
             </p>
-            <p className="mt-1 whitespace-pre-line text-[15px] text-slate-900">{n.handoverNote}</p>
+            <p className="mt-0.5 whitespace-pre-line text-sm text-slate-900">{n.handoverNote}</p>
           </li>
         ))}
       </ul>

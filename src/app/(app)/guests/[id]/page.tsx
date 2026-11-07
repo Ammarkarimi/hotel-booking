@@ -56,7 +56,7 @@ export default function GuestProfilePage() {
         </Link>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold sm:text-3xl">
+            <h1 className="flex flex-wrap items-center gap-2 text-xl font-bold">
               {name} {g.vip && <Badge variant="purple">VIP</Badge>} {g.blacklisted && <Badge variant="danger">Do not allow</Badge>}
             </h1>
             <p className="mt-1 text-slate-500">Guest since {formatDate(g.createdAt)}</p>

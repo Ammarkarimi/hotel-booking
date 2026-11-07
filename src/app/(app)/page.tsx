@@ -3,30 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import {
-  ArrowRight,
-  BedDouble,
-  CalendarDays,
-  CalendarPlus,
-  CheckCircle2,
-  Circle,
-  ClipboardCheck,
-  DoorOpen,
-  LogIn,
-  LogOut,
-  Send,
-  Sparkles,
-  UserPlus,
-  Users,
-  Wallet,
-  ShieldCheck,
-} from "lucide-react";
-import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatCard, StatusBadge } from "@/components/ui";
+import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
+import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatusBadge } from "@/components/ui";
 import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
 import { useBookingActions } from "@/components/booking-actions";
 import { HandoverNotes } from "@/components/shift";
-import { SendGuestFormDialog } from "@/components/guest-form-send";
 import { api } from "@/lib/client";
 import { cn, formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { BookingDTO, CurrentShiftDTO, GuestFormDTO } from "@/lib/types";
@@ -68,26 +50,30 @@ interface Dashboard {
   activity: Array<{ id: string; staffName: string; action: string; details: string | null; createdAt: string }>;
 }
 
-function greeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+// Table cells used on this page, the same everywhere so the screen reads like one sheet.
+const TH = "border-b border-slate-300 bg-slate-50 px-2 py-1 text-left text-xs font-bold text-slate-600 whitespace-nowrap";
+const TD = "border-b border-slate-200 px-2 py-1.5 align-middle text-[13px]";
+const EMPTY = "px-2 py-4 text-center text-[13px] text-slate-500";
+
+/** "9 Nov" from a date key. */
+function shortDate(key: string) {
+  return new Date(`${key}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
-function BookingLine({ b, children, sub }: { b: BookingDTO; children?: React.ReactNode; sub?: React.ReactNode }) {
+function firstName(name: string) {
+  return name.trim().split(/\s+/)[0] ?? name;
+}
+
+function GuestCell({ b }: { b: BookingDTO }) {
   return (
-    <div className="flex flex-col gap-3 border-b border-slate-100 px-5 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
-      <Link href={`/bookings/${b.id}`} className="min-w-0 hover:underline">
-        <p className="truncate text-[15px] font-semibold text-slate-900">
-          {b.guestName} {b.guest.vip && <Badge variant="purple">VIP</Badge>}
-        </p>
-        <p className="text-sm text-slate-500">
-          Room {b.room.roomNumber} · #{b.number} {sub}
-        </p>
-      </Link>
-      <div className="flex shrink-0 flex-wrap gap-2">{children}</div>
-    </div>
+    <Link href={`/bookings/${b.id}`} className="font-semibold text-primary-700 hover:underline">
+      {b.guestName}
+      {b.guest.vip && (
+        <Badge variant="purple" className="ml-1.5">
+          VIP
+        </Badge>
+      )}
+    </Link>
   );
 }
 
@@ -99,156 +85,143 @@ function SetupChecklist({ data }: { data: Dashboard }) {
   ];
   if (steps.every((s) => s.done)) return null;
   return (
-    <Card className="border-primary-200 bg-primary-50/50">
+    <Card>
       <CardHeader title="Getting started" description="Three quick steps to set up your hotel. It takes about 10 minutes." />
-      <div className="divide-y divide-primary-100">
+      <ul>
         {steps.map((s, i) => (
-          <Link key={s.text} href={s.href} className="flex items-center gap-3 px-5 py-3 hover:bg-primary-50">
-            {s.done ? <CheckCircle2 className="h-6 w-6 text-emerald-600" /> : <Circle className="h-6 w-6 text-primary-300" />}
-            <span className={cn("flex-1 text-[15px] font-medium", s.done && "text-slate-400 line-through")}>
-              Step {i + 1}: {s.text}
-            </span>
-            {!s.done && <ArrowRight className="h-5 w-5 text-primary-600" />}
-          </Link>
+          <li key={s.text} className="border-b border-slate-200 last:border-0">
+            <Link href={s.href} className="flex items-center gap-2 px-3 py-2 text-[13px] hover:bg-primary-50">
+              {s.done ? <CheckCircle2 className="h-4 w-4 text-emerald-700" /> : <Circle className="h-4 w-4 text-slate-400" />}
+              <span className={cn("flex-1", s.done ? "text-slate-400 line-through" : "font-semibold text-primary-700 underline")}>
+                Step {i + 1}: {s.text}
+              </span>
+            </Link>
+          </li>
         ))}
-      </div>
+      </ul>
     </Card>
   );
 }
 
-/** Which floor a room is on: the floor typed in Rooms, or the first digit of a number like 204. */
-function floorKey(r: DashboardRoom): string {
-  const typed = r.floor?.trim();
-  if (typed) return typed;
-  return /^\d{3,4}$/.test(r.roomNumber) ? String(Math.floor(Number(r.roomNumber) / 100)) : "";
-}
-
-function floorName(key: string): string {
-  if (key === "") return "Other rooms";
-  if (key === "0" || /^g(round)?$/i.test(key)) return "Ground";
-  return /^\d+$/.test(key) ? `Floor ${key}` : key;
-}
-
-const FLOOR_WORDS = ["ground", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
-
-/** Top floor first, like looking at the building from the street. Rooms without a floor go last. */
-function floorRank(key: string): number {
-  if (key === "") return -Infinity;
-  const lower = key.toLowerCase();
-  if (lower === "g" || lower.startsWith("ground")) return 0;
-  const n = parseFloat(lower.replace(/[^\d.-]/g, ""));
-  if (Number.isFinite(n)) return n;
-  const word = FLOOR_WORDS.findIndex((w) => lower.startsWith(w));
-  return word >= 0 ? word : -1;
-}
-
-type TileState = "free" | "occupied" | "arriving" | "booked" | "maintenance";
-
-// Lit windows have a guest in; plain windows are free; a yellow top edge means someone arrives today.
-const TILE_STYLES: Record<TileState, string> = {
-  occupied: "bg-lamp-400 text-primary-900",
-  free: "bg-slate-50 text-primary-900",
-  arriving: "bg-slate-50 text-primary-900 shadow-[inset_0_5px_0_var(--color-lamp-400)]",
-  booked: "bg-primary-100 text-primary-900",
-  maintenance: "bg-roof text-primary-300 ring-1 ring-inset ring-white/10",
-};
-
-function RoomBoard({ rooms, leavingToday }: { rooms: DashboardRoom[]; leavingToday: Set<string> }) {
+/** The day's numbers in one strip. Each opens the matching screen. */
+function Figures({ data }: { data: Dashboard }) {
   const router = useRouter();
-  if (rooms.length === 0) return null;
+  const { stats } = data;
+  const byMethod = Object.entries(stats.collectedByMethod)
+    .map(([m, v]) => `${label(m)} ${formatCurrency(v)}`)
+    .join(", ");
+  const cells: Array<{ title: string; value: string; sub: string; href?: string; tone?: string }> = [
+    { title: "Guests staying", value: `${stats.occupied} / ${stats.totalRooms - stats.maintenance}`, sub: `${stats.occupancy}% full tonight` },
+    { title: "Free rooms tonight", value: String(stats.freeTonight), sub: stats.maintenance ? `${stats.maintenance} not usable` : "Ready to sell", href: "/bookings/new" },
+    { title: "Rooms to clean", value: String(stats.dirty), sub: "Open housekeeping", href: "/housekeeping", tone: stats.dirty ? "text-red-700" : undefined },
+    { title: "Money received today", value: formatCurrency(stats.collectedToday), sub: byMethod || "No payments yet", href: "/payments" },
+    { title: "Money to collect", value: formatCurrency(stats.owed), sub: "From guests staying or left", href: "/bookings?view=unpaid", tone: stats.owed > 0 ? "text-red-700" : undefined },
+  ];
+  return (
+    <div className="grid grid-cols-2 border-l border-t border-chrome-line bg-white sm:grid-cols-3 xl:grid-cols-5">
+      {cells.map((c) => {
+        const body = (
+          <>
+            <span className="block text-xs font-semibold text-slate-600">{c.title}</span>
+            <span className={cn("block text-lg font-bold tabular-nums text-slate-900", c.tone)}>{c.value}</span>
+            <span className="block truncate text-xs text-slate-500">{c.sub}</span>
+          </>
+        );
+        const cls = "border-b border-r border-chrome-line px-3 py-1.5 text-left";
+        return c.href ? (
+          <button key={c.title} onClick={() => router.push(c.href!)} className={cn(cls, "hover:bg-primary-50")}>
+            {body}
+          </button>
+        ) : (
+          <div key={c.title} className={cls}>
+            {body}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
-  const floors = new Map<string, DashboardRoom[]>();
-  for (const r of rooms) {
-    const key = floorKey(r);
-    floors.set(key, [...(floors.get(key) ?? []), r]);
-  }
-  const ordered = [...floors.entries()].sort((a, b) => floorRank(b[0]) - floorRank(a[0]));
+/** Every room as a small box: grey when a guest is in tonight, white when not. */
+function RoomsTonight({ data }: { data: Dashboard }) {
+  const router = useRouter();
+  if (data.rooms.length === 0) return null;
+  const staying = new Map(data.inHouse.map((b) => [b.room.id, b]));
+  const leaving = new Set(data.departures.map((b) => b.room.id));
 
   return (
-    <section aria-labelledby="rooms-now" className="min-w-0">
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h2 id="rooms-now" className="text-xl font-bold text-slate-900">All rooms right now</h2>
-          <p className="text-sm text-slate-500">Lit windows have a guest in. Tap a free room to book it, or any other room to open it.</p>
-        </div>
-        <Link href="/calendar" className="shrink-0">
-          <Button variant="outline" size="sm">
-            <CalendarDays className="h-4 w-4" /> Calendar
-          </Button>
-        </Link>
+    <Card>
+      <CardHeader
+        title="Rooms tonight"
+        description="Click a free room to book it, or any other room to see it in the calendar."
+        action={
+          <Link href="/calendar" className="text-[13px] font-semibold text-primary-700 underline">
+            Calendar
+          </Link>
+        }
+      />
+      <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-[repeat(auto-fill,minmax(150px,1fr))]">
+        {data.rooms.map((r) => {
+          const dirty = r.housekeeping !== "clean";
+          const booking = staying.get(r.id);
+          let state: string;
+          let line: React.ReactNode;
+          if (r.status === "maintenance") {
+            state = "Not usable";
+            line = label(r.type);
+          } else if (r.guestName) {
+            state = firstName(r.guestName);
+            line = leaving.has(r.id) ? "Leaves today" : booking ? `Till ${shortDate(booking.checkOutDate)}` : label(r.type);
+          } else if (r.arrivingGuest) {
+            state = "Arriving";
+            line = firstName(r.arrivingGuest);
+          } else if (r.freeTonight) {
+            state = "Free";
+            line = dirty ? <span className="text-red-700">Needs cleaning</span> : <span className="text-emerald-700">Ready</span>;
+          } else {
+            state = "Booked";
+            line = "Guest not in yet";
+          }
+          const occupied = !!r.guestName && r.status !== "maintenance";
+          return (
+            <button
+              key={r.id}
+              onClick={() => router.push(r.status !== "maintenance" && !r.guestName && !r.arrivingGuest && r.freeTonight ? `/bookings/new?room=${r.id}` : `/calendar?room=${r.id}`)}
+              title={`Room ${r.roomNumber}, ${label(r.type)}${dirty ? `, ${label(r.housekeeping)}` : ""}`}
+              className={cn(
+                "border border-slate-300 px-2.5 py-1.5 text-left text-[13px] leading-snug hover:border-primary-500",
+                occupied ? "bg-slate-100" : "bg-white",
+                r.status === "maintenance" && "text-slate-400"
+              )}
+            >
+              <span className="block truncate">
+                <b className={r.status === "maintenance" ? "" : "text-slate-900"}>{r.roomNumber}</b> {state}
+              </span>
+              <span className={cn("block truncate", r.status === "maintenance" ? "" : "text-slate-500")}>{line}</span>
+              {occupied && dirty && <span className="block truncate text-red-700">Needs cleaning</span>}
+            </button>
+          );
+        })}
       </div>
-
-      <div aria-hidden="true" className="mx-1 h-9 bg-roof [clip-path:polygon(3%_100%,50%_0,97%_100%)]" />
-      <div className="space-y-3 bg-wall px-3 pb-4 pt-4 sm:px-5">
-        {ordered.map(([key, list]) => (
-          <div key={key || "none"} className="grid grid-cols-[52px_minmax(0,1fr)] items-stretch gap-2.5 sm:grid-cols-[72px_minmax(0,1fr)]">
-            <p className="flex items-center text-xs font-bold text-primary-200 sm:text-sm">{floorName(key)}</p>
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5">
-              {list.map((r) => {
-                const state: TileState =
-                  r.status === "maintenance" ? "maintenance" : r.guestName ? "occupied" : r.arrivingGuest ? "arriving" : r.freeTonight ? "free" : "booked";
-                const text =
-                  state === "maintenance" ? "Not usable" : state === "occupied" ? r.guestName : state === "arriving" ? `Arriving: ${r.arrivingGuest}` : state === "free" ? "Free tonight" : "Booked tonight";
-                const needsCleaning = r.housekeeping !== "clean";
-                const leaving = state === "occupied" && leavingToday.has(r.id);
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => router.push(state === "free" ? `/bookings/new?room=${r.id}` : `/calendar?room=${r.id}`)}
-                    className={cn(
-                      "flex min-h-[104px] flex-col justify-end rounded-t-md rounded-b-sm px-2.5 pb-3 pt-2.5 text-left transition hover:ring-2 hover:ring-lamp-200",
-                      TILE_STYLES[state],
-                      needsCleaning && state !== "occupied" && state !== "maintenance" && "stripes",
-                      leaving && "shadow-[inset_0_-6px_0_#d9541e]"
-                    )}
-                  >
-                    <span className="flex items-center justify-between gap-1">
-                      <span className="font-heading text-[22px] font-extrabold leading-none">{r.roomNumber}</span>
-                      {needsCleaning && (
-                        <span title={label(r.housekeeping)} className="rounded-full bg-white/85 p-1 text-red-700">
-                          <Sparkles className="h-3.5 w-3.5" />
-                          <span className="sr-only">{label(r.housekeeping)}</span>
-                        </span>
-                      )}
-                    </span>
-                    <span className="mt-1.5 truncate text-[13px] font-bold leading-tight">{text}</span>
-                    <span className="truncate text-xs leading-tight opacity-80">{leaving ? "Leaves today" : label(r.type)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div aria-hidden="true" className="h-2.5 rounded-b bg-slate-400" />
-
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-slate-600">
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-lamp-400" /> Guest staying</span>
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm border border-slate-400 bg-slate-50" /> Free</span>
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm border border-slate-400 bg-slate-50 shadow-[inset_0_3px_0_var(--color-lamp-400)]" /> Arriving today</span>
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-primary-100 ring-1 ring-primary-200" /> Booked tonight</span>
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-lamp-400 shadow-[inset_0_-3px_0_#d9541e]" /> Leaves today</span>
-        <span className="flex items-center gap-1.5"><span className="stripes h-3.5 w-3.5 rounded-sm" /> Needs cleaning</span>
-        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-roof" /> Not usable</span>
-      </div>
-    </section>
+      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight.</p>
+    </Card>
   );
 }
 
 export default function TodayPage() {
-  const { user, isAdmin, settings } = useApp();
-  const router = useRouter();
+  const { isAdmin, settings } = useApp();
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [shifts, setShifts] = useState<CurrentShiftDTO | null>(null);
   const [forms, setForms] = useState<GuestFormDTO[]>([]);
-  const [sendOpen, setSendOpen] = useState(false);
+  const [loadedAt, setLoadedAt] = useState<Date | null>(null);
 
   const load = useCallback(() => {
     api<Dashboard>("/api/dashboard")
       .then((d) => {
         setData(d);
         setError("");
+        setLoadedAt(new Date());
       })
       .catch((e) => setError(e.message));
     api<CurrentShiftDTO>("/api/shifts/current").then(setShifts).catch(() => undefined);
@@ -266,96 +239,79 @@ export default function TodayPage() {
   if (error && !data) return <EmptyState title="Could not load today's information" description={error} action={<Button onClick={load}>Try again</Button>} />;
   if (!data) return <Loading text="Loading today's information..." />;
 
-  const { stats } = data;
   const stayingNotLeaving = data.inHouse.filter((b) => b.checkOutDate > data.today);
   const notInPathik = data.inHouse.filter((b) => !b.pathikAt);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2 border-b border-chrome-line pb-2">
         <div>
-          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-primary-600 sm:text-4xl">
-            {greeting()}, {user.name.split(" ")[0]}
-          </h1>
-          <p className="mt-1 text-[15px] text-slate-500">
-            {formatDate(data.today)}. Here is what needs your attention today.
-          </p>
+          <h1 className="text-xl font-bold text-slate-900">Today</h1>
+          <p className="text-[13px] text-slate-600">{formatDate(data.today)}</p>
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 [&>button]:whitespace-nowrap">
-          <Button size="lg" onClick={() => router.push("/bookings/new")}>
-            <CalendarPlus className="h-5 w-5" /> New booking
-          </Button>
-          <Button size="lg" variant="success" onClick={() => router.push("/bookings/new?walkin=1")}>
-            <UserPlus className="h-5 w-5" /> Walk-in guest
-          </Button>
-          <Button size="lg" variant="outline" onClick={() => router.push("/calendar")}>
-            <CalendarDays className="h-5 w-5" /> Room calendar
-          </Button>
-          <Button size="lg" variant="outline" onClick={() => setSendOpen(true)}>
-            <Send className="h-5 w-5" /> Send guest form
-          </Button>
-        </div>
+        <Button size="sm" variant="outline" onClick={load} title="Updates by itself every minute">
+          <RefreshCw className="h-4 w-4" /> Refresh
+          {loadedAt && <span className="text-xs font-normal text-slate-500">{loadedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span>}
+        </Button>
       </div>
-      <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />
 
       {settings.pathik && notInPathik.length > 0 && (
-        <div role="alert" className="flex flex-col gap-3 rounded-xl border-2 border-lamp-400 bg-lamp-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-start gap-3 text-lamp-900">
-            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-lamp-700" />
-            <span>
-              <span className="block text-lg font-bold">
-                {notInPathik.length} guest{notInPathik.length === 1 ? "" : "s"} still to enter in Pathik
-              </span>
-              <span className="block text-sm">
-                {notInPathik
-                  .slice(0, 4)
-                  .map((b) => `${b.guestName} (Room ${b.room.roomNumber})`)
-                  .join(", ")}
-                {notInPathik.length > 4 ? ` and ${notInPathik.length - 4} more` : ""}
-              </span>
-            </span>
+        <div role="alert" className="flex flex-col gap-2 border border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            <b>
+              Pathik: {notInPathik.length} guest{notInPathik.length === 1 ? "" : "s"} not entered yet.
+            </b>{" "}
+            {notInPathik
+              .slice(0, 4)
+              .map((b) => `${b.guestName} (Room ${b.room.roomNumber})`)
+              .join(", ")}
+            {notInPathik.length > 4 ? ` and ${notInPathik.length - 4} more` : ""}
           </p>
-          <Button variant="outline" className="shrink-0 border-lamp-400 bg-white" onClick={() => document.getElementById("pathik-left")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+          <Button size="sm" variant="outline" className="shrink-0" onClick={() => document.getElementById("pathik-left")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
             Fill them now
           </Button>
         </div>
       )}
 
+      <Figures data={data} />
+
       {forms.length > 0 && (
-        <Card className="border-primary-200">
+        <Card>
           <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <ClipboardCheck className="h-5 w-5 text-primary-600" /> Guest forms: choose a room
-              </span>
-            }
+            title={`Guest forms: choose a room (${forms.length})`}
             description="These guests filled in their details on WhatsApp"
             action={
-              <Link href="/guest-forms" className="text-sm font-semibold text-primary-600 hover:underline">
+              <Link href="/guest-forms" className="text-[13px] font-semibold text-primary-700 underline">
                 All forms
               </Link>
             }
           />
-          <ul className="divide-y divide-slate-100">
-            {forms.slice(0, 5).map((f) => (
-              <li key={f.id} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  <span className="block font-semibold">{f.details ? `${f.details.firstName} ${f.details.lastName}`.trim() : f.phone}</span>
-                  {f.details && (
-                    <span className="block text-sm text-slate-500">
-                      {formatDate(f.details.checkIn)} → {formatDate(f.details.checkOut)} · {f.details.adults + f.details.children} guest
-                      {f.details.adults + f.details.children > 1 ? "s" : ""}
-                    </span>
-                  )}
-                </span>
-                <Link href={`/bookings/new?form=${f.id}`}>
-                  <Button size="sm">
-                    <BedDouble className="h-4 w-4" /> Choose room & book
-                  </Button>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Dates</th>
+                  <th className={TH}>Guests</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {forms.slice(0, 5).map((f) => (
+                  <tr key={f.id}>
+                    <td className={cn(TD, "font-semibold")}>{f.details ? `${f.details.firstName} ${f.details.lastName}`.trim() : f.phone}</td>
+                    <td className={TD}>{f.details ? `${formatDate(f.details.checkIn)} to ${formatDate(f.details.checkOut)}` : ""}</td>
+                    <td className={TD}>{f.details ? f.details.adults + f.details.children : ""}</td>
+                    <td className={cn(TD, "text-right")}>
+                      <Link href={`/bookings/new?form=${f.id}`}>
+                        <Button size="sm">Choose room and book</Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
 
@@ -368,141 +324,166 @@ export default function TodayPage() {
             description="Left by staff at the end of their shift"
             action={
               isAdmin ? (
-                <Link href="/shifts" className="text-sm font-semibold text-primary-600 hover:underline">
+                <Link href="/shifts" className="text-[13px] font-semibold text-primary-700 underline">
                   All shifts{shifts.unread ? ` (${shifts.unread} new)` : ""}
                 </Link>
               ) : undefined
             }
           />
-          <HandoverNotes notes={shifts.handovers} timeZone={settings.timezone} className="px-5 pb-5" />
+          <HandoverNotes notes={shifts.handovers} timeZone={settings.timezone} className="p-2" />
         </Card>
       )}
 
-      <div className={cn("grid gap-6", data.rooms.length > 0 && "xl:grid-cols-[minmax(0,1fr)_300px]")}>
-        <RoomBoard rooms={data.rooms} leavingToday={new Set(data.departures.map((b) => b.room.id))} />
-        <div className={cn("grid content-start gap-3", data.rooms.length > 0 ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-1" : "grid-cols-2 md:grid-cols-3 2xl:grid-cols-5")}>
-          <StatCard title="Guests staying" value={`${stats.occupied} / ${stats.totalRooms - stats.maintenance}`} subtitle={`${stats.occupancy}% full tonight`} icon={<Users className="h-5 w-5" />} tone="sky" />
-          <StatCard title="Free rooms tonight" value={stats.freeTonight} subtitle={stats.maintenance ? `${stats.maintenance} not usable` : "Ready to sell"} icon={<BedDouble className="h-5 w-5" />} tone="green" onClick={() => router.push("/bookings/new")} />
-          <StatCard title="Rooms to clean" value={stats.dirty} subtitle="Tap to see list" icon={<Sparkles className="h-5 w-5" />} tone={stats.dirty ? "red" : "green"} onClick={() => router.push("/housekeeping")} />
-          <StatCard
-            title="Money received today"
-            value={formatCurrency(stats.collectedToday)}
-            subtitle={Object.entries(stats.collectedByMethod).map(([m, v]) => `${label(m)} ${formatCurrency(v)}`).join(" · ") || "No payments yet"}
-            icon={<Wallet className="h-5 w-5" />}
-            tone="primary"
-            onClick={() => router.push("/payments")}
-          />
-          <StatCard title="Money to collect" value={formatCurrency(stats.owed)} subtitle="From guests staying or left" icon={<Wallet className="h-5 w-5" />} tone={stats.owed > 0 ? "amber" : "green"} onClick={() => router.push("/bookings?view=unpaid")} />
-        </div>
-      </div>
-
-      {settings.pathik && notInPathik.length > 0 && (
-        <Card className="scroll-mt-4 border-lamp-300" id="pathik-left">
-          <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-lamp-700" /> Not entered in Pathik yet ({notInPathik.length})
-              </span>
-            }
-            description="Guests staying now who are not marked as entered in the police guest register."
-          />
-          {notInPathik.map((b) => (
-            <BookingLine key={b.id} b={b}>
-              <PathikButton bookingId={b.id} onChanged={load} />
-            </BookingLine>
-          ))}
-        </Card>
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
-          <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <LogIn className="h-5 w-5 text-lamp-700" /> Arriving today ({data.arrivals.length})
-              </span>
-            }
-            description="Guests expected to arrive. Press “Check in” when they reach the desk."
-          />
-          {data.arrivals.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-500">No more arrivals today.</p>
-          ) : (
-            data.arrivals.map((b) => (
-              <BookingLine
-                key={b.id}
-                b={b}
-                sub={
-                  <>
-                    · {b.folio.nightCount} night{b.folio.nightCount === 1 ? "" : "s"}
-                    {b.flags.lateArrival && <Badge variant="danger" className="ml-1">Was due {formatDate(b.checkInDate)}</Badge>}
-                  </>
-                }
-              >
-                <Button size="sm" variant="success" onClick={() => actions.checkIn(b)} loading={actions.busy === b.id}>
-                  <LogIn className="h-4 w-4" /> Check in
-                </Button>
-                {b.flags.lateArrival && (
-                  <Button size="sm" variant="outline" onClick={() => actions.noShow(b)}>
-                    Did not come
-                  </Button>
+          <CardHeader title={`Arriving today (${data.arrivals.length})`} description="Press Check in when the guest reaches the desk." />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>No.</th>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Room</th>
+                  <th className={TH}>Nights</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {data.arrivals.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className={EMPTY}>
+                      No more arrivals today.
+                    </td>
+                  </tr>
+                ) : (
+                  data.arrivals.map((b) => (
+                    <tr key={b.id}>
+                      <td className={cn(TD, "text-slate-500")}>{b.number}</td>
+                      <td className={TD}>
+                        <GuestCell b={b} />
+                        {b.flags.lateArrival && (
+                          <Badge variant="danger" className="ml-1.5">
+                            Was due {formatDate(b.checkInDate)}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className={TD}>{b.room.roomNumber}</td>
+                      <td className={TD}>{b.folio.nightCount}</td>
+                      <td className={cn(TD, "whitespace-nowrap text-right")}>
+                        <span className="inline-flex gap-1.5">
+                          {b.flags.lateArrival && (
+                            <Button size="sm" variant="outline" onClick={() => actions.noShow(b)}>
+                              Did not come
+                            </Button>
+                          )}
+                          <Button size="sm" variant="success" onClick={() => actions.checkIn(b)} loading={actions.busy === b.id}>
+                            Check in
+                          </Button>
+                        </span>
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </BookingLine>
-            ))
-          )}
+              </tbody>
+            </table>
+          </div>
         </Card>
 
         <Card>
-          <CardHeader
-            title={
-              <span className="flex items-center gap-2">
-                <LogOut className="h-5 w-5 text-primary-600" /> Leaving today ({data.departures.length})
-              </span>
-            }
-            description="Collect any money due, then press “Check out”."
-          />
-          {data.departures.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-500">No more check-outs today.</p>
-          ) : (
-            data.departures.map((b) => (
-              <BookingLine
-                key={b.id}
-                b={b}
-                sub={
-                  <>
-                    {b.folio.balance > 0.5 ? (
-                      <span className="font-semibold text-red-600"> · owes {formatCurrency(b.folio.balance)}</span>
-                    ) : (
-                      <span className="text-emerald-600"> · fully paid</span>
-                    )}
-                    {b.flags.overstay && <Badge variant="danger" className="ml-1">Was due {formatDate(b.checkOutDate)}</Badge>}
-                  </>
-                }
-              >
-                <Button size="sm" onClick={() => actions.checkOut(b)}>
-                  <DoorOpen className="h-4 w-4" /> Check out
-                </Button>
-              </BookingLine>
-            ))
-          )}
+          <CardHeader title={`Leaving today (${data.departures.length})`} description="Collect any money due, then press Check out." />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>No.</th>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Room</th>
+                  <th className={cn(TH, "text-right")}>Balance</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {data.departures.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className={EMPTY}>
+                      No more check-outs today.
+                    </td>
+                  </tr>
+                ) : (
+                  data.departures.map((b) => (
+                    <tr key={b.id}>
+                      <td className={cn(TD, "text-slate-500")}>{b.number}</td>
+                      <td className={TD}>
+                        <GuestCell b={b} />
+                        {b.flags.overstay && (
+                          <Badge variant="danger" className="ml-1.5">
+                            Was due {formatDate(b.checkOutDate)}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className={TD}>{b.room.roomNumber}</td>
+                      <td className={cn(TD, "text-right tabular-nums")}>
+                        {b.folio.balance > 0.5 ? <b className="text-red-700">{formatCurrency(b.folio.balance)}</b> : <span className="text-emerald-700">Paid</span>}
+                      </td>
+                      <td className={cn(TD, "text-right")}>
+                        <Button size="sm" onClick={() => actions.checkOut(b)}>
+                          Check out
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <RoomsTonight data={data} />
+
+      <div className="grid gap-3 lg:grid-cols-2">
         <Card>
           <CardHeader title={`Staying now (${stayingNotLeaving.length})`} description="Guests in the hotel who leave on a later day." />
-          {stayingNotLeaving.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-500">No other guests staying.</p>
-          ) : (
-            stayingNotLeaving.map((b) => (
-              <BookingLine key={b.id} b={b} sub={<>· leaves {formatDate(b.checkOutDate)}</>}>
-                {b.folio.balance > 0.5 && (
-                  <Button size="sm" variant="outline" onClick={() => actions.takePayment(b)}>
-                    Take payment
-                  </Button>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>No.</th>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Room</th>
+                  <th className={TH}>Leaves</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {stayingNotLeaving.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className={EMPTY}>
+                      No other guests staying.
+                    </td>
+                  </tr>
+                ) : (
+                  stayingNotLeaving.map((b) => (
+                    <tr key={b.id}>
+                      <td className={cn(TD, "text-slate-500")}>{b.number}</td>
+                      <td className={TD}>
+                        <GuestCell b={b} />
+                      </td>
+                      <td className={TD}>{b.room.roomNumber}</td>
+                      <td className={TD}>{formatDate(b.checkOutDate)}</td>
+                      <td className={cn(TD, "text-right")}>
+                        {b.folio.balance > 0.5 && (
+                          <Button size="sm" variant="outline" onClick={() => actions.takePayment(b)}>
+                            Take payment
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
                 )}
-              </BookingLine>
-            ))
-          )}
+              </tbody>
+            </table>
+          </div>
         </Card>
 
         <Card>
@@ -510,25 +491,87 @@ export default function TodayPage() {
             title="Money still to collect"
             description="Guests who have not paid in full."
             action={
-              <Link href="/bookings?view=unpaid" className="text-sm font-semibold text-primary-600 hover:underline">
+              <Link href="/bookings?view=unpaid" className="text-[13px] font-semibold text-primary-700 underline">
                 See all
               </Link>
             }
           />
-          {data.unpaid.length === 0 ? (
-            <p className="px-5 py-6 text-center text-sm text-slate-500">Everyone has paid. 🎉</p>
-          ) : (
-            data.unpaid.slice(0, 6).map((b) => (
-              <BookingLine key={b.id} b={b} sub={<> · <StatusBadge status={b.status} /></>}>
-                <span className="self-center text-[15px] font-bold text-red-600">{formatCurrency(b.folio.balance)}</span>
-                <Button size="sm" variant="success" onClick={() => actions.takePayment(b)}>
-                  Take payment
-                </Button>
-              </BookingLine>
-            ))
-          )}
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>No.</th>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Room</th>
+                  <th className={TH}>Status</th>
+                  <th className={cn(TH, "text-right")}>Due</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {data.unpaid.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className={EMPTY}>
+                      Everyone has paid.
+                    </td>
+                  </tr>
+                ) : (
+                  data.unpaid.slice(0, 6).map((b) => (
+                    <tr key={b.id}>
+                      <td className={cn(TD, "text-slate-500")}>{b.number}</td>
+                      <td className={TD}>
+                        <GuestCell b={b} />
+                      </td>
+                      <td className={TD}>{b.room.roomNumber}</td>
+                      <td className={TD}>
+                        <StatusBadge status={b.status} />
+                      </td>
+                      <td className={cn(TD, "text-right font-bold tabular-nums text-red-700")}>{formatCurrency(b.folio.balance)}</td>
+                      <td className={cn(TD, "text-right")}>
+                        <Button size="sm" variant="success" onClick={() => actions.takePayment(b)}>
+                          Take payment
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </Card>
       </div>
+
+      {settings.pathik && notInPathik.length > 0 && (
+        <Card className="scroll-mt-14" id="pathik-left">
+          <CardHeader title={`Not entered in Pathik yet (${notInPathik.length})`} description="Guests staying now who are not marked as entered in the police guest register." />
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>No.</th>
+                  <th className={TH}>Guest</th>
+                  <th className={TH}>Room</th>
+                  <th className={TH} />
+                </tr>
+              </thead>
+              <tbody>
+                {notInPathik.map((b) => (
+                  <tr key={b.id}>
+                    <td className={cn(TD, "text-slate-500")}>{b.number}</td>
+                    <td className={TD}>
+                      <GuestCell b={b} />
+                    </td>
+                    <td className={TD}>{b.room.roomNumber}</td>
+                    <td className={cn(TD, "text-right")}>
+                      <PathikButton bookingId={b.id} onChanged={load} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {isAdmin && data.activity.length > 0 && (
         <Card>
@@ -536,29 +579,41 @@ export default function TodayPage() {
             title="Recent activity"
             description="Who did what, most recent first."
             action={
-              <Link href="/settings?tab=activity" className="text-sm font-semibold text-primary-600 hover:underline">
+              <Link href="/settings?tab=activity" className="text-[13px] font-semibold text-primary-700 underline">
                 Full history
               </Link>
             }
           />
-          <ul className="divide-y divide-slate-100">
-            {data.activity.map((a) => (
-              <li key={a.id} className="flex flex-col gap-0.5 px-5 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
-                <span>
-                  <b>{a.staffName}</b> — {a.action}
-                  {a.details && <span className="text-slate-500">: {a.details}</span>}
-                </span>
-                <span className="shrink-0 text-xs text-slate-400">{formatDateTime(a.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className={TH}>Time</th>
+                  <th className={TH}>Staff</th>
+                  <th className={TH}>What they did</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.activity.map((a) => (
+                  <tr key={a.id}>
+                    <td className={cn(TD, "whitespace-nowrap text-slate-500")}>{formatDateTime(a.createdAt)}</td>
+                    <td className={cn(TD, "whitespace-nowrap font-semibold")}>{a.staffName}</td>
+                    <td className={TD}>
+                      {a.action}
+                      {a.details && <span className="text-slate-500">: {a.details}</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </Card>
       )}
 
-      {stats.upcomingWeek > 0 && (
-        <p className="text-center text-sm text-slate-500">
-          {stats.upcomingWeek} more booking{stats.upcomingWeek === 1 ? "" : "s"} arriving in the next 7 days.{" "}
-          <Link href="/bookings?view=upcoming" className="font-semibold text-primary-600 hover:underline">
+      {data.stats.upcomingWeek > 0 && (
+        <p className="text-[13px] text-slate-600">
+          {data.stats.upcomingWeek} more booking{data.stats.upcomingWeek === 1 ? "" : "s"} arriving in the next 7 days.{" "}
+          <Link href="/bookings?view=upcoming" className="font-semibold text-primary-700 underline">
             View upcoming
           </Link>
         </p>
