@@ -29,6 +29,7 @@ src/
 │   │   ├── [hotel]/           # A hotel's public booking website
 │   │   └── confirmation/[token]/
 │   ├── print/[kind]/[id]/     # invoice | confirmation | registration
+│   ├── print/day-sheet/       # Day sheet (client page from /api/dashboard, so it opens offline too)
 │   ├── welcome/               # Public landing page (shown at / to signed-out visitors)
 │   ├── login/
 │   └── api/                   # JSON API (see below)
@@ -51,6 +52,8 @@ src/
 │   ├── guest-forms-api.ts     # Guest form links and the shape staff screens get (database)
 │   ├── shift-api.ts           # Shared by the shift API routes
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
+│   ├── day-sheet.ts           # Day sheet lists and its WhatsApp text (pure)
+│   ├── offline.ts             # Registers public/sw.js, clears its caches on sign-out, online/offline hook
 │   ├── expenses.ts            # Expense validation and who may change what
 │   ├── settings.ts, public.ts, api.ts, …
 │   └── __tests__/             # Unit tests
@@ -62,6 +65,7 @@ prisma/
 scripts/vercel-build.mjs       # Build script used by Vercel
 scripts/tour/                  # Records the landing-page video and screenshots
 public/welcome/                # Landing-page video (MP4 + WebM), poster and screenshots
+public/sw.js                   # Offline copy of the Dashboard and Day sheet (service worker)
 ```
 
 ## Data model
@@ -158,6 +162,23 @@ only checks the token’s signature; the full checks run in `getSession()` and
 `getPlatformSession()` on every API call and page.
 
 - Sign-in attempts are rate-limited in memory, per server instance.
+
+### Offline copy (`public/sw.js`)
+
+A service worker, registered from the app shell in production builds only
+(`src/lib/offline.ts`). It never makes anything work offline except reading:
+
+| Request | What it does |
+|---|---|
+| Page navigation to `/` or `/print/day-sheet` | Network first. A 200 response carrying `x-signed-in: 1` (set by the middleware on signed-in requests only, so the landing page is never saved) is stored in `innvela-offline-pages-v1`. Offline: the stored page. |
+| Any other page navigation | Network; offline: a small built-in "No internet" page (503) linking to the two pages above |
+| `GET /api/dashboard` | Network first; a 200 is stored with an `x-saved-at` time. Network error or 5xx: the stored copy with `offlineSavedAt` added to the JSON (the Dashboard and Day sheet show a yellow note). 401 deletes every copy. |
+| `/_next/static/*` | From `innvela-offline-files-v1` when present, otherwise network. That cache holds exactly the files the stored pages (and their CSS) refer to; others are deleted. |
+
+The shell posts `"warm"` on load and every 10 minutes (the worker refreshes at
+most every 10 minutes). Sign-out and the sign-in page delete every
+`innvela-offline-*` cache. Changing what is cached: bump the `-v1` names so
+`activate` removes the old caches.
 - The public booking form has a hidden spam trap and is rate-limited.
 
 ## Booking rules worth knowing

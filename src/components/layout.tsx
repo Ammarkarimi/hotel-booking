@@ -21,6 +21,7 @@ import { SendGuestFormDialog } from "@/components/guest-form-send";
 import { LogoMark } from "@/components/brand";
 import type { SessionUser } from "@/lib/session";
 import { moduleForPath, notInPackageMessage, type ModuleKey } from "@/lib/modules";
+import { clearOffline, startOffline, useOnline } from "@/lib/offline";
 
 const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; module?: ModuleKey }> = [
   { href: "/", label: "Dashboard", hint: "What is happening now" },
@@ -291,8 +292,17 @@ function Shell({ children }: { children: React.ReactNode }) {
   // A page from a module the package does not include (an old link or bookmark).
   const pageModule = moduleForPath(pathname);
   const lockedModule = pageModule && !has(pageModule) ? pageModule : null;
+  const online = useOnline();
+
+  // Keep a copy of the Dashboard and Day sheet on this computer for when the internet goes.
+  useEffect(() => {
+    startOffline();
+    const t = setInterval(startOffline, 10 * 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   async function handleLogout() {
+    await clearOffline();
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();
@@ -379,6 +389,16 @@ function Shell({ children }: { children: React.ReactNode }) {
       {settings.subscriptionNotice && (
         <div role="status" className="no-print border-b border-amber-300 bg-amber-50 px-3 py-2 text-[13px] font-semibold text-amber-900">
           {settings.subscriptionNotice}
+        </div>
+      )}
+
+      {!online && (
+        <div role="alert" className="no-print border-b border-red-300 bg-red-50 px-3 py-2 text-[13px] text-red-900">
+          <b>No internet.</b> The Dashboard and the{" "}
+          <a href="/print/day-sheet" target="_blank" className="font-semibold underline">
+            Day sheet
+          </a>{" "}
+          show the copy saved on this computer. Nothing can be saved until the internet is back: write check-ins, check-outs and payments on the Day sheet and enter them later.
         </div>
       )}
 

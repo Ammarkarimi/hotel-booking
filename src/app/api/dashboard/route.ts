@@ -78,6 +78,9 @@ export async function GET() {
     return NextResponse.json({
       today,
       hotelName: ctx.settings.hotelName,
+      // For the day sheet: amounts in the hotel's currency, sent to the owner on WhatsApp.
+      currency: ctx.settings.currency,
+      ownerWhatsapp: ctx.settings.ownerWhatsapp ?? null,
       hasBookings: anyBooking !== null,
       stats: {
         totalRooms: rooms.length,

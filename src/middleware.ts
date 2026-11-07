@@ -3,8 +3,9 @@ import type { NextRequest } from "next/server";
 import { COOKIE_NAME, PLATFORM_COOKIE_NAME, verifyPlatformToken, verifySessionToken } from "@/lib/session";
 
 // Pages and APIs anyone can open without signing in (the guest booking website and the
-// public landing page with its video and images), and the guest form sent on WhatsApp.
-const publicPaths = ["/login", "/api/auth/login", "/api/auth/expired", "/book", "/form", "/api/public", "/welcome"];
+// public landing page with its video and images), the guest form sent on WhatsApp, and the
+// offline helper the browser loads (public/sw.js).
+const publicPaths = ["/login", "/api/auth/login", "/api/auth/expired", "/book", "/form", "/api/public", "/welcome", "/sw.js"];
 
 // The software provider's panel. It has its own sign-in; hotel accounts never get in.
 const platformPaths = ["/platform", "/api/platform"];
@@ -59,7 +60,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  return NextResponse.next();
+  // Tells the offline helper (public/sw.js) this page belongs to a signed-in person, so it
+  // may keep a copy for when the internet is down. The landing page never gets it.
+  const response = NextResponse.next();
+  response.headers.set("x-signed-in", "1");
+  return response;
 }
 
 export const config = {
