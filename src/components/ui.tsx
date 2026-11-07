@@ -394,7 +394,7 @@ export function Modal({
   if (!open) return null;
   const widths = { sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-2xl", xl: "sm:max-w-4xl" };
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-end justify-center whitespace-normal text-left font-normal sm:items-center sm:p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} />
       <div
         className={cn(

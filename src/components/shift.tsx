@@ -121,7 +121,7 @@ function StartShiftGate({ current, onStarted }: { current: CurrentShiftDTO; onSt
   }
 
   return (
-    <div className="no-print fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/70 p-0 backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="start-shift-title">
+    <div className="no-print fixed inset-0 z-[60] flex items-end justify-center bg-slate-900/70 p-0 text-left backdrop-blur-sm sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="start-shift-title">
       <div className="max-h-[95vh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 shadow-2xl sm:max-w-lg sm:rounded-3xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-2xl bg-primary-50 p-3 text-primary-600">
