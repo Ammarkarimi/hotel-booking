@@ -159,6 +159,8 @@ export interface SettingsDTO {
   rateTipsFloors: Record<string, number>;
   rateTipsStaff: boolean;
   pathik: boolean;
+  /** Room prices on Today include the room GST. */
+  pricesWithTax: boolean;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 

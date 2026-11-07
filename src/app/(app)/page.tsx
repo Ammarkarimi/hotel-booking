@@ -31,6 +31,7 @@ interface Dashboard {
   today: string;
   hotelName: string;
   hasBookings: boolean; // the hotel has taken at least one booking, ever
+  pricesWithTax: boolean; // room prices include the room GST
   stats: {
     totalRooms: number;
     occupied: number;
@@ -267,7 +268,7 @@ function RoomsTonight({ data }: { data: Dashboard }) {
       </div>
       <FreeByCategory rooms={data.rooms} />
       </div>
-      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight. Prices are for tonight.</p>
+      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight. Prices are for tonight, {data.pricesWithTax ? "with GST" : "without GST"}.</p>
     </Card>
   );
 }

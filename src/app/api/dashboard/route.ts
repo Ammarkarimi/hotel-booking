@@ -4,7 +4,7 @@ import { withAuth, isAdmin } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, todayKey } from "@/lib/dates";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
-import { priceNights, round2 } from "@/lib/pricing";
+import { priceNights, round2, roomTaxRate } from "@/lib/pricing";
 
 /** Everything the front desk needs for "Today" in one request. */
 export async function GET() {
@@ -12,6 +12,12 @@ export async function GET() {
     const ctx = await getBillingContext();
     const { today } = ctx;
     const tomorrow = addDays(today, 1);
+
+    // One night tonight for a room, as the bill would price it.
+    const tonightPrice = (r: { pricePerNight: number; type: string }) => {
+      const rate = priceNights({ baseRate: r.pricePerNight, checkIn: today, checkOut: tomorrow, roomType: r.type, rules: ctx.rules })[0]?.rate ?? r.pricePerNight;
+      return ctx.settings.pricesWithTax ? round2(rate * (1 + roomTaxRate(rate, ctx.tax) / 100)) : rate;
+    };
 
     const [rooms, active, recentlyLeft, payments, activity, upcomingCount, anyBooking] = await Promise.all([
       prisma.room.findMany({ orderBy: { roomNumber: "asc" } }),
@@ -95,6 +101,7 @@ export async function GET() {
       departures,
       inHouse,
       unpaid: unpaid.slice(0, 20),
+      pricesWithTax: ctx.settings.pricesWithTax,
       rooms: rooms.map((r) => ({
         id: r.id,
         roomNumber: r.roomNumber,
@@ -103,8 +110,8 @@ export async function GET() {
         status: r.status,
         housekeeping: r.housekeeping,
         houseKeeperName: r.houseKeeperName,
-        // Tonight's price, with the weekend and seasonal changes the hotel has set.
-        priceTonight: priceNights({ baseRate: r.pricePerNight, checkIn: today, checkOut: tomorrow, roomType: r.type, rules: ctx.rules })[0]?.rate ?? r.pricePerNight,
+        // Tonight's price, with the weekend and seasonal changes the hotel has set, and the GST when the owner wants it shown.
+        priceTonight: tonightPrice(r),
         freeTonight: r.status !== "maintenance" && !takenTonight.has(r.id),
         guestName: inHouse.find((b) => b.roomId === r.id)?.guestName ?? null,
         arrivingGuest: arrivals.find((b) => b.roomId === r.id && b.checkInDate === today)?.guestName ?? null,

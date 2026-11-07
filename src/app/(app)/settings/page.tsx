@@ -188,6 +188,12 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
           <Field label="Tax on extras like food & laundry (%)" className="max-w-xs">
             <NumberInput value={s.extrasTaxRate} onChange={(n) => set({ extrasTaxRate: n ?? 0 })} />
           </Field>
+          <Toggle
+            checked={s.pricesWithTax}
+            onChange={(pricesWithTax) => set({ pricesWithTax })}
+            label="Show room prices on Today with GST"
+            description="Off: Today shows the room price before GST. On: it shows the price with the room GST added, which is what the guest pays for one night. Bills are not changed."
+          />
         </CardContent>
       </Card>
 
