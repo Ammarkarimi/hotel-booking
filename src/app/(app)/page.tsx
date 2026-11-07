@@ -35,6 +35,7 @@ interface DashboardRoom {
   id: string;
   roomNumber: string;
   type: string;
+  floor: string | null;
   status: string;
   housekeeping: string;
   houseKeeperName: string | null;
@@ -115,64 +116,122 @@ function SetupChecklist({ data }: { data: Dashboard }) {
   );
 }
 
-const TILE_STYLES: Record<string, string> = {
-  free: "border-emerald-200 bg-emerald-50 text-emerald-900 hover:border-emerald-400",
-  occupied: "border-sky-200 bg-sky-50 text-sky-900 hover:border-sky-400",
-  arriving: "border-amber-200 bg-amber-50 text-amber-900 hover:border-amber-400",
-  booked: "border-amber-200 bg-amber-50/60 text-amber-900 hover:border-amber-400",
-  maintenance: "border-slate-200 bg-slate-100 text-slate-500 hover:border-slate-400",
+/** Which floor a room is on: the floor typed in Rooms, or the first digit of a number like 204. */
+function floorKey(r: DashboardRoom): string {
+  const typed = r.floor?.trim();
+  if (typed) return typed;
+  return /^\d{3,4}$/.test(r.roomNumber) ? String(Math.floor(Number(r.roomNumber) / 100)) : "";
+}
+
+function floorName(key: string): string {
+  if (key === "") return "Other rooms";
+  if (key === "0" || /^g(round)?$/i.test(key)) return "Ground";
+  return /^\d+$/.test(key) ? `Floor ${key}` : key;
+}
+
+const FLOOR_WORDS = ["ground", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
+
+/** Top floor first, like looking at the building from the street. Rooms without a floor go last. */
+function floorRank(key: string): number {
+  if (key === "") return -Infinity;
+  const lower = key.toLowerCase();
+  if (lower === "g" || lower.startsWith("ground")) return 0;
+  const n = parseFloat(lower.replace(/[^\d.-]/g, ""));
+  if (Number.isFinite(n)) return n;
+  const word = FLOOR_WORDS.findIndex((w) => lower.startsWith(w));
+  return word >= 0 ? word : -1;
+}
+
+type TileState = "free" | "occupied" | "arriving" | "booked" | "maintenance";
+
+// Lit windows have a guest in; plain windows are free; a yellow top edge means someone arrives today.
+const TILE_STYLES: Record<TileState, string> = {
+  occupied: "bg-lamp-400 text-primary-900",
+  free: "bg-slate-50 text-primary-900",
+  arriving: "bg-slate-50 text-primary-900 shadow-[inset_0_5px_0_var(--color-lamp-400)]",
+  booked: "bg-primary-100 text-primary-900",
+  maintenance: "bg-roof text-primary-300 ring-1 ring-inset ring-white/10",
 };
 
-function RoomBoard({ rooms }: { rooms: DashboardRoom[] }) {
+function RoomBoard({ rooms, leavingToday }: { rooms: DashboardRoom[]; leavingToday: Set<string> }) {
   const router = useRouter();
   if (rooms.length === 0) return null;
+
+  const floors = new Map<string, DashboardRoom[]>();
+  for (const r of rooms) {
+    const key = floorKey(r);
+    floors.set(key, [...(floors.get(key) ?? []), r]);
+  }
+  const ordered = [...floors.entries()].sort((a, b) => floorRank(b[0]) - floorRank(a[0]));
+
   return (
-    <Card>
-      <CardHeader
-        title="All rooms right now"
-        description="Tap a room: free rooms open a new booking, others open the guest's booking."
-        action={
-          <Link href="/calendar">
-            <Button variant="outline" size="sm">
-              <CalendarDays className="h-4 w-4" /> Calendar
-            </Button>
-          </Link>
-        }
-      />
-      <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-        {rooms.map((r) => {
-          const state =
-            r.status === "maintenance" ? "maintenance" : r.guestName ? "occupied" : r.arrivingGuest ? "arriving" : r.freeTonight ? "free" : "booked";
-          const text =
-            state === "maintenance" ? "Not usable" : state === "occupied" ? r.guestName : state === "arriving" ? `Arriving: ${r.arrivingGuest}` : state === "free" ? "Free tonight" : "Booked tonight";
-          return (
-            <button
-              key={r.id}
-              onClick={() => router.push(state === "free" ? `/bookings/new?room=${r.id}` : `/calendar?room=${r.id}`)}
-              className={cn("rounded-xl border-2 p-3 text-left transition", TILE_STYLES[state])}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-bold">{r.roomNumber}</span>
-                {r.housekeeping !== "clean" && (
-                  <span title={label(r.housekeeping)} className="rounded-full bg-white/80 p-1 text-red-600">
-                    <Sparkles className="h-3.5 w-3.5" />
-                  </span>
-                )}
-              </div>
-              <p className="text-xs font-medium opacity-80">{label(r.type)}</p>
-              <p className="mt-1 truncate text-sm font-semibold">{text}</p>
-            </button>
-          );
-        })}
+    <section aria-labelledby="rooms-now" className="min-w-0">
+      <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <h2 id="rooms-now" className="text-xl font-bold text-slate-900">All rooms right now</h2>
+          <p className="text-sm text-slate-500">Lit windows have a guest in. Tap a free room to book it, or any other room to open it.</p>
+        </div>
+        <Link href="/calendar" className="shrink-0">
+          <Button variant="outline" size="sm">
+            <CalendarDays className="h-4 w-4" /> Calendar
+          </Button>
+        </Link>
       </div>
-      <div className="flex flex-wrap gap-4 border-t border-slate-100 px-5 py-3 text-xs text-slate-600">
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-emerald-300" /> Free</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-sky-300" /> Guest staying</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-amber-300" /> Arriving / booked</span>
-        <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded bg-slate-300" /> Not usable</span>
-        <span className="flex items-center gap-1.5"><Sparkles className="h-3 w-3 text-red-600" /> Needs cleaning</span>
+
+      <div aria-hidden="true" className="mx-1 h-9 bg-roof [clip-path:polygon(3%_100%,50%_0,97%_100%)]" />
+      <div className="space-y-3 bg-wall px-3 pb-4 pt-4 sm:px-5">
+        {ordered.map(([key, list]) => (
+          <div key={key || "none"} className="grid grid-cols-[52px_minmax(0,1fr)] items-stretch gap-2.5 sm:grid-cols-[72px_minmax(0,1fr)]">
+            <p className="flex items-center text-xs font-bold text-primary-200 sm:text-sm">{floorName(key)}</p>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 2xl:grid-cols-5">
+              {list.map((r) => {
+                const state: TileState =
+                  r.status === "maintenance" ? "maintenance" : r.guestName ? "occupied" : r.arrivingGuest ? "arriving" : r.freeTonight ? "free" : "booked";
+                const text =
+                  state === "maintenance" ? "Not usable" : state === "occupied" ? r.guestName : state === "arriving" ? `Arriving: ${r.arrivingGuest}` : state === "free" ? "Free tonight" : "Booked tonight";
+                const needsCleaning = r.housekeeping !== "clean";
+                const leaving = state === "occupied" && leavingToday.has(r.id);
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => router.push(state === "free" ? `/bookings/new?room=${r.id}` : `/calendar?room=${r.id}`)}
+                    className={cn(
+                      "flex min-h-[104px] flex-col justify-end rounded-t-md rounded-b-sm px-2.5 pb-3 pt-2.5 text-left transition hover:ring-2 hover:ring-lamp-200",
+                      TILE_STYLES[state],
+                      needsCleaning && state !== "occupied" && state !== "maintenance" && "stripes",
+                      leaving && "shadow-[inset_0_-6px_0_#d9541e]"
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-1">
+                      <span className="font-heading text-[22px] font-extrabold leading-none">{r.roomNumber}</span>
+                      {needsCleaning && (
+                        <span title={label(r.housekeeping)} className="rounded-full bg-white/85 p-1 text-red-700">
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span className="sr-only">{label(r.housekeeping)}</span>
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-1.5 truncate text-[13px] font-bold leading-tight">{text}</span>
+                    <span className="truncate text-xs leading-tight opacity-80">{leaving ? "Leaves today" : label(r.type)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
-    </Card>
+      <div aria-hidden="true" className="h-2.5 rounded-b bg-slate-400" />
+
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-slate-600">
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-lamp-400" /> Guest staying</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm border border-slate-400 bg-slate-50" /> Free</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm border border-slate-400 bg-slate-50 shadow-[inset_0_3px_0_var(--color-lamp-400)]" /> Arriving today</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-primary-100 ring-1 ring-primary-200" /> Booked tonight</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-lamp-400 shadow-[inset_0_-3px_0_#d9541e]" /> Leaves today</span>
+        <span className="flex items-center gap-1.5"><span className="stripes h-3.5 w-3.5 rounded-sm" /> Needs cleaning</span>
+        <span className="flex items-center gap-1.5"><span className="h-3.5 w-3.5 rounded-sm bg-roof" /> Not usable</span>
+      </div>
+    </section>
   );
 }
 
@@ -215,11 +274,11 @@ export default function TodayPage() {
     <div className="space-y-6">
       <div className="space-y-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">
+          <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-primary-600 sm:text-4xl">
             {greeting()}, {user.name.split(" ")[0]}
           </h1>
           <p className="mt-1 text-[15px] text-slate-500">
-            {formatDate(data.today)} · Here is what needs your attention today.
+            {formatDate(data.today)}. Here is what needs your attention today.
           </p>
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 [&>button]:whitespace-nowrap">
@@ -240,9 +299,9 @@ export default function TodayPage() {
       <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />
 
       {settings.pathik && notInPathik.length > 0 && (
-        <div role="alert" className="flex flex-col gap-3 rounded-2xl border-2 border-amber-300 bg-amber-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-start gap-3 text-amber-900">
-            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-amber-600" />
+        <div role="alert" className="flex flex-col gap-3 rounded-xl border-2 border-lamp-400 bg-lamp-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-3 text-lamp-900">
+            <ShieldCheck className="mt-0.5 h-6 w-6 shrink-0 text-lamp-700" />
             <span>
               <span className="block text-lg font-bold">
                 {notInPathik.length} guest{notInPathik.length === 1 ? "" : "s"} still to enter in Pathik
@@ -256,7 +315,7 @@ export default function TodayPage() {
               </span>
             </span>
           </p>
-          <Button variant="outline" className="shrink-0 border-amber-300 bg-white" onClick={() => document.getElementById("pathik-left")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+          <Button variant="outline" className="shrink-0 border-lamp-400 bg-white" onClick={() => document.getElementById("pathik-left")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
             Fill them now
           </Button>
         </div>
@@ -319,27 +378,30 @@ export default function TodayPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 2xl:grid-cols-5">
-        <StatCard title="Guests staying" value={`${stats.occupied} / ${stats.totalRooms - stats.maintenance}`} subtitle={`${stats.occupancy}% full tonight`} icon={<Users className="h-5 w-5" />} tone="sky" />
-        <StatCard title="Free rooms tonight" value={stats.freeTonight} subtitle={stats.maintenance ? `${stats.maintenance} not usable` : "Ready to sell"} icon={<BedDouble className="h-5 w-5" />} tone="green" onClick={() => router.push("/bookings/new")} />
-        <StatCard title="Rooms to clean" value={stats.dirty} subtitle="Tap to see list" icon={<Sparkles className="h-5 w-5" />} tone={stats.dirty ? "red" : "green"} onClick={() => router.push("/housekeeping")} />
-        <StatCard
-          title="Money received today"
-          value={formatCurrency(stats.collectedToday)}
-          subtitle={Object.entries(stats.collectedByMethod).map(([m, v]) => `${label(m)} ${formatCurrency(v)}`).join(" · ") || "No payments yet"}
-          icon={<Wallet className="h-5 w-5" />}
-          tone="primary"
-          onClick={() => router.push("/payments")}
-        />
-        <StatCard title="Money to collect" value={formatCurrency(stats.owed)} subtitle="From guests staying or left" icon={<Wallet className="h-5 w-5" />} tone={stats.owed > 0 ? "amber" : "green"} onClick={() => router.push("/bookings?view=unpaid")} />
+      <div className={cn("grid gap-6", data.rooms.length > 0 && "xl:grid-cols-[minmax(0,1fr)_300px]")}>
+        <RoomBoard rooms={data.rooms} leavingToday={new Set(data.departures.map((b) => b.room.id))} />
+        <div className={cn("grid content-start gap-3", data.rooms.length > 0 ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-1" : "grid-cols-2 md:grid-cols-3 2xl:grid-cols-5")}>
+          <StatCard title="Guests staying" value={`${stats.occupied} / ${stats.totalRooms - stats.maintenance}`} subtitle={`${stats.occupancy}% full tonight`} icon={<Users className="h-5 w-5" />} tone="sky" />
+          <StatCard title="Free rooms tonight" value={stats.freeTonight} subtitle={stats.maintenance ? `${stats.maintenance} not usable` : "Ready to sell"} icon={<BedDouble className="h-5 w-5" />} tone="green" onClick={() => router.push("/bookings/new")} />
+          <StatCard title="Rooms to clean" value={stats.dirty} subtitle="Tap to see list" icon={<Sparkles className="h-5 w-5" />} tone={stats.dirty ? "red" : "green"} onClick={() => router.push("/housekeeping")} />
+          <StatCard
+            title="Money received today"
+            value={formatCurrency(stats.collectedToday)}
+            subtitle={Object.entries(stats.collectedByMethod).map(([m, v]) => `${label(m)} ${formatCurrency(v)}`).join(" · ") || "No payments yet"}
+            icon={<Wallet className="h-5 w-5" />}
+            tone="primary"
+            onClick={() => router.push("/payments")}
+          />
+          <StatCard title="Money to collect" value={formatCurrency(stats.owed)} subtitle="From guests staying or left" icon={<Wallet className="h-5 w-5" />} tone={stats.owed > 0 ? "amber" : "green"} onClick={() => router.push("/bookings?view=unpaid")} />
+        </div>
       </div>
 
       {settings.pathik && notInPathik.length > 0 && (
-        <Card className="scroll-mt-4 border-amber-200" id="pathik-left">
+        <Card className="scroll-mt-4 border-lamp-300" id="pathik-left">
           <CardHeader
             title={
               <span className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-amber-600" /> Not entered in Pathik yet ({notInPathik.length})
+                <ShieldCheck className="h-5 w-5 text-lamp-700" /> Not entered in Pathik yet ({notInPathik.length})
               </span>
             }
             description="Guests staying now who are not marked as entered in the police guest register."
@@ -357,7 +419,7 @@ export default function TodayPage() {
           <CardHeader
             title={
               <span className="flex items-center gap-2">
-                <LogIn className="h-5 w-5 text-amber-600" /> Arriving today ({data.arrivals.length})
+                <LogIn className="h-5 w-5 text-lamp-700" /> Arriving today ({data.arrivals.length})
               </span>
             }
             description="Guests expected to arrive. Press “Check in” when they reach the desk."
@@ -424,8 +486,6 @@ export default function TodayPage() {
           )}
         </Card>
       </div>
-
-      <RoomBoard rooms={data.rooms} />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

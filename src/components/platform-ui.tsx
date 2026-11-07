@@ -43,7 +43,7 @@ export function SignOutButton() {
     router.refresh();
   }
   return (
-    <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sign out" className="text-slate-200 hover:bg-slate-800 hover:text-white">
+    <Button variant="ghost" size="sm" onClick={signOut} aria-label="Sign out" className="text-slate-200 hover:bg-white/10 hover:text-white">
       <LogOut className="h-4 w-4" /> <span className="hidden sm:inline">Sign out</span>
     </Button>
   );

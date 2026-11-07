@@ -18,7 +18,7 @@ import {
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-2xl border border-slate-200 bg-white shadow-sm", className)} {...props}>
+    <div className={cn("rounded-xl border border-slate-200 bg-white", className)} {...props}>
       {children}
     </div>
   );
@@ -40,7 +40,7 @@ export function CardHeader({
   return (
     <div className={cn("flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4", className)}>
       <div className="min-w-0">
-        {title && <h2 className="text-base font-semibold text-slate-900">{title}</h2>}
+        {title && <h2 className="text-[17px] font-bold leading-snug text-slate-900">{title}</h2>}
         {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
         {children}
       </div>
@@ -65,12 +65,12 @@ export const Button = forwardRef<
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; loading?: boolean }
 >(({ className, variant = "primary", size = "md", loading, disabled, children, type = "button", ...props }, ref) => {
   const variants: Record<ButtonVariant, string> = {
-    primary: "bg-primary-600 text-white hover:bg-primary-700 shadow-sm",
+    primary: "bg-primary-600 text-white hover:bg-primary-700",
     secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
-    outline: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50",
-    danger: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
-    success: "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm",
-    warning: "bg-amber-500 text-white hover:bg-amber-600 shadow-sm",
+    outline: "border border-slate-300 bg-white text-slate-800 hover:border-primary-400 hover:bg-primary-50",
+    danger: "bg-red-700 text-white hover:bg-red-800",
+    success: "bg-emerald-700 text-white hover:bg-emerald-800",
+    warning: "bg-lamp-400 text-primary-900 hover:bg-lamp-500",
     ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
   };
   const sizes: Record<ButtonSize, string> = {
@@ -84,7 +84,7 @@ export const Button = forwardRef<
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center rounded-xl font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
         className
@@ -99,7 +99,7 @@ export const Button = forwardRef<
 Button.displayName = "Button";
 
 const fieldClass =
-  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 disabled:bg-slate-50 disabled:text-slate-500";
+  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 disabled:bg-slate-50 disabled:text-slate-500";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
   <input ref={ref} className={cn(fieldClass, "min-h-11", className)} {...props} />
@@ -150,7 +150,7 @@ export function CountInput({
     onChange(clamp(value + delta));
   };
   const buttonClass =
-    "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-40";
+    "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-40";
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -313,17 +313,17 @@ const BADGE_COLORS: Record<string, string> = {
   success: "bg-emerald-100 text-emerald-800",
   warning: "bg-amber-100 text-amber-800",
   danger: "bg-red-100 text-red-700",
-  info: "bg-sky-100 text-sky-800",
-  purple: "bg-violet-100 text-violet-800",
+  info: "bg-primary-50 text-primary-700",
+  purple: "bg-primary-100 text-primary-700",
   // booking status
-  reserved: "bg-amber-100 text-amber-800",
-  checked_in: "bg-sky-100 text-sky-800",
+  reserved: "bg-primary-100 text-primary-700",
+  checked_in: "bg-lamp-100 text-lamp-800",
   checked_out: "bg-slate-100 text-slate-700",
   cancelled: "bg-red-100 text-red-700",
   no_show: "bg-red-100 text-red-700",
   // room status
   available: "bg-emerald-100 text-emerald-800",
-  occupied: "bg-sky-100 text-sky-800",
+  occupied: "bg-lamp-100 text-lamp-800",
   maintenance: "bg-orange-100 text-orange-800",
   // housekeeping
   clean: "bg-emerald-100 text-emerald-800",
@@ -398,13 +398,13 @@ export function Modal({
       <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
       <div
         className={cn(
-          "relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl",
+          "relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-xl bg-white shadow-2xl sm:rounded-xl",
           widths[size]
         )}
       >
         <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
             {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
           </div>
           {!hideClose && (
@@ -442,9 +442,9 @@ export function StatCard({
   const tones = {
     primary: "bg-primary-50 text-primary-600",
     green: "bg-emerald-50 text-emerald-600",
-    amber: "bg-amber-50 text-amber-600",
+    amber: "bg-lamp-100 text-lamp-800",
     red: "bg-red-50 text-red-600",
-    sky: "bg-sky-50 text-sky-600",
+    sky: "bg-lamp-100 text-lamp-800",
     slate: "bg-slate-100 text-slate-600",
   };
   const Comp = onClick ? "button" : "div";
@@ -453,17 +453,17 @@ export function StatCard({
     <Comp
       onClick={onClick}
       className={cn(
-        "flex w-full items-start justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm",
-        onClick && "transition hover:border-primary-300 hover:shadow"
+        "flex w-full items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left",
+        onClick && "transition hover:border-primary-400"
       )}
     >
       <div className="min-w-0">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         {/* Long amounts get the full width on phones so a number is not split over two lines. */}
-        <p className={cn("mt-1 break-words font-bold text-slate-900 sm:text-2xl", long ? "text-lg" : "text-xl")}>{value}</p>
+        <p className={cn("mt-1 break-words font-heading font-extrabold tabular-nums text-primary-600 sm:text-[26px]", long ? "text-lg" : "text-xl")}>{value}</p>
         {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
       </div>
-      {icon && <div className={cn("shrink-0 rounded-xl p-2.5", long && "hidden min-[440px]:block", tones[tone])}>{icon}</div>}
+      {icon && <div className={cn("shrink-0 rounded-lg p-2.5", long && "hidden min-[440px]:block", tones[tone])}>{icon}</div>}
     </Comp>
   );
 }
@@ -483,7 +483,7 @@ export function PageHeader({
     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back}
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">{title}</h1>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-primary-600 sm:text-4xl">{title}</h1>
         {description && <p className="mt-1 text-[15px] text-slate-500">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
@@ -503,7 +503,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-200 bg-white px-6 py-10 text-center">
+    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center">
       {icon && <div className="mb-3 rounded-full bg-slate-100 p-3 text-slate-500">{icon}</div>}
       <p className="text-base font-semibold text-slate-800">{title}</p>
       {description && <p className="mt-1 max-w-md text-sm text-slate-500">{description}</p>}
@@ -539,8 +539,8 @@ export function Tabs<T extends string>({
           key={t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            "flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition",
-            value === t.value ? "bg-primary-600 text-white shadow-sm" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition",
+            value === t.value ? "bg-primary-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
           )}
         >
           {t.label}
@@ -548,7 +548,7 @@ export function Tabs<T extends string>({
             <span
               className={cn(
                 "rounded-full px-1.5 text-xs",
-                value === t.value ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                value === t.value ? "bg-lamp-400 text-primary-900" : "bg-slate-100 text-slate-600"
               )}
             >
               {t.count}
@@ -563,12 +563,12 @@ export function Tabs<T extends string>({
 /** Small friendly tip box used to explain screens to new users. */
 export function Tip({ children, tone = "info" }: { children: ReactNode; tone?: "info" | "warning" | "danger" | "success" }) {
   const tones = {
-    info: "border-sky-200 bg-sky-50 text-sky-900",
-    warning: "border-amber-200 bg-amber-50 text-amber-900",
+    info: "border-primary-200 bg-primary-50 text-primary-800",
+    warning: "border-lamp-300 bg-lamp-50 text-lamp-900",
     danger: "border-red-200 bg-red-50 text-red-900",
     success: "border-emerald-200 bg-emerald-50 text-emerald-900",
   };
-  return <div className={cn("rounded-xl border px-4 py-3 text-sm", tones[tone])}>{children}</div>;
+  return <div className={cn("rounded-lg border px-4 py-3 text-sm", tones[tone])}>{children}</div>;
 }
 
 export function Row({ label: l, children, strong }: { label: ReactNode; children: ReactNode; strong?: boolean }) {

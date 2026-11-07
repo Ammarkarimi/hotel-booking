@@ -18,8 +18,8 @@ interface CalendarData {
 }
 
 const BAR_COLORS: Record<string, string> = {
-  reserved: "bg-amber-400 hover:bg-amber-500 text-amber-950",
-  checked_in: "bg-sky-500 hover:bg-sky-600 text-white",
+  reserved: "bg-primary-200 hover:bg-primary-300 text-primary-900",
+  checked_in: "bg-lamp-400 hover:bg-lamp-500 text-primary-900",
   checked_out: "bg-slate-300 hover:bg-slate-400 text-slate-700",
 };
 
@@ -85,8 +85,8 @@ function CalendarView() {
         </Button>
         <Input type="date" value={start} onChange={(e) => e.target.value && setStart(e.target.value)} className="w-auto" aria-label="Start date" />
         <div className="ml-auto flex flex-wrap gap-3 text-xs text-slate-600">
-          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-amber-400" /> Booked</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-sky-500" /> Staying</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-primary-200" /> Booked</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-lamp-400" /> Staying</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-slate-300" /> Left</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded border border-dashed border-emerald-400 bg-emerald-50" /> Free</span>
         </div>
@@ -100,12 +100,12 @@ function CalendarView() {
         <Card className="overflow-x-auto">
           <div className="min-w-max">
             <div className="sticky top-0 z-10 grid border-b border-slate-200 bg-white" style={gridCols}>
-              <div className="sticky left-0 z-10 bg-white px-3 py-2 text-xs font-bold uppercase text-slate-500">Room</div>
+              <div className="sticky left-0 z-10 bg-white px-3 py-2 text-xs font-semibold text-slate-500">Room</div>
               {dayKeys.map((d) => {
                 const l = dayLabel(d);
                 return (
                   <div key={d} className={cn("border-l border-slate-100 px-1 py-2 text-center", d === data.today && "bg-primary-50", l.weekend && d !== data.today && "bg-slate-50")}>
-                    <p className={cn("text-[11px] font-semibold uppercase", d === data.today ? "text-primary-700" : "text-slate-500")}>{d === data.today ? "Today" : l.weekday}</p>
+                    <p className={cn("text-[11px] font-semibold", d === data.today ? "text-primary-700" : "text-slate-500")}>{d === data.today ? "Today" : l.weekday}</p>
                     <p className={cn("text-base font-bold", d === data.today && "text-primary-700")}>{l.day}</p>
                     <p className="text-[10px] text-slate-400">{l.month}</p>
                     <p className={cn("mt-0.5 text-[10px] font-semibold", freeCount[d] ? "text-emerald-600" : "text-red-500")}>{freeCount[d] ?? 0} free</p>

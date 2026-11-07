@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Bricolage_Grotesque } from "next/font/google";
+import { Gabarito } from "next/font/google";
 import {
   Banknote,
   BarChart3,
@@ -43,7 +43,7 @@ import {
 import { Logo, LogoMark } from "@/components/brand";
 import { PlayTourButton, TourPlayer } from "./tour";
 
-const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
+const display = Gabarito({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
   title: { absolute: "Innvela · Hotel software for boutique and premium hotels" },
@@ -127,8 +127,8 @@ const SPOTLIGHTS = [
     image: "/welcome/today.webp",
     eyebrow: "Today screen",
     title: "Your whole property, the moment you sign in",
-    text: "The Today screen shows who is arriving and departing, with clear Check in and Check out buttons. Alongside, you see which rooms are ready tonight, which are being cleaned and what has been collected today.",
-    points: ["Arrivals and departures, one tap each", "Live colour-coded board of every room", "Takings received and balances still due"],
+    text: "The Today screen draws your property as a building: every room is a window, lit when a guest is in, striped while it is being cleaned. Alongside, you see who is arriving and departing, with clear Check in and Check out buttons, and what has been collected today.",
+    points: ["Arrivals and departures, one tap each", "Every room at a glance, floor by floor", "Takings received and balances still due"],
   },
   {
     image: "/welcome/new-booking.webp",
@@ -263,7 +263,7 @@ const FAQS = [
 function ContactButtons({ dark = false }: { dark?: boolean }) {
   if (!whatsappHref && !emailHref) {
     return (
-      <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-base font-bold text-white shadow-lg hover:bg-primary-700">
+      <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary-600 px-6 text-base font-bold text-white hover:bg-primary-700">
         <Play className="h-5 w-5" fill="currentColor" /> Watch the 5-minute tour
       </PlayTourButton>
     );
@@ -345,7 +345,7 @@ export default function WelcomePage() {
             </a>
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <Link href="/login" className="rounded-xl px-4 py-2.5 text-[15px] font-semibold text-slate-700 hover:bg-slate-100">
+            <Link href="/login" className="rounded-lg px-4 py-2.5 text-[15px] font-semibold text-slate-700 hover:bg-slate-100">
               Sign in
             </Link>
             {whatsappHref && (
@@ -353,7 +353,7 @@ export default function WelcomePage() {
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hidden rounded-xl bg-primary-600 px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-primary-700 sm:inline-flex"
+                className="hidden rounded-lg bg-primary-600 px-4 py-2.5 text-[15px] font-semibold text-white hover:bg-primary-700 sm:inline-flex"
               >
                 Request a demo
               </a>
@@ -364,7 +364,7 @@ export default function WelcomePage() {
 
       <main>
         {/* Hero */}
-        <section className="relative overflow-hidden bg-gradient-to-b from-primary-50 via-white to-white">
+        <section className="relative overflow-hidden bg-slate-50">
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:pb-24 lg:pt-20">
             <div className="min-w-0">
               <p className="mb-4 inline-flex rounded-full bg-white px-3 py-1 text-sm font-semibold text-primary-700 ring-1 ring-primary-200">
@@ -379,7 +379,7 @@ export default function WelcomePage() {
                 booking website, guests book you directly and you keep the commission.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-primary-600 px-6 text-base font-bold text-white shadow-lg hover:bg-primary-700">
+                <PlayTourButton className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-primary-600 px-6 text-base font-bold text-white hover:bg-primary-700">
                   <Play className="h-5 w-5" fill="currentColor" /> Watch the 5-minute tour
                 </PlayTourButton>
                 {whatsappHref && (
@@ -387,7 +387,7 @@ export default function WelcomePage() {
                     href={whatsappHref}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-white px-6 text-base font-bold text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50"
+                    className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-white px-6 text-base font-bold text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50"
                   >
                     <MessageCircle className="h-5 w-5 text-emerald-600" /> Request a demo
                   </a>
@@ -402,7 +402,7 @@ export default function WelcomePage() {
               </ul>
             </div>
             <div className="relative min-w-0 pb-10 lg:pb-0">
-              <BrowserFrame src="/welcome/today.webp" alt="The Today screen showing arrivals, departures and room status" priority />
+              <BrowserFrame src="/welcome/today.webp" alt="The Today screen: every room drawn as a building, lit windows have a guest in" priority />
               <PhoneFrame
                 src="/welcome/guest-site.webp"
                 alt="The hotel's own booking website on a phone"
@@ -415,7 +415,7 @@ export default function WelcomePage() {
         {/* Video tour */}
         <section id="tour" className="scroll-mt-16 bg-slate-950 py-16 text-white sm:py-20">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary-300">Video tour</p>
+            <p className="text-sm font-semibold text-primary-300">Video tour</p>
             <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">A day at a premium property, in about 5 minutes</h2>
             <p className="mt-3 max-w-2xl text-lg text-slate-300">
               A guest books direct, another fills in their details and ID on WhatsApp, the front desk ticks each ID, checks guests in and out, and hands
@@ -432,7 +432,7 @@ export default function WelcomePage() {
         {/* All features */}
         <section id="features" className="scroll-mt-16 py-16 sm:py-24">
           <div className="mx-auto max-w-6xl px-4 sm:px-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">One refined system</p>
+            <p className="text-sm font-semibold text-primary-600">One refined system</p>
             <h2 className="mt-2 max-w-3xl font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">
               Everything a premium hotel needs, without the complexity
             </h2>
@@ -471,7 +471,7 @@ export default function WelcomePage() {
                   <BrowserFrame src={s.image} alt={s.title} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">{s.eyebrow}</p>
+                  <p className="text-sm font-semibold text-primary-600">{s.eyebrow}</p>
                   <h3 className="mt-2 font-display text-2xl font-bold tracking-tight text-balance sm:text-3xl">{s.title}</h3>
                   <p className="mt-4 text-lg leading-relaxed text-slate-600">{s.text}</p>
                   <ul className="mt-5 grid gap-2.5">
@@ -491,7 +491,7 @@ export default function WelcomePage() {
         <section id="website" className="scroll-mt-16 overflow-hidden py-16 sm:py-24">
           <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="min-w-0">
-              <p className="text-sm font-semibold uppercase tracking-widest text-primary-600">Your booking website</p>
+              <p className="text-sm font-semibold text-primary-600">Your booking website</p>
               <h2 className="mt-2 font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Direct bookings, without the commission</h2>
               <p className="mt-4 text-lg leading-relaxed text-slate-600">
                 Every property gets its own booking page. Share it on Instagram, WhatsApp, Google Maps and your website. Guests choose their dates, see

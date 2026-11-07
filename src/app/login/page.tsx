@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand";
+import { BuildingArt } from "@/components/building-art";
 import { Button, Card, CardContent, Field, Input } from "@/components/ui";
 
 const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -49,12 +50,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
+    <div className="grid min-h-screen bg-slate-50 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <aside className="hidden flex-col justify-between bg-wall px-12 py-12 text-white lg:flex">
+        <Logo tone="dark" markClassName="h-9 w-9" wordClassName="text-2xl" />
+        <div>
+          <BuildingArt className="mb-10" />
+          <p className="max-w-sm font-heading text-3xl font-bold leading-tight">Every room and every guest, at a glance.</p>
+          <p className="mt-3 max-w-sm text-primary-200">Lit windows have a guest in. Sign in to see your hotel tonight.</p>
+        </div>
+        <p className="text-sm text-primary-300">Innvela front desk</p>
+      </aside>
+      <div className="flex items-center justify-center p-4 sm:p-8">
+      <Card className="w-full max-w-md">
         <CardContent className="px-6 py-8 sm:px-8">
           <div className="mb-8 text-center">
-            <Logo className="mb-5" markClassName="h-10 w-10" wordClassName="text-3xl" />
-            <h1 className="text-2xl font-bold text-slate-900">Welcome back</h1>
+            <Logo className="mb-5 lg:hidden" markClassName="h-10 w-10" wordClassName="text-3xl" />
+            <h1 className="text-3xl font-extrabold tracking-tight text-primary-600">Welcome back</h1>
             <p className="mt-1 text-[15px] text-slate-500">Sign in to manage your hotel</p>
           </div>
 
@@ -84,7 +95,7 @@ export default function LoginPage() {
               </div>
             </Field>
 
-            {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
+            {error && <div className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
             <Button type="submit" size="lg" className="w-full" loading={loading}>
               Sign in
@@ -100,7 +111,7 @@ export default function LoginPage() {
           </p>
 
           {SHOW_DEMO && (
-            <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+            <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
               <p className="mb-1 font-semibold text-slate-800">Demo accounts</p>
               <button type="button" className="block hover:underline" onClick={() => { setEmail("admin@hotel.com"); setPassword("admin123"); }}>
                 Owner: admin@hotel.com / admin123
@@ -112,6 +123,7 @@ export default function LoginPage() {
           )}
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

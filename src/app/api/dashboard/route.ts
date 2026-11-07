@@ -99,6 +99,7 @@ export async function GET() {
         id: r.id,
         roomNumber: r.roomNumber,
         type: r.type,
+        floor: r.floor,
         status: r.status,
         housekeeping: r.housekeeping,
         houseKeeperName: r.houseKeeperName,

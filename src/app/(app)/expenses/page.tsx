@@ -247,7 +247,7 @@ export default function ExpensesPage() {
                 <div className="divide-y divide-slate-100">
                   {byDay.map(([day, list]) => (
                     <div key={day}>
-                      <div className="flex justify-between bg-slate-50 px-5 py-2 text-xs font-bold uppercase text-slate-500">
+                      <div className="flex justify-between bg-slate-50 px-5 py-2 text-xs font-semibold text-slate-500">
                         <span>{groupLabel(day, "day")}</span>
                         <span>{formatCurrency(list.reduce((s, e) => s + e.amount, 0))}</span>
                       </div>

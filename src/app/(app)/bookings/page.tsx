@@ -86,7 +86,7 @@ function BookingsList() {
         />
       ) : (
         <Card className="overflow-hidden">
-          <div className="hidden grid-cols-12 gap-3 border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-xs font-bold uppercase tracking-wide text-slate-500 md:grid">
+          <div className="hidden grid-cols-12 gap-3 border-b border-slate-100 bg-slate-50 px-5 py-2.5 text-xs font-semibold text-slate-500 md:grid">
             <span className="col-span-3">Guest</span>
             <span className="col-span-1">Room</span>
             <span className="col-span-3">Dates</span>
