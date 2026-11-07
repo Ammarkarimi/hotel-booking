@@ -28,7 +28,7 @@ works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from
 
 | Area | What you can do |
 |---|---|
-| **Today screen** | Arrivals with one-tap *Check in*, departures with *Check out* and bill, colour-coded board of every room, money received today (by cash/UPI/card), money still to collect, rooms to clean, setup checklist, staff activity |
+| **Dashboard** | Arrivals with one-tap *Check in*, departures with *Check out* and bill, colour-coded board of every room, money received today (by cash/UPI/card), money still to collect, rooms to clean, setup checklist, staff activity |
 | **New booking wizard** | 4 steps: dates (quick “2 nights” buttons) → free rooms with total price → returning-guest search or new guest → price, discount, source, advance payment. **Walk-in** mode checks the guest in immediately. Confirmation via **WhatsApp** or print |
 | **No double bookings** | Availability is date-based; the database locks a room while a booking is saved, so two people can never book the same room for the same night |
 | **Room calendar** | Tape chart of all rooms for 7/14 days; tap an empty box to book that room from that date |
@@ -42,7 +42,7 @@ works before they talk to you. Set `SALES_WHATSAPP` so they can contact you from
 | **Booking-site payouts** | For MakeMyTrip, Goibibo, Booking.com and others: the bill stays on the gross amount while the owner records the site's booking ID, commission, GST on it, TCS, TDS, the net payout and when it reached the bank |
 | **Guest forms on WhatsApp** | Staff send a link; the guest fills in their details, address, journey, the other adults with them, and which ID each adult will show at check-in (nothing is uploaded). The desk is alerted, chooses the room, and the booking and guest profile are filled in from the form |
 | **WhatsApp messages to guests** | Booking confirmation, a welcome right after check-in (check-in and check-out times, room, bill, balance) and a thank-you after check-out, each in the owner's own wording from Settings, with a live preview and tap-to-add details |
-| **Pathik** | "Fill in Pathik" on a booking or guest: with the Pathik helper add-on for Chrome, Pathik's Add Guest form (the Gujarat police guest register) is filled in, with every other adult in the room. ID photos and Aadhaar numbers are added by hand. Today lists stays not yet marked as entered |
+| **Pathik** | "Fill in Pathik" on a booking or guest: with the Pathik helper add-on for Chrome, Pathik's Add Guest form (the Gujarat police guest register) is filled in, with every other adult in the room. ID photos and Aadhaar numbers are added by hand. The Dashboard lists stays not yet marked as entered |
 | **Rate tips** | Later in the day, a pop-up suggests a lower price per room type for rooms that will probably stay empty tonight, from the hotel's own booking history (what usually still sells after this hour, same weekday), with the owner's biggest cut and lowest price per type. It closes only when the person types "I have seen"; the owner sees who saw it. A page shows how full each type was, the price it sold for, and when bookings come in |
 | **ID check at check-in** | The receptionist looks at each adult's original ID and ticks it as verified on the booking; check-in warns about adults not yet ticked. Only which ID, who and when is saved: no Aadhaar number, copy or photo is stored anywhere |
 | **Staff shifts** | Front desk start and end shifts: handover notes shown to the next person, compulsory note and a typed code at the end, a WhatsApp shift report to the owner (check-ins, check-outs, bookings, money, cash to hand over), and attendance for the owner |
@@ -112,7 +112,7 @@ Sign-in emails are unique across all hotels, so hotel staff simply sign in at
 1. Deploy (see below) and run `npm run db:seed` once — this creates only the two
    sign-in accounts for the first hotel, no demo data. Further hotels are created
    from `/platform`.
-2. Sign in as the owner. The **Getting started** checklist on the Today screen
+2. Sign in as the owner. The **Getting started** checklist on the Dashboard
    walks you through:
    - *Settings → Hotel details*: name, address, phone, GSTIN, check-in/out times
    - *Rooms → Add room*: each room with type, normal price and facilities
@@ -212,7 +212,7 @@ there while it is the only hotel.
 ```
 src/
 ├── app/
-│   ├── (app)/            # Signed-in screens: Today, calendar, bookings, guests, rooms, …
+│   ├── (app)/            # Signed-in screens: Dashboard, calendar, bookings, guests, rooms, …
 │   ├── api/              # JSON API (public/* is the guest booking website API)
 │   ├── book/[hotel]/     # Public online booking website, one per hotel
 │   ├── platform/         # Software provider's owner panel (hotels, subscriptions)

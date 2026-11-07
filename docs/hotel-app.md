@@ -21,7 +21,7 @@ password under **My account**.
 
 ## Screens
 
-### Today
+### Dashboard
 
 The home screen shows what needs attention now:
 
@@ -129,7 +129,7 @@ bill before anyone presses the button.
 
 Instead of typing a guest's details at the desk, send them a form:
 
-1. Press **Send guest form** on Today (or **Guest forms → Send a form**). Type
+1. Press **Send guest form** in the toolbar (or **Guest forms → Send a form**). Type
    the guest's WhatsApp number, and their name and dates if you know them. Press
    **Send on WhatsApp** and then Send in WhatsApp. The link works for 7 days.
 2. The guest opens the link on their phone and fills in: arrival and leaving
@@ -142,7 +142,7 @@ Instead of typing a guest's details at the desk, send them a form:
    **another photo ID** (driving licence, voter ID, passport). Nothing is
    uploaded and no ID number is asked. They tick that they agree and press Send.
 3. The front desk gets a pop-up within 30 seconds, a red number on **Guest
-   forms** and a card on Today. Press **Choose room & book**: the dates, people
+   forms** and a card on the Dashboard. Press **Choose room & book**: the dates, people
    and special requests are already filled in, and the guest's details are
    shown. If the mobile number belongs to a returning guest, choose
    whether it is the same person. Pick the room, check the price and confirm.
@@ -244,7 +244,7 @@ Staff; owners and managers never need to).
   random code shown on screen. Then **Send to owner on WhatsApp** opens WhatsApp
   with the shift report addressed to the owner's number, and they sign out.
 - **Next person:** sees that handover note before starting their own shift, and
-  it shows on the Today screen.
+  it shows on the Dashboard.
 - **How many at once:** the owner sets how many people work at the front desk at
   the same time (Settings → Staff, default 1). While there is room, staff just
   start their shift.
@@ -388,8 +388,8 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
 **For each stay:**
 
 1. On the booking (card **Police register (Pathik)**), on the guest's page, or from
-   **Today → Not entered in Pathik yet**, press **Fill in Pathik**. At the top of
-   Today a yellow alert says how many guests staying now are still to enter in
+   **Dashboard → Not entered in Pathik yet**, press **Fill in Pathik**. At the top of
+   the Dashboard a yellow alert says how many guests staying now are still to enter in
    Pathik, with their names and rooms; **Fill them now** jumps to the list.
 2. The window says what Pathik needs that is not in the software yet (for example
    the district or email). Add it on the booking or guest first, or type it in Pathik.
@@ -478,4 +478,4 @@ several hotels, it asks guests to use the link their hotel gave them.
 - **Blue**: guest staying
 - **Yellow**: booked, arriving or part paid
 - **Red**: needs cleaning or money owed
-- On Today, a **grey** room box has a guest in tonight and a **white** one does not
+- On the Dashboard, a **grey** room box has a guest in tonight and a **white** one does not

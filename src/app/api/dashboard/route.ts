@@ -6,7 +6,7 @@ import { addDays, dateFromKey, todayKey } from "@/lib/dates";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
 import { priceNights, round2 } from "@/lib/pricing";
 
-/** Everything the front desk needs for "Today" in one request. */
+/** Everything the front desk needs for the Dashboard in one request. */
 export async function GET() {
   return withAuth(async (user) => {
     const ctx = await getBillingContext();

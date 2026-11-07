@@ -67,7 +67,7 @@ and a reminder to change the password.
 
 ### New-hotel checklist (what to tell the owner)
 
-After they sign in, the **Getting started** box on their *Today* screen walks
+After they sign in, the **Getting started** box on their *Dashboard* walks
 them through it. In short:
 
 1. *Settings → Hotel details*: address, phone, GSTIN, check-in and check-out times.
@@ -149,7 +149,7 @@ Open **Packages** at the top. Three packages are there to start with: **Basic**,
 **Standard** and **Premium**. You can rename them, change what each includes, set
 a suggested monthly fee, add more packages, and delete a package no hotel is on.
 
-Every package includes the everyday front desk: Today, room calendar, bookings,
+Every package includes the everyday front desk: Dashboard, room calendar, bookings,
 check-in and check-out, bills and GST invoices, payments, guests, ID check, rooms
 and prices, housekeeping, WhatsApp messages to guests, staff sign-ins and
 settings. These can be switched on or off per package:
@@ -157,7 +157,7 @@ settings. These can be switched on or off per package:
 | Feature | What the hotel loses without it |
 |---|---|
 | Guest forms on WhatsApp | The Guest forms tab, the Send guest form button, and form links already sent stop working |
-| Pathik (police guest register) | Fill in Pathik buttons and the Pathik reminders on Today; booking no longer asks for the Pathik details |
+| Pathik (police guest register) | Fill in Pathik buttons and the Pathik reminders on the Dashboard; booking no longer asks for the Pathik details |
 | Expenses | The Expenses tab and the expenses line in the cash drawer |
 | Reports | The Reports tab and downloads |
 | Staff shifts | The Shifts tab, the shift button, handover notes; staff no longer have to start a shift |

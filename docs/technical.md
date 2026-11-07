@@ -19,7 +19,7 @@ For whoever works on the code.
 ```
 src/
 ├── app/
-│   ├── (app)/                 # Hotel screens (signed in): Today, calendar, bookings, guests,
+│   ├── (app)/                 # Hotel screens (signed in): Dashboard, calendar, bookings, guests,
 │   │                          #   rooms, housekeeping, payments, expenses, reports, settings, account, help
 │   ├── platform/
 │   │   ├── login/             # Owner-panel sign-in
@@ -290,7 +290,7 @@ logos for light and dark backgrounds.
 
 Signed-out visitors to `/` see the landing page (`src/app/welcome/`); the middleware
 rewrites `/` to `/welcome` for them, so the address stays `/`. Signed-in hotel staff
-still get the Today screen at `/`. `/welcome` and everything in `public/welcome/` are
+still get the Dashboard at `/`. `/welcome` and everything in `public/welcome/` are
 public.
 
 The page reads `SALES_WHATSAPP` and `SALES_EMAIL` at build time, so redeploy after
