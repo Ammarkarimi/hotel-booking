@@ -4,7 +4,7 @@ import { withAuth, isAdmin } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, todayKey } from "@/lib/dates";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
-import { round2 } from "@/lib/pricing";
+import { priceNights, round2 } from "@/lib/pricing";
 
 /** Everything the front desk needs for "Today" in one request. */
 export async function GET() {
@@ -103,6 +103,8 @@ export async function GET() {
         status: r.status,
         housekeeping: r.housekeeping,
         houseKeeperName: r.houseKeeperName,
+        // Tonight's price, with the weekend and seasonal changes the hotel has set.
+        priceTonight: priceNights({ baseRate: r.pricePerNight, checkIn: today, checkOut: tomorrow, roomType: r.type, rules: ctx.rules })[0]?.rate ?? r.pricePerNight,
         freeTonight: r.status !== "maintenance" && !takenTonight.has(r.id),
         guestName: inHouse.find((b) => b.roomId === r.id)?.guestName ?? null,
         arrivingGuest: arrivals.find((b) => b.roomId === r.id && b.checkInDate === today)?.guestName ?? null,

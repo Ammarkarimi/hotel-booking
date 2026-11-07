@@ -32,8 +32,11 @@ The home screen shows what needs attention now:
 - **Rooms tonight**: a small box for every room. Grey means a guest is in
   tonight (with their first name and "Leaves today" or "Till 9 Nov"), white means
   no guest tonight ("Free" with Ready or Needs cleaning, or "Arriving" with the
-  guest's name). Click a free room to book it, any other room to see it in the
-  calendar.
+  guest's name). Each box also shows the room's category and tonight's price
+  (with any weekend or seasonal change). Click a free room to book it, any other
+  room to see it in the calendar. Beside the boxes, **Free tonight** lists each
+  category with how many of its rooms are free (for example "2 of 3"), how many of
+  those still need cleaning, and tonight's price.
 - a **Getting started** checklist for new hotels
 
 The screen works like desktop software: section tabs along the top, and a
