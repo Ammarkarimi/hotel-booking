@@ -5,6 +5,7 @@ import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import { Button, Modal, Textarea } from "@/components/ui";
 import { cn, setCurrency } from "@/lib/utils";
 import type { SessionUser } from "@/lib/session";
+import type { ModuleKey } from "@/lib/modules";
 
 export interface ShellSettings {
   hotelName: string;
@@ -24,6 +25,8 @@ export interface ShellSettings {
   pathik: boolean;
   /** The owner's wording for each message; null = the default. */
   messages: { booking: string | null; checkIn: string | null; checkOut: string | null };
+  /** The parts of the software the hotel's package includes (src/lib/modules.ts). */
+  modules: ModuleKey[];
 }
 
 type ToastTone = "success" | "error" | "info";
@@ -46,6 +49,8 @@ interface AppContextValue {
   user: SessionUser;
   isAdmin: boolean;
   settings: ShellSettings;
+  /** Does the hotel's package include this module? */
+  has: (module: ModuleKey) => boolean;
   toast: (message: string, tone?: ToastTone) => void;
   confirm: (opts: ConfirmOptions) => Promise<false | { reason: string }>;
 }
@@ -86,7 +91,7 @@ export function AppProvider({ user, settings, children }: { user: SessionUser; s
   const icons = { success: CheckCircle2, error: XCircle, info: Info };
 
   return (
-    <AppContext.Provider value={{ user, isAdmin: user.role === "admin", settings, toast, confirm }}>
+    <AppContext.Provider value={{ user, isAdmin: user.role === "admin", settings, has: (m) => settings.modules.includes(m), toast, confirm }}>
       {children}
 
       <div className="pointer-events-none fixed inset-x-0 top-3 z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6 sm:top-auto sm:items-end sm:px-6">

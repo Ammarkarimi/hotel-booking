@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { withAdmin, fail } from "@/lib/api";
+import { withModuleAdmin, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, diffDays, isDateKey } from "@/lib/dates";
 import { defaultGroupBy, type GroupBy } from "@/lib/periods";
@@ -8,7 +8,7 @@ import { buildReport } from "@/lib/reports";
 const GROUPS: GroupBy[] = ["day", "week", "month"];
 
 export async function GET(request: NextRequest) {
-  return withAdmin(async () => {
+  return withModuleAdmin("reports", async () => {
     const { searchParams } = new URL(request.url);
     const ctx = await getBillingContext();
     const to = isDateKey(searchParams.get("to")) ? searchParams.get("to")! : ctx.today;

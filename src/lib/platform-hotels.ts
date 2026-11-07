@@ -5,6 +5,7 @@ import { todayKey } from "./dates";
 import { PLATFORM_TIMEZONE, slugify } from "./platform";
 import { RESERVED_SLUGS } from "./public";
 import { addMonths, isMonth, monthOf, subscriptionSummary } from "./subscription";
+import { cleanModules, resolveModules } from "./modules";
 
 export const SUBSCRIPTION_METHODS = ["upi", "bank_transfer", "cash", "card", "cheque", "other"] as const;
 
@@ -29,7 +30,45 @@ export const hotelFields = {
   monthlyFee: z.coerce.number().min(0, "Fee cannot be negative").max(10_000_000),
   billingStart: month,
   notes: z.string().trim().max(2000).optional().nullable(),
+  // null = no package: the hotel gets exactly `modules`.
+  packageId: z.string().trim().min(1).nullable().optional(),
+  modules: z.array(z.string()).max(50).optional(),
 };
+
+/** Checks the package exists and turns the choice into what is saved on the hotel. */
+export async function packageChoice(body: { packageId?: string | null; modules?: string[] }) {
+  if (body.packageId === undefined && body.modules === undefined) return {};
+  if (body.packageId && !(await rawPrisma.package.findUnique({ where: { id: body.packageId } }))) {
+    fail("That package no longer exists. Please choose another.");
+  }
+  return {
+    ...(body.packageId !== undefined && { packageId: body.packageId }),
+    ...(body.modules !== undefined && { modules: cleanModules(body.modules) }),
+  };
+}
+
+export const packageFields = {
+  name: z.string().trim().min(1, "Package name is required").max(60),
+  description: z.string().trim().max(300).optional().nullable(),
+  monthlyFee: z.coerce.number().min(0, "Fee cannot be negative").max(10_000_000),
+  modules: z.array(z.string()).max(50),
+  sortOrder: z.coerce.number().int().min(0).max(1000).optional(),
+};
+
+/** Every package with how many hotels are on it. */
+export async function listPackages() {
+  const packages = await rawPrisma.package.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    include: { _count: { select: { hotels: true } } },
+  });
+  return packages.map(({ _count, modules, ...p }) => ({ ...p, modules: cleanModules(modules), hotels: _count.hotels }));
+}
+
+/** A package name is unique, ignoring capitals. */
+export async function assertPackageNameFree(name: string, excludeId?: string) {
+  const same = await rawPrisma.package.findFirst({ where: { name: { equals: name, mode: "insensitive" }, ...(excludeId && { id: { not: excludeId } }) } });
+  if (same) fail(`There is already a package called "${same.name}".`);
+}
 
 /** Checks a requested booking-page name, or finds a free one based on the hotel name. */
 export async function chooseSlug(requested: string | undefined, hotelName: string, excludeHotelId?: string) {
@@ -70,6 +109,7 @@ export async function platformOverview() {
       include: {
         subscriptionPayments: { select: { month: true, amount: true, clearsMonth: true } },
         _count: { select: { rooms: true, staff: true } },
+        package: { select: { id: true, name: true, modules: true } },
       },
     }),
     rawPrisma.staff.groupBy({ by: ["hotelId"], _max: { lastLoginAt: true } }),
@@ -88,10 +128,12 @@ export async function platformOverview() {
   const loginBy = new Map(lastLogins.map((l) => [l.hotelId, l._max.lastLoginAt]));
   const bookingsBy = new Map(recentBookings.map((b) => [b.hotelId, b._count._all]));
 
-  const rows = hotels.map(({ subscriptionPayments, _count, ...hotel }) => {
+  const rows = hotels.map(({ subscriptionPayments, _count, package: pkg, ...hotel }) => {
     const s = subscriptionSummary(hotel, subscriptionPayments, month);
     return {
       ...hotel,
+      package: pkg ? { id: pkg.id, name: pkg.name } : null,
+      activeModules: resolveModules({ modules: hotel.modules, package: pkg }),
       rooms: _count.rooms,
       staff: _count.staff,
       lastLoginAt: loginBy.get(hotel.id) ?? null,
@@ -134,6 +176,7 @@ export async function platformHotelDetail(id: string) {
         select: { id: true, name: true, email: true, role: true, active: true, lastLoginAt: true, createdAt: true },
       },
       _count: { select: { rooms: true, bookings: true, guests: true } },
+      package: { select: { id: true, name: true, modules: true } },
     },
   });
   if (!hotel) fail("Hotel not found", 404);
@@ -142,6 +185,8 @@ export async function platformHotelDetail(id: string) {
   const { subscriptionPayments, _count, ...rest } = hotel;
   return {
     ...rest,
+    modules: cleanModules(hotel.modules),
+    activeModules: resolveModules(hotel),
     payments: subscriptionPayments,
     usage: { rooms: _count.rooms, bookings: _count.bookings, guests: _count.guests, bookings30d },
     subscription: subscriptionSummary(hotel, subscriptionPayments, currentMonth()),

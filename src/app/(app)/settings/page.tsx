@@ -498,8 +498,18 @@ function ActivityTab() {
 function SettingsView() {
   const params = useSearchParams();
   const router = useRouter();
-  const { toast, isAdmin, settings: shell } = useApp();
-  const [tab, setTab] = useState<Tab>((params.get("tab") as Tab) || "hotel");
+  const { toast, isAdmin, settings: shell, has } = useApp();
+  const tabs: Array<{ value: Tab; label: string }> = [
+    { value: "hotel", label: "Hotel details" },
+    { value: "prices", label: "Prices & tax" },
+    ...(has("rate_tips") ? [{ value: "tips" as Tab, label: "Rate tips" }] : []),
+    ...(has("website") ? [{ value: "website" as Tab, label: "Online booking" }] : []),
+    { value: "messages", label: "WhatsApp messages" },
+    { value: "staff", label: "Staff" },
+    { value: "activity", label: "Activity history" },
+  ];
+  const asked = params.get("tab") as Tab;
+  const [tab, setTab] = useState<Tab>(tabs.some((t) => t.value === asked) ? asked : "hotel");
   const [s, setS] = useState<SettingsDTO | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -541,20 +551,12 @@ function SettingsView() {
         className="mb-6"
         value={tab}
         onChange={changeTab}
-        tabs={[
-          { value: "hotel", label: "Hotel details" },
-          { value: "prices", label: "Prices & tax" },
-          { value: "tips", label: "Rate tips" },
-          { value: "website", label: "Online booking" },
-          { value: "messages", label: "WhatsApp messages" },
-          { value: "staff", label: "Staff" },
-          { value: "activity", label: "Activity history" },
-        ]}
+        tabs={tabs}
       />
       {tab === "hotel" && (
         <>
           <HotelTab s={s} set={set} />
-          <PathikSettings s={s} set={set} />
+          {has("pathik") && <PathikSettings s={s} set={set} />}
         </>
       )}
       {tab === "prices" && <PricesTab s={s} set={set} reload={load} />}
@@ -563,7 +565,7 @@ function SettingsView() {
       {tab === "messages" && <MessageSettings s={s} set={set} today={shell.today} />}
       {tab === "staff" && (
         <>
-          <ShiftSettings s={s} set={set} />
+          {has("shifts") && <ShiftSettings s={s} set={set} />}
           <StaffTab />
         </>
       )}

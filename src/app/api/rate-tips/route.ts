@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentHotelId, prisma } from "@/lib/db";
-import { fail, isAdmin, withAuth } from "@/lib/api";
+import { fail, isAdmin, withModule } from "@/lib/api";
 import { getPricingRules, getSettings } from "@/lib/settings";
 import { addDays, dateFromKey, toDateKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
@@ -31,7 +31,7 @@ async function load(from: string, today: string) {
  * 30 nights: how full each room type was and when bookings came in.
  */
 export async function GET(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("rate_tips", async (user) => {
     const s = await getSettings();
     const admin = isAdmin(user);
     const visible = s.rateTips && (admin || s.rateTipsStaff);
@@ -78,7 +78,7 @@ const seenSchema = z.object({
 
 /** The person typed "I have seen": the tips they were shown stop popping up for them. */
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("rate_tips", async (user) => {
     const { keys, text } = seenSchema.parse(await request.json());
     if (!isSeenText(text)) fail(`Please type "${SEEN_TEXT}" to close the rate tips.`);
     await prisma.rateTipSeen.createMany({

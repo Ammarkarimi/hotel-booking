@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, Building2, IndianRupee, Plus, Search, Wallet } from "lucide-react";
-import { Button, Card, CardContent, CardHeader, EmptyState, Input, Loading, PageHeader, StatCard, Tabs, Tip } from "@/components/ui";
+import { Badge, Button, Card, CardContent, CardHeader, EmptyState, Input, Loading, PageHeader, StatCard, Tabs, Tip } from "@/components/ui";
 import { HotelStatusBadge, MonthStatusBadge, PAYMENT_METHOD_LABELS, money, type Overview } from "@/components/platform-ui";
 import { api } from "@/lib/client";
 import { monthLabel } from "@/lib/subscription";
@@ -124,6 +124,7 @@ export default function PlatformHome() {
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-base font-semibold text-slate-900">{h.name}</span>
                         <HotelStatusBadge status={h.status} />
+                        <Badge variant="info">{h.package ? h.package.name : "Custom"}</Badge>
                       </div>
                       <p className="text-sm text-slate-500">
                         {[h.city, h.contactName, h.contactPhone].filter(Boolean).join(" · ") || "No contact details"}

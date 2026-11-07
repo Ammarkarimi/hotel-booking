@@ -3,7 +3,7 @@ import { z } from "zod";
 import { rawPrisma } from "@/lib/db";
 import { fail } from "@/lib/api";
 import { withPlatform } from "@/lib/platform";
-import { chooseSlug, deleteHotelData, hotelFields, platformHotelDetail } from "@/lib/platform-hotels";
+import { chooseSlug, deleteHotelData, hotelFields, packageChoice, platformHotelDetail } from "@/lib/platform-hotels";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -25,6 +25,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const slug = body.slug !== undefined && body.slug !== hotel.slug ? await chooseSlug(body.slug, hotel.name, id) : undefined;
     const text = (v: string | null | undefined) => (v === undefined ? undefined : v || null);
+    const pkg = await packageChoice(body);
     await rawPrisma.hotel.update({
       where: { id },
       data: {
@@ -38,6 +39,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
         contactPhone: text(body.contactPhone),
         contactEmail: text(body.contactEmail),
         notes: text(body.notes),
+        ...pkg,
       },
     });
     // Keep the name on the hotel's invoices and website in step.

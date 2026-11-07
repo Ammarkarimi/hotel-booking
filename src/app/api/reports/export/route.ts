@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { withAdmin, csvResponse, fail } from "@/lib/api";
+import { withModuleAdmin, csvResponse, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, diffDays, isDateKey } from "@/lib/dates";
 import { defaultGroupBy, type GroupBy } from "@/lib/periods";
@@ -13,7 +13,7 @@ const sum = (values: number[]) => round2(values.reduce((s, v) => s + v, 0));
 
 /** Downloads a spreadsheet (CSV) that opens in Excel or Google Sheets. */
 export async function GET(request: NextRequest) {
-  return withAdmin(async () => {
+  return withModuleAdmin("reports", async () => {
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type") || "bookings";
     const ctx = await getBillingContext();

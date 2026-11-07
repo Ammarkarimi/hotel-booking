@@ -20,20 +20,21 @@ import { RateTipPopup } from "@/components/rate-tips";
 import { SendGuestFormDialog } from "@/components/guest-form-send";
 import { LogoMark } from "@/components/brand";
 import type { SessionUser } from "@/lib/session";
+import { moduleForPath, notInPackageMessage, type ModuleKey } from "@/lib/modules";
 
-const NAV = [
+const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; module?: ModuleKey }> = [
   { href: "/", label: "Today", hint: "What is happening now" },
   { href: "/calendar", label: "Calendar", hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", hint: "All reservations" },
   { href: "/guests", label: "Guests", hint: "Guest records & IDs" },
-  { href: "/guest-forms", label: "Guest forms", hint: "Details sent on WhatsApp" },
+  { href: "/guest-forms", label: "Guest forms", hint: "Details sent on WhatsApp", module: "guest_forms" },
   { href: "/housekeeping", label: "Housekeeping", hint: "Room cleaning" },
   { href: "/payments", label: "Payments", hint: "Money received" },
-  { href: "/expenses", label: "Expenses", hint: "Money spent" },
+  { href: "/expenses", label: "Expenses", hint: "Money spent", module: "expenses" },
   { href: "/rooms", label: "Rooms", hint: "Your rooms & prices" },
-  { href: "/rate-tips", label: "Rate tips", hint: "Fill tonight's empty rooms" },
-  { href: "/reports", label: "Reports", hint: "Business summary", admin: true },
-  { href: "/shifts", label: "Shifts", hint: "Attendance & handover notes", admin: true },
+  { href: "/rate-tips", label: "Rate tips", hint: "Fill tonight's empty rooms", module: "rate_tips" },
+  { href: "/reports", label: "Reports", hint: "Business summary", admin: true, module: "reports" },
+  { href: "/shifts", label: "Shifts", hint: "Attendance & handover notes", admin: true, module: "shifts" },
   { href: "/settings", label: "Settings", hint: "Hotel details & staff", admin: true },
 ];
 
@@ -44,9 +45,11 @@ function isActive(pathname: string, href: string) {
 /** New shift reports and handovers, for the owner's Shifts tab. */
 function useUnreadShifts(isAdmin: boolean) {
   const pathname = usePathname();
+  const { has } = useApp();
+  const on = has("shifts");
   const [unread, setUnread] = useState(0);
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isAdmin || !on) return;
     const load = () =>
       api<{ unread?: number; waitingHandovers?: number }>("/api/shifts/current")
         .then((r) => setUnread((r.unread ?? 0) + (r.waitingHandovers ?? 0)))
@@ -54,17 +57,19 @@ function useUnreadShifts(isAdmin: boolean) {
     load();
     const t = setInterval(load, 60000);
     return () => clearInterval(t);
-  }, [isAdmin, pathname]);
+  }, [isAdmin, on, pathname]);
   return unread;
 }
 
 /** How many guests have sent their WhatsApp form and wait for a room. Tells the desk when a new one arrives. */
 function useFormsWaiting() {
-  const { toast } = useApp();
+  const { toast, has } = useApp();
+  const on = has("guest_forms");
   const pathname = usePathname();
   const [count, setCount] = useState(0);
   const last = useRef<number | null>(null);
   useEffect(() => {
+    if (!on) return;
     const load = () =>
       api<{ received: number }>("/api/guest-forms?count=1")
         .then(({ received }) => {
@@ -81,7 +86,7 @@ function useFormsWaiting() {
       clearInterval(t);
       window.removeEventListener("guest-forms-changed", load);
     };
-  }, [pathname, toast]);
+  }, [on, pathname, toast]);
   return count;
 }
 
@@ -96,10 +101,10 @@ function Count({ n, label: text }: { n: number; label: string }) {
 
 function MenuTabs({ formsWaiting, unread, onNavigate, vertical }: { formsWaiting: number; unread: number; onNavigate?: () => void; vertical?: boolean }) {
   const pathname = usePathname();
-  const { isAdmin } = useApp();
+  const { isAdmin, has } = useApp();
   return (
     <>
-      {NAV.filter((n) => !n.admin || isAdmin).map((item) => {
+      {NAV.filter((n) => (!n.admin || isAdmin) && (!n.module || has(n.module))).map((item) => {
         const active = isActive(pathname, item.href);
         const badge =
           item.href === "/guest-forms" ? <Count n={formsWaiting} label={`${formsWaiting} guest forms need a room`} /> : item.href === "/shifts" ? <Count n={unread} label={`${unread} new shift reports`} /> : null;
@@ -274,8 +279,7 @@ function focusSearch() {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
-  const { settings, user } = useApp();
-  const { isAdmin } = useApp();
+  const { settings, user, isAdmin, has } = useApp();
   const router = useRouter();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -284,6 +288,9 @@ function Shell({ children }: { children: React.ReactNode }) {
   const formsWaiting = useFormsWaiting();
   const unread = useUnreadShifts(isAdmin);
   useShortcuts(focusSearch);
+  // A page from a module the package does not include (an old link or bookmark).
+  const pageModule = moduleForPath(pathname);
+  const lockedModule = pageModule && !has(pageModule) ? pageModule : null;
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -305,9 +312,11 @@ function Shell({ children }: { children: React.ReactNode }) {
           <span className="hidden sm:inline">
             {user.name} ({label(user.role)})
           </span>
-          <a href={`/book/${settings.bookingSlug}`} target="_blank" rel="noopener noreferrer" className={cn(barLink, "hidden md:inline")}>
-            Online booking page
-          </a>
+          {has("website") && (
+            <a href={`/book/${settings.bookingSlug}`} target="_blank" rel="noopener noreferrer" className={cn(barLink, "hidden md:inline")}>
+              Online booking page
+            </a>
+          )}
           <Link href="/help" className={barLink}>
             Help
           </Link>
@@ -345,19 +354,23 @@ function Shell({ children }: { children: React.ReactNode }) {
             <CalendarDays className="h-4 w-4" /> Calendar <kbd className="font-sans text-[11px] text-slate-500">F4</kbd>
           </Button>
         </Link>
-        <Button size="sm" variant="outline" className="hidden md:inline-flex" onClick={() => setSendOpen(true)}>
-          <Send className="h-4 w-4" /> Send guest form
-        </Button>
-        {formsWaiting > 0 && pathname !== "/guest-forms" && (
+        {has("guest_forms") && (
+          <Button size="sm" variant="outline" className="hidden md:inline-flex" onClick={() => setSendOpen(true)}>
+            <Send className="h-4 w-4" /> Send guest form
+          </Button>
+        )}
+        {has("guest_forms") && formsWaiting > 0 && pathname !== "/guest-forms" && (
           <Link href="/guest-forms" title="Guest forms waiting for a room">
             <Button size="sm" variant="warning">
               <ClipboardCheck className="h-4 w-4" /> {formsWaiting} form{formsWaiting === 1 ? "" : "s"} waiting
             </Button>
           </Link>
         )}
-        <div className="[&_button]:min-h-8 [&_button]:px-2.5 [&_button]:text-[13px] [&_span]:text-[13px]">
-          <ShiftControl />
-        </div>
+        {has("shifts") && (
+          <div className="[&_button]:min-h-8 [&_button]:px-2.5 [&_button]:text-[13px] [&_span]:text-[13px]">
+            <ShiftControl />
+          </div>
+        )}
         <div className="order-last w-full sm:order-none sm:ml-auto sm:w-auto">
           <GlobalSearch />
         </div>
@@ -369,7 +382,7 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <main className="flex-1 px-3 pb-12 pt-3 sm:px-4">{children}</main>
+      <main className="flex-1 px-3 pb-12 pt-3 sm:px-4">{lockedModule ? <NotInPackage module={lockedModule} /> : children}</main>
 
       {/* Status bar */}
       <footer className="no-print fixed inset-x-0 bottom-0 z-20 flex flex-wrap items-center gap-x-5 border-t border-chrome-line bg-slate-50 px-3 py-1 text-xs text-slate-700">
@@ -403,19 +416,37 @@ function Shell({ children }: { children: React.ReactNode }) {
             </div>
             <nav aria-label="Main" className="flex-1 overflow-y-auto">
               <MenuTabs formsWaiting={formsWaiting} unread={unread} onNavigate={() => setMenuOpen(false)} vertical />
-              <button onClick={() => (setMenuOpen(false), setSendOpen(true))} className="block w-full border-b border-slate-200 px-4 py-2.5 text-left text-slate-800">
-                Send guest form
-              </button>
-              <a href={`/book/${settings.bookingSlug}`} target="_blank" rel="noopener noreferrer" className="block border-b border-slate-200 px-4 py-2.5 text-slate-800">
-                Online booking page
-              </a>
+              {has("guest_forms") && (
+                <button onClick={() => (setMenuOpen(false), setSendOpen(true))} className="block w-full border-b border-slate-200 px-4 py-2.5 text-left text-slate-800">
+                  Send guest form
+                </button>
+              )}
+              {has("website") && (
+                <a href={`/book/${settings.bookingSlug}`} target="_blank" rel="noopener noreferrer" className="block border-b border-slate-200 px-4 py-2.5 text-slate-800">
+                  Online booking page
+                </a>
+              )}
             </nav>
           </div>
         </div>
       )}
 
-      <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />
-      <RateTipPopup />
+      {has("guest_forms") && <SendGuestFormDialog open={sendOpen} onClose={() => setSendOpen(false)} />}
+      {has("rate_tips") && <RateTipPopup />}
+    </div>
+  );
+}
+
+function NotInPackage({ module }: { module: ModuleKey }) {
+  return (
+    <div className="mx-auto mt-6 max-w-lg border border-chrome-line bg-white">
+      <div className="border-b border-chrome-line bg-chrome px-3 py-1.5 text-[13px] font-bold text-slate-800">Not in your package</div>
+      <div className="space-y-3 p-4 text-[14px] text-slate-700">
+        <p>{notInPackageMessage(module)}</p>
+        <Link href="/" className="font-semibold text-primary-700 underline">
+          Back to Today
+        </Link>
+      </div>
     </div>
   );
 }

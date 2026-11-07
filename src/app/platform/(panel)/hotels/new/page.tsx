@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, Field, Input, PageHeader, Select, Textarea, Tip } from "@/components/ui";
-import { CredentialsCard } from "@/components/platform-ui";
+import { CredentialsCard, ModuleChecklist, type PackageRow } from "@/components/platform-ui";
 import { api, localToday } from "@/lib/client";
 import { addMonths, monthLabel, monthOf } from "@/lib/subscription";
 
@@ -26,7 +26,21 @@ export default function NewHotelPage() {
     slug: "",
     password: "",
     notes: "",
+    packageId: "",
   });
+  const [packages, setPackages] = useState<PackageRow[]>([]);
+
+  useEffect(() => {
+    api<PackageRow[]>("/api/platform/packages")
+      .then((list) => {
+        setPackages(list);
+        // Start on the middle package when there are three, or the first one.
+        const start = list[Math.min(1, list.length - 1)];
+        if (start) setForm((f) => ({ ...f, packageId: f.packageId || start.id, monthlyFee: f.monthlyFee || (start.monthlyFee > 0 ? String(start.monthlyFee) : "") }));
+      })
+      .catch(() => undefined);
+  }, []);
+  const chosen = packages.find((p) => p.id === form.packageId);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [created, setCreated] = useState<Created | null>(null);
@@ -38,7 +52,7 @@ export default function NewHotelPage() {
     setSaving(true);
     try {
       const result = await api<Created>("/api/platform/hotels", {
-        body: { ...form, monthlyFee: Number(form.monthlyFee || 0), slug: form.slug || undefined, password: form.password || undefined },
+        body: { ...form, packageId: form.packageId || undefined, monthlyFee: Number(form.monthlyFee || 0), slug: form.slug || undefined, password: form.password || undefined },
       });
       setCreated(result);
       window.scrollTo({ top: 0 });
@@ -124,8 +138,29 @@ export default function NewHotelPage() {
         </Card>
 
         <Card>
-          <CardHeader title="Subscription" description="What this hotel pays you." />
+          <CardHeader title="Subscription" description="The package decides which features the hotel gets. You can change it at any time." />
           <CardContent className="grid gap-4 sm:grid-cols-2">
+            {packages.length > 0 && (
+              <>
+                <Field label="Package" className="sm:col-span-2">
+                  <Select
+                    value={form.packageId}
+                    onChange={(e) => {
+                      const p = packages.find((x) => x.id === e.target.value);
+                      set({ packageId: e.target.value, ...(p && p.monthlyFee > 0 && { monthlyFee: String(p.monthlyFee) }) });
+                    }}
+                  >
+                    {packages.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                        {p.description ? `: ${p.description}` : ""}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
+                {chosen && <ModuleChecklist value={chosen.modules} className="rounded-sm border border-slate-200 bg-slate-50 p-3 sm:col-span-2" />}
+              </>
+            )}
             <Field label="Monthly fee (₹)" hint="Put 0 for a free account.">
               <Input type="number" min={0} step="1" inputMode="numeric" value={form.monthlyFee} onChange={(e) => set({ monthlyFee: e.target.value })} placeholder="e.g. 999" required />
             </Field>

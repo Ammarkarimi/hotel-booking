@@ -168,7 +168,7 @@ function NewBookingWizard() {
   useEffect(() => {
     setTips({});
     // Tips are for tonight only. A request still running when the date changes is ignored.
-    if (checkIn !== shell.today) return;
+    if (checkIn !== shell.today || !shell.modules.includes("rate_tips")) return;
     let current = true;
     api<RateTipsDTO>("/api/rate-tips")
       .then((d) => current && d.date === checkIn && setTips(Object.fromEntries(d.types.flatMap((t) => (t.tip ? [[t.type, t.tip]] : [])))))
@@ -176,7 +176,7 @@ function NewBookingWizard() {
     return () => {
       current = false;
     };
-  }, [checkIn, shell.today]);
+  }, [checkIn, shell.today, shell.modules]);
 
   useEffect(() => {
     const id = params.get("guestId");

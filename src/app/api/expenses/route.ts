@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { currentHotelId, prisma } from "@/lib/db";
-import { withAuth, fail, isAdmin } from "@/lib/api";
+import { withModule, fail, isAdmin } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { addDays, dateFromKey, isDateKey } from "@/lib/dates";
 import { canChangeExpense, checkExpenseDate, expenseSchema, serializeExpense } from "@/lib/expenses";
@@ -10,7 +10,7 @@ import { EXPENSE_CATEGORIES, formatCurrency, label } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 
 export async function GET(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("expenses", async (user) => {
     const { searchParams } = new URL(request.url);
     const ctx = await getBillingContext();
     const to = isDateKey(searchParams.get("to")) ? searchParams.get("to")! : ctx.today;
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("expenses", async (user) => {
     await assertOnShift(user);
     const body = expenseSchema.parse(await request.json());
     const ctx = await getBillingContext();

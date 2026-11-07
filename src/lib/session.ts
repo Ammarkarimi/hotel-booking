@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
+import type { ModuleKey } from "./modules";
 
 // Read lazily (not at import time) so a missing secret can never break `next build`;
 // it fails at sign-in instead, with a clear message.
@@ -24,6 +25,8 @@ export interface SessionUser {
   name: string;
   role: string;
   hotelId: string;
+  /** What the hotel's package includes (src/lib/modules.ts). Read fresh on every request, never stored in the cookie. */
+  modules?: ModuleKey[];
 }
 
 export interface PlatformSession {

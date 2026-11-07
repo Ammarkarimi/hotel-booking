@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { currentHotelId, prisma } from "@/lib/db";
-import { fail, withAuth } from "@/lib/api";
+import { fail, withModule } from "@/lib/api";
 import { dateFromKey, diffDays, isDateKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
 import { assertOnShift } from "@/lib/shift-api";
@@ -15,7 +15,7 @@ import { drainFileCleanup } from "@/lib/file-cleanup";
  * Otherwise the list: view = received (default), waiting (sent, not filled in yet), done (booked or closed), all.
  */
 export async function GET(request: NextRequest) {
-  return withAuth(async () => {
+  return withModule("guest_forms", async () => {
     const { searchParams } = new URL(request.url);
     if (searchParams.get("count") === "1") {
       // Every signed-in screen asks for this regularly, so it also clears old files in the background.
@@ -44,7 +44,7 @@ const createSchema = z.object({
 
 /** Staff create a form; the screen then opens WhatsApp with the link. */
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("guest_forms", async (user) => {
     await assertOnShift(user);
     const body = createSchema.parse(await request.json());
     const checkIn = isDateKey(body.checkIn) ? body.checkIn : null;

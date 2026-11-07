@@ -69,6 +69,7 @@ public/welcome/                # Landing-page video (MP4 + WebM), poster and scr
 | Table | Belongs to | Notes |
 |---|---|---|
 | `Hotel` | — | One per customer hotel. `slug` is the booking-page address, `status` is `active` or `suspended`, plus `monthlyFee`, `billingStart` (`YYYY-MM`), and `bookingSeq` (last booking number used) |
+| `Package` | — | A package the provider sells: `name`, `description`, `monthlyFee` (suggested; 0 = not set), `modules` (list of module keys), `sortOrder`. `Hotel.packageId` points to it; with no package the hotel uses its own `Hotel.modules` |
 | `SubscriptionPayment` | Hotel | Money the hotel paid you. `month` is `YYYY-MM`; `clearsMonth = false` means a part payment |
 | `Staff` | Hotel | Sign-ins. `email` is unique across **all** hotels. `role` is `admin` (owner / manager) or `staff` (front desk). Also `active` and `lastLoginAt` |
 | `HotelSettings` | Hotel (one each) | Profile, tax mode and GST slabs, weekend change, times, invoice prefix, website settings. `msgBooking`, `msgCheckIn`, `msgCheckOut`: the owner's wording for the guest WhatsApp messages (null = the default in `src/lib/messages.ts`). `rateTips`, `rateTipsFrom` (HH:MM), `rateTipsMaxDiscount` (%), `rateTipsFloors` (JSON: lowest price per room type), `rateTipsStaff` (front desk sees tips) |
@@ -122,6 +123,21 @@ This is the most important design rule. It lives in `src/lib/db.ts`.
   Using it anywhere else is a bug.
 - Covered by `src/lib/__tests__/tenant.test.ts`. The multi-hotel change was also
   tested end-to-end with two hotels trying to reach each other’s data.
+
+**Packages and modules:** `src/lib/modules.ts` lists the modules a package can
+switch on or off (guest forms, Pathik, expenses, reports, shifts, rate tips, the
+booking website); everything else is in every package. `getSession` returns the
+hotel's modules (`resolveModules`: its package's list, or `Hotel.modules`).
+
+- Routes of a module use `withModule(key, …)` or `withModuleAdmin(key, …)`, which
+  answer 403 with "not part of your package".
+- `getSettings()` turns off `pathik`, `staffShifts`, `rateTips` and
+  `websiteEnabled` when the module is missing, so the rest of the code needs no
+  checks. The Settings screen reads and writes the owner's saved values with
+  `getStoredSettings()`, so nothing is lost when a module is added back.
+- Screens use `useApp().has(key)`. The window hides the menu tab, buttons and
+  pop-ups, and shows "Not in your package" on a module's page (`moduleForPath`).
+- Guest form links check the module in `withFormLink`.
 
 **When adding a feature:** use `prisma` inside `withAuth` or `withAdmin`. Include
 `hotelId: currentHotelId()` when creating rows; TypeScript requires it. Don’t
@@ -212,7 +228,9 @@ All responses are JSON. Errors look like `{ "error": "message" }`.
 |---|---|
 | `/api/platform/login`, `/api/platform/logout` | POST |
 | `/api/platform/hotels` | GET (overview and totals), POST (create a hotel and its owner; returns the password once) |
-| `/api/platform/hotels/[id]` | GET, PATCH (details, fee, `status`), DELETE (`{ "confirmName": "<hotel name>" }`) |
+| `/api/platform/packages` | GET (with how many hotels are on each), POST (`name`, `description`, `monthlyFee`, `modules`) |
+| `/api/platform/packages/[id]` | PATCH (same fields), DELETE (only when no hotel is on it) |
+| `/api/platform/hotels/[id]` | GET, PATCH (details, fee, `status`, `packageId`, or `packageId: null` with `modules`), DELETE (`{ "confirmName": "<hotel name>" }`) |
 | `/api/platform/hotels/[id]/payments` | POST (`month`, `months`, `amount`, `method`, `clearsMonth`, `paidOn`, `reference`, `notes`) |
 | `/api/platform/hotels/[id]/reset-password` | POST (`{ "staffId": … }`; returns the new password) |
 | `/api/platform/payments/[id]` | DELETE |
