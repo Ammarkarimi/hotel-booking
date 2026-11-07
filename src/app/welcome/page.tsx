@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Gabarito } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import {
   Banknote,
   BarChart3,
@@ -43,7 +43,7 @@ import {
 import { Logo, LogoMark } from "@/components/brand";
 import { PlayTourButton, TourPlayer } from "./tour";
 
-const display = Gabarito({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
+const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-display" });
 
 export const metadata: Metadata = {
   title: { absolute: "Innvela · Hotel software for boutique and premium hotels" },
@@ -127,8 +127,8 @@ const SPOTLIGHTS = [
     image: "/welcome/today.webp",
     eyebrow: "Today screen",
     title: "Your whole property, the moment you sign in",
-    text: "The Today screen draws your property as a building: every room is a window, lit when a guest is in, striped while it is being cleaned. Alongside, you see who is arriving and departing, with clear Check in and Check out buttons, and what has been collected today.",
-    points: ["Arrivals and departures, one tap each", "Every room at a glance, floor by floor", "Takings received and balances still due"],
+    text: "The Today screen lists who is arriving and departing, with clear Check in and Check out buttons. Below, a box for every room shows who is in tonight, which rooms are free and ready, and which still need cleaning, with today's takings at the top.",
+    points: ["Arrivals and departures, one tap each", "Every room at a glance", "Takings received and balances still due"],
   },
   {
     image: "/welcome/new-booking.webp",
@@ -402,7 +402,7 @@ export default function WelcomePage() {
               </ul>
             </div>
             <div className="relative min-w-0 pb-10 lg:pb-0">
-              <BrowserFrame src="/welcome/today.webp" alt="The Today screen: every room drawn as a building, lit windows have a guest in" priority />
+              <BrowserFrame src="/welcome/today.webp" alt="The Today screen showing arrivals, departures and every room tonight" priority />
               <PhoneFrame
                 src="/welcome/guest-site.webp"
                 alt="The hotel's own booking website on a phone"

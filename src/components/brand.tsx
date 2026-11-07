@@ -11,19 +11,19 @@ export function LogoMark({ className = "h-8 w-8", tone = "light" }: { className?
   const dark = tone === "dark";
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden="true" focusable="false">
-      <path d={ROOF} fill="none" stroke={dark ? "#ffffff" : "#3b2350"} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
-      <path d={V} fill="none" stroke={dark ? "#ffcf5a" : "#e0a800"} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={ROOF} fill="none" stroke={dark ? "#ffffff" : "#0f172a"} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d={V} fill="none" stroke={dark ? "#7c93ff" : "#2548eb"} strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
 
-/** The app icon: the mark on a plum rounded square. */
+/** The app icon: the mark on a navy rounded square. */
 export function LogoIcon({ className = "h-10 w-10" }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" className={className} aria-hidden="true" focusable="false">
-      <rect width="64" height="64" rx="15" fill="#3b2350" />
+      <rect width="64" height="64" rx="15" fill="#0f172a" />
       <path d="M14 31L32 16l18 15" fill="none" stroke="#ffffff" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M21.5 34l10.5 15.5L42.5 34" fill="none" stroke="#ffcf5a" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M21.5 34l10.5 15.5L42.5 34" fill="none" stroke="#7c93ff" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }
@@ -32,9 +32,9 @@ export function LogoIcon({ className = "h-10 w-10" }: { className?: string }) {
 export function Wordmark({ className = "text-xl", tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const dark = tone === "dark";
   return (
-    <span className={"font-extrabold tracking-tight " + className} style={{ fontFamily: "var(--font-brand), var(--font-body), system-ui, sans-serif" }}>
+    <span className={"font-extrabold tracking-tight " + className} style={{ fontFamily: "var(--font-brand), Inter, system-ui, sans-serif" }}>
       <span className={dark ? "text-white" : "text-slate-900"}>Inn</span>
-      <span style={{ color: dark ? "#ffcf5a" : "#a87a00" }}>vela</span>
+      <span style={{ color: dark ? "#7c93ff" : "#2548eb" }}>vela</span>
     </span>
   );
 }

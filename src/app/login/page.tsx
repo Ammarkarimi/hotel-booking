@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand";
-import { BuildingArt } from "@/components/building-art";
 import { Button, Card, CardContent, Field, Input } from "@/components/ui";
 
 const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -50,23 +49,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="grid min-h-screen bg-slate-50 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-      <aside className="hidden flex-col justify-between bg-wall px-12 py-12 text-white lg:flex">
-        <Logo tone="dark" markClassName="h-9 w-9" wordClassName="text-2xl" />
-        <div>
-          <BuildingArt className="mb-10" />
-          <p className="max-w-sm font-heading text-3xl font-bold leading-tight">Every room and every guest, at a glance.</p>
-          <p className="mt-3 max-w-sm text-primary-200">Lit windows have a guest in. Sign in to see your hotel tonight.</p>
-        </div>
-        <p className="text-sm text-primary-300">Innvela front desk</p>
-      </aside>
-      <div className="flex items-center justify-center p-4 sm:p-8">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center bg-slate-200 p-4">
+      <div className="w-full max-w-md">
+      <div className="border border-b-0 border-primary-700 bg-primary-600 px-3 py-1.5 text-[13px] font-bold text-white">Innvela: Sign in</div>
+      <Card className="w-full">
         <CardContent className="px-6 py-8 sm:px-8">
-          <div className="mb-8 text-center">
-            <Logo className="mb-5 lg:hidden" markClassName="h-10 w-10" wordClassName="text-3xl" />
-            <h1 className="text-3xl font-extrabold tracking-tight text-primary-600">Welcome back</h1>
-            <p className="mt-1 text-[15px] text-slate-500">Sign in to manage your hotel</p>
+          <div className="mb-5 text-center">
+            <Logo className="mb-4" markClassName="h-9 w-9" wordClassName="text-2xl" />
+            <h1 className="text-lg font-bold text-slate-900">Sign in to your hotel</h1>
+            <p className="text-[13px] text-slate-600">Use the email and password your hotel gave you.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

@@ -13,7 +13,7 @@ import { defaultGroupBy, periodLabel, type GroupBy } from "@/lib/periods";
 import type { Report } from "@/lib/reports";
 import { cn, formatCurrency, formatDate, label } from "@/lib/utils";
 
-const CHART_BLUE = "#3b2350";
+const CHART_BLUE = "#0b4f8a";
 const CHART_AMBER = "#f59e0b";
 
 const money = (n: number) => formatCurrency(Math.round(n));

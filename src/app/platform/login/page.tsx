@@ -39,7 +39,7 @@ export default function PlatformLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-wall p-4">
+    <div className="flex min-h-screen items-center justify-center bg-slate-200 p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardContent className="px-6 py-8 sm:px-8">
           <div className="mb-8 text-center">

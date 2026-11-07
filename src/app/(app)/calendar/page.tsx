@@ -18,8 +18,8 @@ interface CalendarData {
 }
 
 const BAR_COLORS: Record<string, string> = {
-  reserved: "bg-primary-200 hover:bg-primary-300 text-primary-900",
-  checked_in: "bg-lamp-400 hover:bg-lamp-500 text-primary-900",
+  reserved: "bg-amber-300 hover:bg-amber-400 text-amber-950",
+  checked_in: "bg-primary-600 hover:bg-primary-700 text-white",
   checked_out: "bg-slate-300 hover:bg-slate-400 text-slate-700",
 };
 
@@ -85,8 +85,8 @@ function CalendarView() {
         </Button>
         <Input type="date" value={start} onChange={(e) => e.target.value && setStart(e.target.value)} className="w-auto" aria-label="Start date" />
         <div className="ml-auto flex flex-wrap gap-3 text-xs text-slate-600">
-          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-primary-200" /> Booked</span>
-          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-lamp-400" /> Staying</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-amber-300" /> Booked</span>
+          <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-primary-600" /> Staying</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded bg-slate-300" /> Left</span>
           <span className="flex items-center gap-1.5"><span className="h-3 w-5 rounded border border-dashed border-emerald-400 bg-emerald-50" /> Free</span>
         </div>

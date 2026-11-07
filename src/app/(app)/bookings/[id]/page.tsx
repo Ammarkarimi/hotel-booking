@@ -750,7 +750,7 @@ export default function BookingDetailPage() {
         <div className="flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold sm:text-3xl">Booking #{b.number}</h1>
+              <h1 className="text-xl font-bold">Booking #{b.number}</h1>
               <StatusBadge status={b.status} className="text-sm" />
               {/* "Not paid" means nothing for a booking that was cancelled or never came. */}
               {(open || b.status === "checked_out" || f.netPaid > 0) && <Badge variant={pState}>{label(pState)}</Badge>}

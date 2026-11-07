@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Figtree, Gabarito } from "next/font/google";
+import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 
-// Reading face for all text.
-const body = Figtree({ subsets: ["latin"], variable: "--font-body" });
-// The Innvela wordmark (src/components/brand.tsx) and every heading (globals.css).
-const brand = Gabarito({ subsets: ["latin"], weight: ["600", "700", "800"], variable: "--font-brand" });
+// Only the Innvela wordmark (src/components/brand.tsx) uses a web font; all other text uses the
+// computer's own fonts (Tahoma / Segoe UI, see globals.css), like desktop software.
+const brand = Bricolage_Grotesque({ subsets: ["latin"], weight: ["800"], variable: "--font-brand" });
 
 export const metadata: Metadata = {
   title: { default: "Innvela", template: "%s · Innvela" },
@@ -15,13 +14,13 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#3b2350",
+  themeColor: "#0b4f8a",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${brand.variable} ${body.variable}`}>
-      <body className={body.className}>{children}</body>
+    <html lang="en" className={brand.variable}>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

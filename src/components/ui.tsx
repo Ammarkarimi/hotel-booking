@@ -18,7 +18,7 @@ import {
 
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("rounded-xl border border-slate-200 bg-white", className)} {...props}>
+    <div className={cn("border border-chrome-line bg-white", className)} {...props}>
       {children}
     </div>
   );
@@ -38,10 +38,10 @@ export function CardHeader({
   children?: ReactNode;
 }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-4", className)}>
+    <div className={cn("flex items-center justify-between gap-3 border-b border-chrome-line bg-chrome px-3 py-1.5", className)}>
       <div className="min-w-0">
-        {title && <h2 className="text-[17px] font-bold leading-snug text-slate-900">{title}</h2>}
-        {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+        {title && <h2 className="text-[13px] font-bold text-slate-900">{title}</h2>}
+        {description && <p className="text-xs text-slate-600">{description}</p>}
         {children}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -51,7 +51,7 @@ export function CardHeader({
 
 export function CardContent({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("px-5 py-4", className)} {...props}>
+    <div className={cn("px-3 py-3", className)} {...props}>
       {children}
     </div>
   );
@@ -65,18 +65,18 @@ export const Button = forwardRef<
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant; size?: ButtonSize; loading?: boolean }
 >(({ className, variant = "primary", size = "md", loading, disabled, children, type = "button", ...props }, ref) => {
   const variants: Record<ButtonVariant, string> = {
-    primary: "bg-primary-600 text-white hover:bg-primary-700",
-    secondary: "bg-slate-100 text-slate-800 hover:bg-slate-200",
-    outline: "border border-slate-300 bg-white text-slate-800 hover:border-primary-400 hover:bg-primary-50",
-    danger: "bg-red-700 text-white hover:bg-red-800",
-    success: "bg-emerald-700 text-white hover:bg-emerald-800",
-    warning: "bg-lamp-400 text-primary-900 hover:bg-lamp-500",
-    ghost: "bg-transparent text-slate-600 hover:bg-slate-100",
+    primary: "border border-primary-700 bg-primary-600 text-white hover:bg-primary-700",
+    secondary: "border border-chrome-line bg-slate-100 text-slate-800 hover:bg-slate-200",
+    outline: "border border-chrome-line bg-slate-50 text-slate-900 hover:bg-slate-200",
+    danger: "border border-red-800 bg-red-700 text-white hover:bg-red-800",
+    success: "border border-emerald-800 bg-emerald-700 text-white hover:bg-emerald-800",
+    warning: "border border-amber-600 bg-amber-400 text-slate-900 hover:bg-amber-500",
+    ghost: "border border-transparent bg-transparent text-slate-700 hover:border-chrome-line hover:bg-slate-100",
   };
   const sizes: Record<ButtonSize, string> = {
-    sm: "min-h-9 px-3 text-sm gap-1.5",
-    md: "min-h-11 px-4 text-[15px] gap-2",
-    lg: "min-h-14 px-6 text-lg gap-2.5",
+    sm: "min-h-8 px-2.5 text-[13px] gap-1.5",
+    md: "min-h-9 px-3.5 text-sm gap-2",
+    lg: "min-h-11 px-5 text-[15px] gap-2",
   };
   return (
     <button
@@ -84,7 +84,7 @@ export const Button = forwardRef<
       type={type}
       disabled={disabled || loading}
       className={cn(
-        "inline-flex items-center justify-center rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center rounded-md font-semibold disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
         className
@@ -99,16 +99,16 @@ export const Button = forwardRef<
 Button.displayName = "Button";
 
 const fieldClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 disabled:bg-slate-50 disabled:text-slate-500";
+  "w-full rounded-sm border border-chrome-line bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-100 disabled:bg-slate-100 disabled:text-slate-500";
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(({ className, ...props }, ref) => (
-  <input ref={ref} className={cn(fieldClass, "min-h-11", className)} {...props} />
+  <input ref={ref} className={cn(fieldClass, "min-h-9", className)} {...props} />
 ));
 Input.displayName = "Input";
 
 export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSelectElement>>(
   ({ className, children, ...props }, ref) => (
-    <select ref={ref} className={cn(fieldClass, "min-h-11 pr-8", className)} {...props}>
+    <select ref={ref} className={cn(fieldClass, "min-h-9 pr-8", className)} {...props}>
       {children}
     </select>
   )
@@ -150,7 +150,7 @@ export function CountInput({
     onChange(clamp(value + delta));
   };
   const buttonClass =
-    "flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-700 transition hover:bg-slate-50 disabled:opacity-40";
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-chrome-line bg-slate-50 text-slate-700 hover:bg-slate-200 disabled:opacity-40";
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -164,7 +164,7 @@ export function CountInput({
         pattern="[0-9]*"
         autoComplete="off"
         aria-label={ariaLabel}
-        className={cn(fieldClass, "min-h-11 min-w-0 px-2 text-center font-semibold")}
+        className={cn(fieldClass, "min-h-9 min-w-0 px-2 text-center font-semibold")}
         value={draft ?? String(value)}
         onFocus={(e) => e.target.select()}
         onChange={(e) => {
@@ -208,7 +208,7 @@ export function NumberInput({
       // Phone number pads often have no minus key, so negative numbers get the full keyboard.
       inputMode={allowNegative ? "text" : "decimal"}
       autoComplete="off"
-      className={cn(fieldClass, "min-h-11", className)}
+      className={cn(fieldClass, "min-h-9", className)}
       value={draft ?? (value === null ? "" : String(value))}
       onChange={(e) => {
         const raw = e.target.value.replace(",", ".").replace(allowNegative ? /[^\d.-]/g : /[^\d.]/g, "");
@@ -227,7 +227,7 @@ export function NumberInput({
 
 export function Label({ className, children, ...props }: React.LabelHTMLAttributes<HTMLLabelElement>) {
   return (
-    <label className={cn("mb-1.5 block text-sm font-semibold text-slate-700", className)} {...props}>
+    <label className={cn("mb-1 block text-[13px] font-bold text-slate-700", className)} {...props}>
       {children}
     </label>
   );
@@ -313,17 +313,17 @@ const BADGE_COLORS: Record<string, string> = {
   success: "bg-emerald-100 text-emerald-800",
   warning: "bg-amber-100 text-amber-800",
   danger: "bg-red-100 text-red-700",
-  info: "bg-primary-50 text-primary-700",
-  purple: "bg-primary-100 text-primary-700",
+  info: "bg-sky-100 text-sky-800",
+  purple: "bg-violet-100 text-violet-800",
   // booking status
-  reserved: "bg-primary-100 text-primary-700",
-  checked_in: "bg-lamp-100 text-lamp-800",
+  reserved: "bg-amber-100 text-amber-800",
+  checked_in: "bg-primary-100 text-primary-800",
   checked_out: "bg-slate-100 text-slate-700",
   cancelled: "bg-red-100 text-red-700",
   no_show: "bg-red-100 text-red-700",
   // room status
   available: "bg-emerald-100 text-emerald-800",
-  occupied: "bg-lamp-100 text-lamp-800",
+  occupied: "bg-primary-100 text-primary-800",
   maintenance: "bg-orange-100 text-orange-800",
   // housekeeping
   clean: "bg-emerald-100 text-emerald-800",
@@ -340,7 +340,7 @@ export function Badge({ className, children, variant = "default" }: { className?
   return (
     <span
       className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        "inline-flex items-center whitespace-nowrap rounded-sm px-1.5 py-px text-xs font-semibold",
         BADGE_COLORS[variant] || BADGE_COLORS.default,
         className
       )}
@@ -395,30 +395,30 @@ export function Modal({
   const widths = { sm: "sm:max-w-md", md: "sm:max-w-lg", lg: "sm:max-w-2xl", xl: "sm:max-w-4xl" };
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-slate-900/50" onClick={onClose} />
+      <div className="absolute inset-0 bg-slate-900/40" onClick={onClose} />
       <div
         className={cn(
-          "relative z-10 flex max-h-[92vh] w-full flex-col rounded-t-xl bg-white shadow-2xl sm:rounded-xl",
+          "relative z-10 flex max-h-[92vh] w-full flex-col border border-chrome-line bg-white shadow-2xl",
           widths[size]
         )}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-primary-700 bg-primary-600 px-3 py-2 text-white">
           <div>
-            <h2 className="text-xl font-bold text-slate-900">{title}</h2>
-            {description && <p className="mt-0.5 text-sm text-slate-500">{description}</p>}
+            <h2 className="text-[15px] font-bold">{title}</h2>
+            {description && <p className="text-xs text-primary-100">{description}</p>}
           </div>
           {!hideClose && (
             <button
               onClick={onClose}
               aria-label="Close"
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              className="rounded-sm p-1 text-white hover:bg-red-600"
             >
               <X className="h-5 w-5" />
             </button>
           )}
         </div>
-        <div className="overflow-y-auto px-5 py-4">{children}</div>
-        {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-slate-100 px-5 py-3">{footer}</div>}
+        <div className="overflow-y-auto px-4 py-3">{children}</div>
+        {footer && <div className="flex flex-wrap justify-end gap-2 border-t border-chrome-line bg-slate-50 px-4 py-2">{footer}</div>}
       </div>
     </div>
   );
@@ -442,9 +442,9 @@ export function StatCard({
   const tones = {
     primary: "bg-primary-50 text-primary-600",
     green: "bg-emerald-50 text-emerald-600",
-    amber: "bg-lamp-100 text-lamp-800",
+    amber: "bg-amber-50 text-amber-600",
     red: "bg-red-50 text-red-600",
-    sky: "bg-lamp-100 text-lamp-800",
+    sky: "bg-sky-50 text-sky-600",
     slate: "bg-slate-100 text-slate-600",
   };
   const Comp = onClick ? "button" : "div";
@@ -453,17 +453,17 @@ export function StatCard({
     <Comp
       onClick={onClick}
       className={cn(
-        "flex w-full items-start justify-between gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left",
-        onClick && "transition hover:border-primary-400"
+        "flex w-full items-start justify-between gap-3 border border-chrome-line bg-white px-3 py-2 text-left",
+        onClick && "hover:bg-primary-50"
       )}
     >
       <div className="min-w-0">
-        <p className="text-sm font-medium text-slate-500">{title}</p>
+        <p className="text-xs font-semibold text-slate-600">{title}</p>
         {/* Long amounts get the full width on phones so a number is not split over two lines. */}
-        <p className={cn("mt-1 break-words font-heading font-extrabold tabular-nums text-primary-600 sm:text-[26px]", long ? "text-lg" : "text-xl")}>{value}</p>
-        {subtitle && <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>}
+        <p className={cn("break-words font-bold tabular-nums text-slate-900", long ? "text-base" : "text-lg")}>{value}</p>
+        {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
       </div>
-      {icon && <div className={cn("shrink-0 rounded-lg p-2.5", long && "hidden min-[440px]:block", tones[tone])}>{icon}</div>}
+      {icon && <div className={cn("shrink-0 text-slate-400 [&_svg]:h-4 [&_svg]:w-4", long && "hidden min-[440px]:block")}>{icon}</div>}
     </Comp>
   );
 }
@@ -480,11 +480,11 @@ export function PageHeader({
   back?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-3 flex flex-col gap-2 border-b border-chrome-line pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
         {back}
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-primary-600 sm:text-4xl">{title}</h1>
-        {description && <p className="mt-1 text-[15px] text-slate-500">{description}</p>}
+        <h1 className="text-xl font-bold text-slate-900">{title}</h1>
+        {description && <p className="text-[13px] text-slate-600">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap gap-2">{actions}</div>}
     </div>
@@ -503,8 +503,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-white px-6 py-10 text-center">
-      {icon && <div className="mb-3 rounded-full bg-slate-100 p-3 text-slate-500">{icon}</div>}
+    <div className="flex flex-col items-center justify-center border border-chrome-line bg-white px-6 py-8 text-center">
+      {icon && <div className="mb-2 text-slate-400">{icon}</div>}
       <p className="text-base font-semibold text-slate-800">{title}</p>
       {description && <p className="mt-1 max-w-md text-sm text-slate-500">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
@@ -533,22 +533,22 @@ export function Tabs<T extends string>({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap gap-1 pb-1", className)}>
+    <div className={cn("flex flex-wrap border-b border-chrome-line", className)}>
       {tabs.map((t) => (
         <button
           key={t.value}
           onClick={() => onChange(t.value)}
           className={cn(
-            "flex shrink-0 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition",
-            value === t.value ? "bg-primary-600 text-white" : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+            "-mb-px flex shrink-0 items-center gap-1.5 border px-3 py-1.5 text-[13px]",
+            value === t.value ? "border-chrome-line border-b-white bg-white font-bold text-slate-900" : "border-transparent text-slate-700 hover:text-primary-700 hover:underline"
           )}
         >
           {t.label}
           {t.count !== undefined && (
             <span
               className={cn(
-                "rounded-full px-1.5 text-xs",
-                value === t.value ? "bg-lamp-400 text-primary-900" : "bg-slate-100 text-slate-600"
+                "rounded-sm px-1 text-xs",
+                value === t.value ? "bg-primary-600 text-white" : "bg-slate-200 text-slate-700"
               )}
             >
               {t.count}
@@ -563,17 +563,17 @@ export function Tabs<T extends string>({
 /** Small friendly tip box used to explain screens to new users. */
 export function Tip({ children, tone = "info" }: { children: ReactNode; tone?: "info" | "warning" | "danger" | "success" }) {
   const tones = {
-    info: "border-primary-200 bg-primary-50 text-primary-800",
-    warning: "border-lamp-300 bg-lamp-50 text-lamp-900",
+    info: "border-primary-200 bg-primary-50 text-primary-900",
+    warning: "border-amber-200 bg-amber-50 text-amber-900",
     danger: "border-red-200 bg-red-50 text-red-900",
     success: "border-emerald-200 bg-emerald-50 text-emerald-900",
   };
-  return <div className={cn("rounded-lg border px-4 py-3 text-sm", tones[tone])}>{children}</div>;
+  return <div className={cn("border px-3 py-2 text-[13px]", tones[tone])}>{children}</div>;
 }
 
 export function Row({ label: l, children, strong }: { label: ReactNode; children: ReactNode; strong?: boolean }) {
   return (
-    <div className={cn("flex items-center justify-between gap-4 py-1.5 text-[15px]", strong && "font-bold text-slate-900")}>
+    <div className={cn("flex items-center justify-between gap-4 py-1 text-sm", strong && "font-bold text-slate-900")}>
       <span className={strong ? "" : "text-slate-600"}>{l}</span>
       <span className="text-right">{children}</span>
     </div>
