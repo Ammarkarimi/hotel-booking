@@ -56,7 +56,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         data: { status: "submitted", submittedAt: new Date(), details: JSON.stringify(saved) },
       });
       if (claimed.count !== 1) fail("Your details have already been sent to the hotel. Thank you!", 409);
-      await logActivity({ id: null, name: "Guest (WhatsApp form)" }, "Guest form received", `${details.firstName} ${details.lastName}`.trim() + `, ${details.checkIn} to ${details.checkOut}`);
+      await logActivity({ id: null, name: "Guest (express check-in)" }, "Express check-in received", `${details.firstName} ${details.lastName}`.trim() + `, ${details.checkIn} to ${details.checkOut}`);
       return noStore({ ok: true });
     });
   } catch (error) {

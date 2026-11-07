@@ -9,7 +9,7 @@ export const CHAPTERS = [
   { t: 0, title: "Guests book on your own website" },
   { t: 17.3, title: "Staff start their shift" },
   { t: 26.9, title: "Your whole day on one screen" },
-  { t: 34.4, title: "Guest forms on WhatsApp" },
+  { t: 34.4, title: "Express check-in on WhatsApp" },
   { t: 44, title: "The guest fills it in on their phone" },
   { t: 60, title: "Check the form, then book" },
   { t: 81.4, title: "A walk-in guest in under a minute" },

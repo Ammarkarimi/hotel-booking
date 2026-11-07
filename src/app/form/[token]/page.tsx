@@ -174,7 +174,7 @@ export default function GuestFormPage() {
   const header = (
     <header className="bg-primary-600 text-white">
       <div className="mx-auto max-w-2xl px-4 pb-20 pt-8">
-        <p className="text-sm font-semibold text-primary-100">Guest registration</p>
+        <p className="text-sm font-semibold text-primary-100">Express check-in</p>
         <h1 className="mt-1 text-3xl font-bold">{hotel.name}</h1>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-primary-100">
           {(hotel.address || hotel.city) && (

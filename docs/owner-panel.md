@@ -156,7 +156,7 @@ settings. These can be switched on or off per package:
 
 | Feature | What the hotel loses without it |
 |---|---|
-| Guest forms on WhatsApp | The Guest forms tab, the Send guest form button, and form links already sent stop working |
+| Express check-in | The Express check-in tab, the Send express check-in button, and links already sent stop working |
 | Pathik (police guest register) | Fill in Pathik buttons and the Pathik reminders on the Dashboard; booking no longer asks for the Pathik details |
 | Expenses | The Expenses tab and the expenses line in the cash drawer |
 | Reports | The Reports tab and downloads |
@@ -169,7 +169,7 @@ Starting packages:
 | Package | Includes |
 |---|---|
 | Basic | Pathik |
-| Standard | Guest forms, Pathik, Expenses, Reports, Staff shifts |
+| Standard | Express check-in, Pathik, Expenses, Reports, Staff shifts |
 | Premium | Everything |
 
 **Change a hotel's package** in its page, under **Package and features**. Choose

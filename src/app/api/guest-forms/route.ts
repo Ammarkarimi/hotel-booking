@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         expiresAt: new Date(Date.now() + FORM_DAYS * 24 * 60 * 60 * 1000),
       },
     });
-    await logActivity(user, "Guest form sent", `${body.guestName || "Guest"} (${body.phone})`);
+    await logActivity(user, "Express check-in sent", `${body.guestName || "Guest"} (${body.phone})`);
     return NextResponse.json(serializeGuestForm(form), { status: 201 });
   });
 }

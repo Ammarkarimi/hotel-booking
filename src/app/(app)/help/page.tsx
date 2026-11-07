@@ -91,12 +91,12 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
   {
     q: "How do I get a guest's details and ID before they arrive?",
     steps: [
-      "Press “Send guest form” in the toolbar. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
+      "Press “Send express check-in” in the toolbar. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
       "The guest fills in their details, and for each adult says which ID they will show at check-in. Nothing is uploaded.",
-      "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
+      "When they send it you get a pop-up and a red number on “Express check-in”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
       "Something wrong in what the guest filled in? Press “Edit details” on the form and correct it. After booking, use “Change” on the booking for the journey, vehicle and other adults' names, and “Edit” on the guest's profile for their own details.",
     ],
-    link: { href: "/guest-forms", text: "Open guest forms" },
+    link: { href: "/guest-forms", text: "Open express check-in" },
   },
   {
     q: "How do I enter a guest in Pathik?",

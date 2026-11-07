@@ -32,7 +32,7 @@ export function SendLink({ form, onDone }: { form: GuestFormDTO; onDone: () => v
   return (
     <div className="space-y-3">
       <Tip tone="success">
-        The form for <b>{form.guestName || form.phone}</b> is ready. Tap the green button and press Send in WhatsApp.
+        Express check-in for <b>{form.guestName || form.phone}</b> is ready. Tap the green button and press Send in WhatsApp.
       </Tip>
       <a href={formWhatsapp(form, settings.hotelName)} target="_blank" rel="noopener noreferrer" className="block" onClick={() => setTimeout(onDone, 300)}>
         <Button variant="success" size="lg" className="w-full">
@@ -93,7 +93,7 @@ export function SendGuestFormDialog({
     <Modal
       open={open}
       onClose={onClose}
-      title="Send guest form on WhatsApp"
+      title="Send express check-in on WhatsApp"
       description="The guest fills in their details on their phone. You then choose the room."
     >
       {created ? (
@@ -127,7 +127,7 @@ export function SendGuestFormDialog({
               Cancel
             </Button>
             <Button type="submit" loading={saving}>
-              <MessageCircle className="h-4 w-4" /> Make the form
+              <MessageCircle className="h-4 w-4" /> Make the link
             </Button>
           </div>
         </form>

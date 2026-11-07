@@ -27,7 +27,7 @@ const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; m
   { href: "/calendar", label: "Calendar", hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", hint: "All reservations" },
   { href: "/guests", label: "Guests", hint: "Guest records & IDs" },
-  { href: "/guest-forms", label: "Guest forms", hint: "Details sent on WhatsApp", module: "guest_forms" },
+  { href: "/guest-forms", label: "Express check-in", hint: "Guests fill in their details on WhatsApp", module: "guest_forms" },
   { href: "/housekeeping", label: "Housekeeping", hint: "Room cleaning" },
   { href: "/payments", label: "Payments", hint: "Money received" },
   { href: "/expenses", label: "Expenses", hint: "Money spent", module: "expenses" },
@@ -74,7 +74,7 @@ function useFormsWaiting() {
       api<{ received: number }>("/api/guest-forms?count=1")
         .then(({ received }) => {
           const added = last.current === null ? 0 : received - last.current;
-          if (added > 0) toast(added === 1 ? "A guest has sent their form. Choose a room in Guest forms." : `${added} guests have sent their forms. See Guest forms.`);
+          if (added > 0) toast(added === 1 ? "A guest has filled in express check-in. Choose a room in Express check-in." : `${added} guests have filled in express check-in. See Express check-in.`);
           last.current = received;
           setCount(received);
         })
@@ -107,7 +107,7 @@ function MenuTabs({ formsWaiting, unread, onNavigate, vertical }: { formsWaiting
       {NAV.filter((n) => (!n.admin || isAdmin) && (!n.module || has(n.module))).map((item) => {
         const active = isActive(pathname, item.href);
         const badge =
-          item.href === "/guest-forms" ? <Count n={formsWaiting} label={`${formsWaiting} guest forms need a room`} /> : item.href === "/shifts" ? <Count n={unread} label={`${unread} new shift reports`} /> : null;
+          item.href === "/guest-forms" ? <Count n={formsWaiting} label={`${formsWaiting} express check-ins need a room`} /> : item.href === "/shifts" ? <Count n={unread} label={`${unread} new shift reports`} /> : null;
         return vertical ? (
           <Link
             key={item.href}
@@ -356,13 +356,13 @@ function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         {has("guest_forms") && (
           <Button size="sm" variant="outline" className="hidden md:inline-flex" onClick={() => setSendOpen(true)}>
-            <Send className="h-4 w-4" /> Send guest form
+            <Send className="h-4 w-4" /> Send express check-in
           </Button>
         )}
         {has("guest_forms") && formsWaiting > 0 && pathname !== "/guest-forms" && (
-          <Link href="/guest-forms" title="Guest forms waiting for a room">
+          <Link href="/guest-forms" title="Express check-ins waiting for a room">
             <Button size="sm" variant="warning">
-              <ClipboardCheck className="h-4 w-4" /> {formsWaiting} form{formsWaiting === 1 ? "" : "s"} waiting
+              <ClipboardCheck className="h-4 w-4" /> {formsWaiting} check-in{formsWaiting === 1 ? "" : "s"} waiting
             </Button>
           </Link>
         )}
@@ -418,7 +418,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               <MenuTabs formsWaiting={formsWaiting} unread={unread} onNavigate={() => setMenuOpen(false)} vertical />
               {has("guest_forms") && (
                 <button onClick={() => (setMenuOpen(false), setSendOpen(true))} className="block w-full border-b border-slate-200 px-4 py-2.5 text-left text-slate-800">
-                  Send guest form
+                  Send express check-in
                 </button>
               )}
               {has("website") && (

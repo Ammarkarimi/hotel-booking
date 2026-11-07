@@ -8,7 +8,7 @@ under **Help & guide**.
 
 | | Owner / manager | Front desk |
 |---|:-:|:-:|
-| Bookings, check-in/out, payments, extras, guests, ID checks, guest forms, calendar, housekeeping | ✅ | ✅ |
+| Bookings, check-in/out, payments, extras, guests, ID checks, express check-in, calendar, housekeeping | ✅ | ✅ |
 | Write down expenses | ✅ all | ✅ their own, last 7 days |
 | Reports and CSV downloads | ✅ | — |
 | Settings (hotel details, prices & tax, online booking, staff, activity history) | ✅ | — |
@@ -43,7 +43,7 @@ The home screen shows what needs attention now:
 
 The screen works like desktop software: section tabs along the top, and a
 toolbar on every page with **New booking** (key **F2**), **Walk-in** (**F3**),
-**Calendar** (**F4**), **Send guest form** and the search box (press **/** to
+**Calendar** (**F4**), **Send express check-in** and the search box (press **/** to
 jump to it). The bar at the bottom shows the date, time and these keys.
 
 ### New booking (4 steps)
@@ -125,11 +125,11 @@ nights are added, unless staff choose to charge only up to the booked date (for 
 guest who really left on time). The check-out screen always shows the exact final
 bill before anyone presses the button.
 
-### Guest forms (WhatsApp)
+### Express check-in (WhatsApp)
 
 Instead of typing a guest's details at the desk, send them a form:
 
-1. Press **Send guest form** in the toolbar (or **Guest forms → Send a form**). Type
+1. Press **Send express check-in** in the toolbar (or **Express check-in → Send express check-in**). Type
    the guest's WhatsApp number, and their name and dates if you know them. Press
    **Send on WhatsApp** and then Send in WhatsApp. The link works for 7 days.
 2. The guest opens the link on their phone and fills in: arrival and leaving
@@ -154,7 +154,7 @@ Instead of typing a guest's details at the desk, send them a form:
 
 **Correcting the details:** if the guest made a mistake (a spelling, the wrong
 city, a missing vehicle number, the wrong number of adults), press **Edit
-details** on the form, either on **Guest forms** or on the booking screen when
+details** on the form, either on **Express check-in** or on the booking screen when
 you choose the room. Everything the guest filled in can be changed. Changing the dates or people from
 the booking screen updates the booking too, so check the room again.
 
@@ -173,7 +173,7 @@ booking.
 from an Aadhaar (no number). The receptionist checks every adult's ID by hand:
 
 1. On the booking, **ID check** lists every adult (the guest, the others named
-   on the guest form, and any more adults booked).
+   in express check-in, and any more adults booked).
 2. Look at the person's original ID (Aadhaar card, e-Aadhaar or Aadhaar app,
    driving licence, voter ID, passport…) and check the photo is them.
 3. Choose which ID they showed and **tick the box**. Only “Aadhaar card
@@ -411,7 +411,7 @@ If dates or times come out in the wrong format, choose the format in the panel a
 press *Fill again*. Without the helper, the window still lists every detail with a
 copy button.
 
-The guest form on WhatsApp asks for the area/locality, district, the next city and
+Express check-in on WhatsApp asks for the area/locality, district, the next city and
 how the guest travels too, and New booking has the same boxes for walk-ins, so most
 stays need nothing typed in Pathik. Hotels outside Gujarat can switch Pathik off
 in Settings → Hotel details.

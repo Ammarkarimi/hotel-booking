@@ -11,7 +11,7 @@ type Params = { params: Promise<{ id: string }> };
 
 async function load(id: string) {
   const form = await prisma.guestForm.findUnique({ where: { id } });
-  if (!form) fail("Guest form not found", 404);
+  if (!form) fail("Express check-in not found", 404);
   return form;
 }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       const saved = await prisma.guestForm.updateMany({ where: { id, status: "submitted" }, data: { details: JSON.stringify(after) } });
       if (saved.count !== 1) fail("This form has just been used for a booking. Please refresh.", 409);
       const changed = before ? (Object.keys(after) as (keyof typeof after)[]).filter((k) => JSON.stringify(after[k]) !== JSON.stringify(before[k])) : [];
-      await logActivity(user, "Guest form details changed", `${after.firstName} ${after.lastName}`.trim() + (changed.length ? `: ${changed.join(", ")}` : ""));
+      await logActivity(user, "Express check-in details changed", `${after.firstName} ${after.lastName}`.trim() + (changed.length ? `: ${changed.join(", ")}` : ""));
       return NextResponse.json(serializeGuestForm(await load(id)));
     }
 
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         where: { id },
         data: { expiresAt: new Date(Date.now() + FORM_DAYS * 24 * 60 * 60 * 1000) },
       });
-      await logActivity(user, "Guest form sent again", name);
+      await logActivity(user, "Express check-in sent again", name);
       return NextResponse.json(serializeGuestForm(updated));
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       data: { status: "cancelled", closedAt: new Date(), closedBy: user.name },
     });
     if (closed.count !== 1) fail("This form has just been used for a booking. Please refresh.", 409);
-    await logActivity(user, "Guest form closed", name);
+    await logActivity(user, "Express check-in closed", name);
     return NextResponse.json(serializeGuestForm(await load(id)));
   });
 }

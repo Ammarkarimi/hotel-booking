@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 // Each guest's form link is private, so search engines must never list it.
 export const metadata: Metadata = {
-  title: { absolute: "Guest details" },
+  title: { absolute: "Express check-in" },
   robots: { index: false, follow: false },
 };
 
