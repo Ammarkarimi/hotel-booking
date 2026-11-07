@@ -137,8 +137,8 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
     if (!open) return;
     setRefundMethod("cash");
     // The price per night actually charged (the same for every night once a price is agreed).
-    setRate(String(f.nightCount ? Math.round((f.roomTotal / f.nightCount) * 100) / 100 : booking.ratePerNight));
-    setDiscount(f.discount ? String(f.discount) : "");
+    setRate(String(f.nightCount ? Math.round((f.enteredRoomTotal / f.nightCount) * 100) / 100 : booking.ratePerNight));
+    setDiscount(f.enteredDiscount ? String(f.enteredDiscount) : "");
     setGstRate(booking.gstRate ?? null);
     setReason("");
   }, [open, booking, f]);
@@ -152,8 +152,9 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
     // The booking's settings come as saved, with the GST slabs still as text.
     tax: { taxMode: s.taxMode, taxRate: s.taxRate, gstSlabs: Array.isArray(s.gstSlabs) ? s.gstSlabs : parseGstSlabs(s.gstSlabs as unknown as string), extrasTaxRate: s.extrasTaxRate },
     gstRate,
+    pricesIncludeTax: booking.pricesIncludeTax,
   });
-  const tooMuchDiscount = (Number(discount) || 0) > preview.roomTotal;
+  const tooMuchDiscount = (Number(discount) || 0) > preview.enteredRoomTotal;
   // After check-out the stay is closed: money paid above the new total is given back now.
   const giveBack = booking.status === "checked_out" && preview.balance < -0.5 ? Math.round(-preview.balance * 100) / 100 : 0;
 
@@ -181,7 +182,10 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
     >
       <form onSubmit={save} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Price per night" hint={`${f.nightCount} night${f.nightCount === 1 ? "" : "s"}. Was ${formatCurrency(f.nightCount ? f.roomTotal / f.nightCount : booking.ratePerNight)}.`}>
+          <Field
+            label={booking.pricesIncludeTax ? "Price per night (with GST)" : "Price per night (before GST)"}
+            hint={`${f.nightCount} night${f.nightCount === 1 ? "" : "s"}. Was ${formatCurrency(f.nightCount ? f.enteredRoomTotal / f.nightCount : booking.ratePerNight)}.`}
+          >
             <Input type="number" min={0} step="any" inputMode="decimal" required autoFocus value={rate} onChange={(e) => setRate(e.target.value)} className="text-lg font-semibold" />
           </Field>
           <Field label="Discount (amount)" optional>
@@ -195,7 +199,7 @@ function EditBillDialog({ booking, open, onClose, onDone }: { booking: BookingDe
           <Input value={reason} maxLength={200} onChange={(e) => setReason(e.target.value)} />
         </Field>
         <div className="rounded-xl bg-slate-50 px-4 py-3">
-          <Row label="Room">{formatCurrency(preview.roomTotal)}</Row>
+          <Row label={preview.pricesIncludeTax ? "Room (before GST)" : "Room"}>{formatCurrency(preview.roomTotal)}</Row>
           {preview.discount > 0 && <Row label="Discount">− {formatCurrency(preview.discount)}</Row>}
           {preview.extrasTotal > 0 && <Row label="Other items">{formatCurrency(preview.extrasTotal)}</Row>}
           <Row label={`GST (${preview.roomTaxRate}%)`}>{formatCurrency(preview.taxTotal)}</Row>

@@ -103,7 +103,7 @@ export async function GET() {
         status: r.status,
         housekeeping: r.housekeeping,
         houseKeeperName: r.houseKeeperName,
-        // Tonight's price, with the weekend and seasonal changes the hotel has set.
+        // Tonight's price as the owner set it (with GST when their prices include it), with any weekend or seasonal change.
         priceTonight: priceNights({ baseRate: r.pricePerNight, checkIn: today, checkOut: tomorrow, roomType: r.type, rules: ctx.rules })[0]?.rate ?? r.pricePerNight,
         freeTonight: r.status !== "maintenance" && !takenTonight.has(r.id),
         guestName: inHouse.find((b) => b.roomId === r.id)?.guestName ?? null,

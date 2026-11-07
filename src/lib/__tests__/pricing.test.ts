@@ -6,6 +6,7 @@ import {
   parseGstSlabs,
   priceNights,
   roomTaxRate,
+  roomTaxRateIncluded,
   DEFAULT_GST_SLABS,
   type TaxRules,
 } from "../pricing";
@@ -124,4 +125,49 @@ test("a GST rate chosen for one booking replaces the default; extras keep theirs
   assert.equal(custom.grandTotal, 8000 + 960 + 1000 + 50);
   assert.equal(computeFolio({ ...base, gstRate: 0 }).roomTax, 0); // 0% is a real choice, not "use the default"
   assert.equal(computeFolio({ ...base, gstRate: null }).roomTaxRate, 5);
+});
+
+test("a price with GST included finds its slab from the price without GST", () => {
+  assert.equal(roomTaxRateIncluded(900, gst), 0);
+  assert.equal(roomTaxRateIncluded(1000, gst), 0);
+  assert.equal(roomTaxRateIncluded(1800, gst), 5); // 1,714.29 + 5%
+  assert.equal(roomTaxRateIncluded(7875, gst), 5); // exactly 7,500 + 5%
+  assert.equal(roomTaxRateIncluded(10030, gst), 18); // 8,500 + 18%
+  assert.equal(roomTaxRateIncluded(1800, flat12), 12);
+});
+
+test("room prices with GST included: the guest pays exactly the price entered", () => {
+  const nights = priceNights({ baseRate: 1800, checkIn: "2026-10-05", checkOut: "2026-10-07", roomType: "double", rules: noRules });
+  const f = computeFolio({ nights, discount: 0, charges: [], payments: [], tax: gst, pricesIncludeTax: true });
+  assert.equal(f.pricesIncludeTax, true);
+  assert.equal(f.enteredRoomTotal, 3600);
+  assert.equal(f.roomTaxRate, 5);
+  assert.equal(f.roomTax, 171.43);
+  assert.equal(f.roomAfterDiscount, 3428.57);
+  assert.equal(f.grandTotal, 3600);
+  assert.deepEqual(f.nights.map((n) => n.rate), [1714.29, 1714.29]);
+
+  // A discount entered with GST included comes off the total the guest pays.
+  const d = computeFolio({ nights, discount: 200, charges: [{ amount: 100 }], payments: [{ amount: 1000, type: "advance" }], tax: gst, pricesIncludeTax: true });
+  assert.equal(d.enteredDiscount, 200);
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  assert.equal(r2(d.roomAfterDiscount + d.roomTax), 3400);
+  assert.equal(r2(d.roomTotal - d.discount), d.roomAfterDiscount);
+  assert.equal(d.grandTotal, 3400 + 100 + 5); // extras still get their tax added
+  assert.equal(d.balance, 2505);
+
+  // A GST rate chosen for the booking is taken out the same way.
+  const z = computeFolio({ nights, discount: 0, charges: [], payments: [], tax: gst, gstRate: 12, pricesIncludeTax: true });
+  assert.equal(z.roomTax, 385.71);
+  assert.equal(z.grandTotal, 3600);
+});
+
+test("room prices before GST are unchanged", () => {
+  const nights = priceNights({ baseRate: 1800, checkIn: "2026-10-05", checkOut: "2026-10-07", roomType: "double", rules: noRules });
+  const f = computeFolio({ nights, discount: 0, charges: [], payments: [], tax: gst });
+  assert.equal(f.pricesIncludeTax, false);
+  assert.equal(f.roomTotal, 3600);
+  assert.equal(f.roomTax, 180);
+  assert.equal(f.grandTotal, 3780);
+  assert.equal(f.enteredRoomTotal, 3600);
 });

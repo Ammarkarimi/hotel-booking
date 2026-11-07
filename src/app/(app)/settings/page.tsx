@@ -188,6 +188,17 @@ function PricesTab({ s, set, reload }: { s: SettingsDTO; set: (p: Partial<Settin
           <Field label="Tax on extras like food & laundry (%)" className="max-w-xs">
             <NumberInput value={s.extrasTaxRate} onChange={(n) => set({ extrasTaxRate: n ?? 0 })} />
           </Field>
+          <Toggle
+            checked={s.roomPricesIncludeTax}
+            onChange={(roomPricesIncludeTax) => set({ roomPricesIncludeTax })}
+            label="Room prices include GST"
+            description={
+              s.roomPricesIncludeTax
+                ? "On: a room priced ₹1,800 costs the guest ₹1,800 in total. The bill shows ₹1,714.29 for the room and ₹85.71 GST (at 5%)."
+                : "Off: GST is added on top. A room priced ₹1,800 costs the guest ₹1,890 (₹1,800 + 5% GST)."
+            }
+          />
+          <p className="-mt-2 pl-14 text-xs text-slate-500">A change applies to bookings made from then on. Bookings already made keep the price and GST they were made with.</p>
         </CardContent>
       </Card>
 

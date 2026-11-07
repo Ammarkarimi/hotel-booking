@@ -202,6 +202,7 @@ function FreeByCategory({ rooms }: { rooms: DashboardRoom[] }) {
 
 function RoomsTonight({ data }: { data: Dashboard }) {
   const router = useRouter();
+  const { settings } = useApp();
   if (data.rooms.length === 0) return null;
   const staying = new Map(data.inHouse.map((b) => [b.room.id, b]));
   const leaving = new Set(data.departures.map((b) => b.room.id));
@@ -267,7 +268,7 @@ function RoomsTonight({ data }: { data: Dashboard }) {
       </div>
       <FreeByCategory rooms={data.rooms} />
       </div>
-      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight. Prices are for tonight.</p>
+      <p className="border-t border-slate-200 px-3 py-1 text-xs text-slate-500">Grey: guest in. White: no guest tonight. Prices are for tonight, {settings.roomPricesIncludeTax ? "GST included" : "before GST"}.</p>
     </Card>
   );
 }

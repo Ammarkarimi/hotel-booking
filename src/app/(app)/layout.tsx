@@ -48,6 +48,7 @@ export default async function SignedInLayout({ children }: { children: React.Rea
         address: [settings.address, settings.city].filter(Boolean).join(", ") || null,
         pathik: settings.pathik,
         modules: session.modules ?? [],
+        roomPricesIncludeTax: settings.roomPricesIncludeTax,
         messages: { booking: settings.msgBooking, checkIn: settings.msgCheckIn, checkOut: settings.msgCheckOut },
       }}
     >

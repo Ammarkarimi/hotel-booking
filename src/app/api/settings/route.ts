@@ -54,6 +54,7 @@ const settingsSchema = z.object({
   rateTipsFloors: z.record(z.string(), z.coerce.number().min(0, "A lowest price cannot be less than 0")),
   rateTipsStaff: z.boolean(),
   pathik: z.boolean(),
+  roomPricesIncludeTax: z.boolean(),
 });
 
 export async function PUT(request: NextRequest) {

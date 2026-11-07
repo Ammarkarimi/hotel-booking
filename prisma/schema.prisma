@@ -134,6 +134,7 @@ model HotelSettings {
   rateTipsFloors      String   @default("{}") // JSON { roomType: lowest price per night the owner accepts }
   rateTipsStaff       Boolean  @default(true) // front-desk staff see the tips too, not only the owner
   pathik              Boolean  @default(true) // show "Fill in Pathik" (the Gujarat police guest register)
+  roomPricesIncludeTax Boolean @default(false) // the room prices the owner enters already include the room GST
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -244,6 +245,7 @@ model Booking {
   ratePerNight        Float     @default(0) // agreed base price per night
   fixedRate           Boolean   @default(false) // true = ignore weekend / seasonal price changes
   gstRate             Float? // GST % on the room for this booking; null = the default from Settings
+  pricesIncludeTax    Boolean   @default(false) // ratePerNight and discount include the room GST (the hotel's setting when booked)
   discount            Float     @default(0)
   adults              Int       @default(1)
   children            Int       @default(0)

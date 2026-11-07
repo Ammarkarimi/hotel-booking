@@ -12,7 +12,7 @@ import type { RoomDTO } from "@/lib/types";
 const EMPTY = { roomNumber: "", type: "double", floor: "", capacity: "2", pricePerNight: "", description: "", amenities: [] as string[] };
 
 function RoomDialog({ open, onClose, room, onSaved }: { open: boolean; onClose: () => void; room: RoomDTO | null; onSaved: () => void }) {
-  const { toast } = useApp();
+  const { toast, settings: shell } = useApp();
   const [form, setForm] = useState(EMPTY);
   const [custom, setCustom] = useState("");
   const [saving, setSaving] = useState(false);
@@ -78,7 +78,7 @@ function RoomDialog({ open, onClose, room, onSaved }: { open: boolean; onClose: 
           <Field label="Floor" optional>
             <Input value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} placeholder="First" />
           </Field>
-          <Field label="Normal price per night">
+          <Field label="Normal price per night" hint={shell.roomPricesIncludeTax ? "With GST included (Settings → Prices & tax)." : "Before GST. GST is added on the bill (Settings → Prices & tax)."}>
             <Input type="number" min={0} inputMode="decimal" value={form.pricePerNight} onChange={(e) => setForm({ ...form, pricePerNight: e.target.value })} required />
           </Field>
           <Field label="Max guests">
