@@ -133,6 +133,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     ],
   },
   {
+    q: "The internet or power went. What do we do?",
+    steps: [
+      "Every morning, press “Day sheet” on the Dashboard and print it, or send it on WhatsApp. It lists every guest with their room, phone and amount due, today's arrivals and free rooms.",
+      "Without internet, the Dashboard and Day sheet still open on this computer from the copy saved before it went, with the time of that copy. Other screens and saving need the internet.",
+      "Write check-ins, check-outs and payments in the blank rows of the Day sheet, and enter them in the software when the internet is back.",
+      "A UPS for the computer and Wi-Fi router, and a phone hotspot or 4G router as a backup, keep the software working through most cuts.",
+    ],
+  },
+  {
     q: "For owners: who worked when, and what did they leave for the next shift?",
     steps: [
       "Open “Staff shifts” for attendance: when each person started and ended, hours worked, check-ins, check-outs and money received.",

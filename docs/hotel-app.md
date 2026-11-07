@@ -40,6 +40,7 @@ The home screen shows what needs attention now:
   category with how many of its rooms are free (for example "2 of 3"), how many of
   those still need cleaning, and tonight's price.
 - a **Getting started** checklist for new hotels
+- a **Day sheet** button (see *When the power or internet goes*)
 
 The screen works like desktop software: section tabs along the top, and a
 toolbar on every page with **New booking** (key **F2**), **Walk-in** (**F3**),
@@ -333,6 +334,36 @@ received date and UTR, to tick off against the site's own statement).
 | WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
+
+## When the power or internet goes
+
+The software runs on the internet, so nothing can be **saved** without it. Two
+things keep the desk going until it is back:
+
+- **Saved copy on the computer.** While the internet works, each computer keeps
+  the latest copy of the Dashboard and the Day sheet (refreshed every few
+  minutes). When the internet or the server cannot be reached, both still open
+  (even after the browser is closed and opened again), with a yellow note
+  showing the time of the copy. Every other screen shows a short "No internet"
+  page with links to these two. A red bar under the toolbar also says when the
+  computer has no network at all.
+- **Day sheet** (Dashboard → *Day sheet*). One page with the guests in the hotel
+  (room, name, phone, people, arrived, leaves, amount due), today's arrivals,
+  rooms free tonight (with "after check-out" and "needs cleaning"), rooms that
+  cannot be used, money received today and still to collect, and ten blank rows
+  to write check-ins, check-outs and payments by hand. **Print** it each morning,
+  or **Send on WhatsApp** (to the owner's number in *Settings → Staff*, or to
+  anyone you choose), so it is on paper or on a phone if the computer goes off.
+
+When the internet is back, enter what was written on the sheet.
+
+The copy is kept only for the person signed in: **Sign out** deletes it, and
+so does opening the sign-in page. The Dashboard and Day sheet open from the
+copy only on a computer that has opened the software while online since
+signing in.
+
+For power cuts, a UPS for the computer and Wi-Fi router, and a 4G backup
+(a phone hotspot or a router with a SIM), keep the software itself working.
 
 ## Rate tips: fill tonight's empty rooms
 

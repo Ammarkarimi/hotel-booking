@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { Logo } from "@/components/brand";
 import { Button, Card, CardContent, Field, Input } from "@/components/ui";
+import { clearOffline } from "@/lib/offline";
 
 const SHOW_DEMO = process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
@@ -19,6 +20,8 @@ export default function LoginPage() {
 
   // Sent here because the account was switched off or the hotel was paused while signed in.
   useEffect(() => {
+    // Whoever used this computer before must not leave their saved Dashboard behind.
+    clearOffline();
     const reason = new URLSearchParams(window.location.search).get("reason");
     if (reason === "paused") setError("This hotel's account is paused. Please contact your software provider to switch it back on.");
     else if (reason === "ended") setError("You have been signed out. Please sign in again, or ask the owner if your account was switched off.");

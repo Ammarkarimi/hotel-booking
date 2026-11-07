@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Circle, RefreshCw } from "lucide-react";
+import { CheckCircle2, Circle, FileText, RefreshCw } from "lucide-react";
 import { Badge, Button, Card, CardHeader, EmptyState, Loading, StatusBadge } from "@/components/ui";
 import { PathikButton } from "@/components/pathik";
 import { useApp } from "@/components/app-provider";
@@ -30,6 +30,7 @@ interface DashboardRoom {
 interface Dashboard {
   today: string;
   hotelName: string;
+  offlineSavedAt?: string; // set when there is no internet and this is the copy saved on this computer
   hasBookings: boolean; // the hotel has taken at least one booking, ever
   stats: {
     totalRooms: number;
@@ -316,11 +317,28 @@ export default function DashboardPage() {
           <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-[13px] text-slate-600">{formatDate(data.today)}</p>
         </div>
-        <Button size="sm" variant="outline" onClick={load} title="Updates by itself every minute">
-          <RefreshCw className="h-4 w-4" /> Refresh
-          {loadedAt && <span className="text-xs font-normal text-slate-500">{loadedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span>}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <a href="/print/day-sheet" target="_blank" title="Print each morning, or send on WhatsApp, in case the power or internet goes">
+            <Button size="sm" variant="outline">
+              <FileText className="h-4 w-4" /> Day sheet
+            </Button>
+          </a>
+          <Button size="sm" variant="outline" onClick={load} title="Updates by itself every minute">
+            <RefreshCw className="h-4 w-4" /> Refresh
+            {loadedAt && <span className="text-xs font-normal text-slate-500">{loadedAt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" })}</span>}
+          </Button>
+        </div>
       </div>
+
+      {data.offlineSavedAt && (
+        <div role="alert" className="border border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-amber-950">
+          <b>Cannot reach the server.</b> This is the copy saved on this computer at {formatDateTime(data.offlineSavedAt)}; anything entered after that is not shown. Write check-ins, check-outs and payments on the{" "}
+          <a href="/print/day-sheet" target="_blank" className="font-semibold underline">
+            Day sheet
+          </a>{" "}
+          and enter them when the internet is back.
+        </div>
+      )}
 
       {settings.pathik && notInPathik.length > 0 && (
         <div role="alert" className="flex flex-col gap-2 border border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-amber-950 sm:flex-row sm:items-center sm:justify-between">
