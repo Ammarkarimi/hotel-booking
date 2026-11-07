@@ -88,6 +88,20 @@ export function roomTaxRate(averageNightly: number, tax: TaxRules): number {
   return slabs[slabs.length - 1].rate;
 }
 
+/**
+ * The GST slab for a room price that already includes GST: the first slab whose rate,
+ * taken out of the price, leaves a tariff inside that slab. For example ₹1,800 with GST
+ * is ₹1,714.29 + 5%.
+ */
+export function roomTaxRateIncluded(inclusiveNightly: number, tax: TaxRules): number {
+  if (tax.taxMode !== "india_gst") return tax.taxRate;
+  const slabs = tax.gstSlabs.length ? tax.gstSlabs : DEFAULT_GST_SLABS;
+  for (const slab of slabs) {
+    if (slab.upTo === null || inclusiveNightly / (1 + slab.rate / 100) <= slab.upTo) return slab.rate;
+  }
+  return slabs[slabs.length - 1].rate;
+}
+
 export interface FolioInput {
   nights: NightPrice[];
   discount: number;
@@ -95,9 +109,16 @@ export interface FolioInput {
   payments: Array<{ amount: number; type: string; status?: string }>;
   tax: TaxRules;
   gstRate?: number | null; // GST % on the room chosen for this booking, instead of the default
+  /** The room prices and discount already include the room GST (the hotel's setting when the booking was made). */
+  pricesIncludeTax?: boolean;
 }
 
 export interface Folio {
+  /** Room prices were entered with GST included. The room lines below are then before GST, as a bill shows them. */
+  pricesIncludeTax: boolean;
+  /** The room price and discount as they were entered (with GST when pricesIncludeTax). */
+  enteredRoomTotal: number;
+  enteredDiscount: number;
   nightCount: number;
   nights: NightPrice[];
   roomTotal: number;
@@ -129,13 +150,31 @@ export function sumPayments(payments: FolioInput["payments"]) {
 }
 
 export function computeFolio(input: FolioInput): Folio {
-  const roomTotal = round2(input.nights.reduce((s, n) => s + n.rate, 0));
-  const discount = round2(Math.min(Math.max(0, input.discount || 0), roomTotal));
-  const roomAfterDiscount = round2(roomTotal - discount);
+  const enteredRoomTotal = round2(input.nights.reduce((s, n) => s + n.rate, 0));
+  const enteredDiscount = round2(Math.min(Math.max(0, input.discount || 0), enteredRoomTotal));
+  const entered = round2(enteredRoomTotal - enteredDiscount);
   const nightCount = input.nights.length;
-  const defaultRate = roomTaxRate(nightCount ? roomAfterDiscount / nightCount : 0, input.tax);
+  const included = !!input.pricesIncludeTax;
+  const perNight = nightCount ? entered / nightCount : 0;
+  const defaultRate = included ? roomTaxRateIncluded(perNight, input.tax) : roomTaxRate(perNight, input.tax);
   const rRate = input.gstRate ?? defaultRate;
-  const roomTax = round2((roomAfterDiscount * rRate) / 100);
+
+  let nights = input.nights;
+  let roomTotal = enteredRoomTotal;
+  let discount = enteredDiscount;
+  let roomAfterDiscount = entered;
+  let roomTax: number;
+  if (included) {
+    // The GST is inside the price: take it out, so the room plus GST is exactly what was entered.
+    const factor = 1 + rRate / 100;
+    roomTax = round2(entered - entered / factor);
+    roomAfterDiscount = round2(entered - roomTax);
+    roomTotal = round2(enteredRoomTotal / factor);
+    discount = round2(roomTotal - roomAfterDiscount);
+    nights = input.nights.map((n) => ({ ...n, rate: round2(n.rate / factor), adjustment: round2(n.adjustment / factor) }));
+  } else {
+    roomTax = round2((roomAfterDiscount * rRate) / 100);
+  }
   const extrasTotal = round2(input.charges.reduce((s, c) => s + c.amount, 0));
   const extrasTaxRate = input.tax.extrasTaxRate || 0;
   const extrasTax = round2((extrasTotal * extrasTaxRate) / 100);
@@ -144,8 +183,11 @@ export function computeFolio(input: FolioInput): Folio {
   const { paid, refunded, netPaid } = sumPayments(input.payments);
 
   return {
+    pricesIncludeTax: included,
+    enteredRoomTotal,
+    enteredDiscount,
     nightCount,
-    nights: input.nights,
+    nights,
     roomTotal,
     discount,
     roomAfterDiscount,

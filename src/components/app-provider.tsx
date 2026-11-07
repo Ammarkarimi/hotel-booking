@@ -27,6 +27,8 @@ export interface ShellSettings {
   messages: { booking: string | null; checkIn: string | null; checkOut: string | null };
   /** The parts of the software the hotel's package includes (src/lib/modules.ts). */
   modules: ModuleKey[];
+  /** Room prices are entered with GST included. */
+  roomPricesIncludeTax: boolean;
 }
 
 type ToastTone = "success" | "error" | "info";

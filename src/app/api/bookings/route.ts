@@ -243,6 +243,7 @@ export async function POST(request: NextRequest) {
           fixedRate: body.ratePerNight !== undefined && body.ratePerNight !== room.pricePerNight,
           discount: body.discount,
           gstRate: body.gstRate ?? null,
+          pricesIncludeTax: ctx.settings.roomPricesIncludeTax,
           notes: body.notes || null,
           otaReference: body.otaReference || null,
           ...(!form && {

@@ -88,6 +88,7 @@ async function createBooking(body: z.infer<typeof schema>) {
         children: body.children,
         source: "website",
         ratePerNight: pick.room.pricePerNight,
+        pricesIncludeTax: ctx.settings.roomPricesIncludeTax,
         notes: body.notes ? `Guest note: ${body.notes}` : null,
       },
       include: { guest: true, room: true },

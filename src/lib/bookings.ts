@@ -102,7 +102,7 @@ export async function findAvailableRooms(
         roomType: room.type,
         rules: ctx.rules,
       });
-      const quote = computeFolio({ nights, discount: 0, charges: [], payments: [], tax: ctx.tax });
+      const quote = computeFolio({ nights, discount: 0, charges: [], payments: [], tax: ctx.tax, pricesIncludeTax: ctx.settings.roomPricesIncludeTax });
       return { room, quote };
     });
 }
@@ -140,6 +140,7 @@ export function folioFor(booking: FullBooking, ctx: BillingContext): Folio {
     payments: booking.payments,
     tax: ctx.tax,
     gstRate: booking.gstRate,
+    pricesIncludeTax: booking.pricesIncludeTax,
   });
   const bill = booking.bill;
   if (!bill) return live;

@@ -81,6 +81,7 @@ export interface BookingDTO {
   fixedRate: boolean;
   discount: number;
   gstRate: number | null; // GST % on the room chosen for this booking; null = the default from Settings
+  pricesIncludeTax: boolean; // ratePerNight and discount include the room GST
   adults: number;
   children: number;
   notes: string | null;
@@ -159,8 +160,8 @@ export interface SettingsDTO {
   rateTipsFloors: Record<string, number>;
   rateTipsStaff: boolean;
   pathik: boolean;
-  /** Room prices on Today include the room GST. */
-  pricesWithTax: boolean;
+  /** The room prices the owner enters already include the room GST. */
+  roomPricesIncludeTax: boolean;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
 }
 

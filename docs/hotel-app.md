@@ -33,8 +33,9 @@ The home screen shows what needs attention now:
   tonight (with their first name and "Leaves today" or "Till 9 Nov"), white means
   no guest tonight ("Free" with Ready or Needs cleaning, or "Arriving" with the
   guest's name). Each box also shows the room's category and tonight's price
-  (with any weekend or seasonal change; with or without GST as chosen in
-  *Settings → Prices & tax → Show room prices on Today with GST*). Click a free room to book it, any other
+  (with any weekend or seasonal change), as you entered it: with GST included
+  or before GST, depending on *Settings → Prices & tax → Room prices include
+  GST*. Click a free room to book it, any other
   room to see it in the calendar. Beside the boxes, **Free tonight** lists each
   category with how many of its rooms are free (for example "2 of 3"), how many of
   those still need cleaning, and tonight's price.
@@ -326,7 +327,7 @@ received date and UTR, to tick off against the site's own statement).
 | Tab | What’s there |
 |---|---|
 | Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
-| Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; weekend price change %; special prices for date ranges (festivals, off-season) |
+| Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; **Room prices include GST** (on: a room priced ₹1,800 costs the guest ₹1,800 and the bill shows ₹1,714.29 + ₹85.71 GST; off: GST is added on top, ₹1,800 + ₹90; a change applies only to bookings made afterwards); weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
 | Rate tips | Rate tips on or off, the time tips start (1 pm by default), the biggest cut a tip may suggest (20% by default), whether front-desk staff see tips, and the lowest price you accept for each room type (see below) |
 | WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |

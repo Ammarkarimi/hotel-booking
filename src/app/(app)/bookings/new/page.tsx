@@ -252,6 +252,7 @@ function NewBookingWizard() {
       payments: Number(advance) > 0 ? [{ amount: Number(advance), type: "advance" }] : [],
       tax: { taxMode: settings.taxMode, taxRate: settings.taxRate, gstSlabs: settings.gstSlabs, extrasTaxRate: settings.extrasTaxRate },
       gstRate,
+      pricesIncludeTax: settings.roomPricesIncludeTax,
     });
   }, [selectedRoom, settings, customRate, discount, advance, checkIn, checkOut, nights, gstRate]);
 
@@ -750,7 +751,7 @@ function NewBookingWizard() {
           <Card className="lg:col-span-3">
             <CardContent className="space-y-4 py-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Price per night" htmlFor="price-per-night" hint={`Normal price: ${formatCurrency(selectedRoom.pricePerNight)}. Change only for a special deal.`}>
+                <Field label="Price per night" htmlFor="price-per-night" hint={`Normal price: ${formatCurrency(selectedRoom.pricePerNight)}${shell.roomPricesIncludeTax ? " with GST" : " before GST"}. Change only for a special deal.`}>
                   <Input id="price-per-night" type="number" min={0} inputMode="decimal" placeholder={String(selectedRoom.pricePerNight)} value={customRate} onChange={(e) => setCustomRate(e.target.value)} />
                   {tips[selectedRoom.type] && tips[selectedRoom.type].price < selectedRoom.pricePerNight && (
                     <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -831,7 +832,7 @@ function NewBookingWizard() {
               </div>
               {folio ? (
                 <div className="mt-4 border-t border-slate-100 pt-3">
-                  <Row label="Room">{formatCurrency(folio.roomTotal)}</Row>
+                  <Row label={folio.pricesIncludeTax ? "Room (before GST)" : "Room"}>{formatCurrency(folio.roomTotal)}</Row>
                   {folio.discount > 0 && <Row label="Discount">− {formatCurrency(folio.discount)}</Row>}
                   <Row label={`GST (${folio.roomTaxRate}%)`}>{formatCurrency(folio.taxTotal)}</Row>
                   <Row label="Total" strong>
