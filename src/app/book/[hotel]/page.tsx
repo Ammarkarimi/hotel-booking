@@ -132,10 +132,10 @@ export default function PublicBookingPage() {
 
   return (
     <div>
-      <header className="bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 text-white">
+      <header className="bg-wall text-white">
         <div className="mx-auto max-w-5xl px-4 pb-24 pt-10 sm:px-6">
-          <p className="text-sm font-semibold uppercase tracking-widest text-primary-100">Book direct · Best price</p>
-          <h1 className="mt-2 text-3xl font-bold sm:text-5xl">{hotel.hotelName}</h1>
+          <p className="text-sm font-semibold text-lamp-300">Book direct for the best price</p>
+          <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-6xl">{hotel.hotelName}</h1>
           {hotel.tagline && <p className="mt-2 text-lg text-primary-100">{hotel.tagline}</p>}
           <div className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-primary-100">
             {(hotel.address || hotel.city) && (

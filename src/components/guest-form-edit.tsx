@@ -32,7 +32,7 @@ function Tick({ checked, onChange, children }: { checked: boolean; onChange: (v:
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="space-y-3">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-slate-500">{title}</h3>
+      <h3 className="text-sm font-bold text-slate-500">{title}</h3>
       {children}
     </section>
   );

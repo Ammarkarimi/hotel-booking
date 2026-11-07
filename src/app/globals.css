@@ -1,16 +1,49 @@
 @import "tailwindcss";
 
+/* Innvela look: a plum building with lit yellow windows.
+   primary = plum (buttons, links), slate = plum-tinted greys (text, lines, page),
+   lamp = the warm window yellow for rooms with a guest in and small highlights. */
 @theme {
-  --color-primary-50: #eef4ff;
-  --color-primary-100: #dbe6fe;
-  --color-primary-200: #bfd3fe;
-  --color-primary-300: #93b4fd;
-  --color-primary-400: #608bfa;
-  --color-primary-500: #3b66f6;
-  --color-primary-600: #2548eb;
-  --color-primary-700: #1d37d8;
-  --color-primary-800: #1e2faf;
-  --color-primary-900: #1e2d8a;
+  --color-primary-50: #f5f0f8;
+  --color-primary-100: #ebe2f1;
+  --color-primary-200: #d8c7e4;
+  --color-primary-300: #bba3cf;
+  --color-primary-400: #9677b0;
+  --color-primary-500: #6e4d8c;
+  --color-primary-600: #3b2350;
+  --color-primary-700: #2f1b40;
+  --color-primary-800: #251534;
+  --color-primary-900: #1b0f26;
+
+  --color-slate-50: #f6f3f8;
+  --color-slate-100: #eee9f2;
+  --color-slate-200: #e2dbe8;
+  --color-slate-300: #cbc0d4;
+  --color-slate-400: #9d90a9;
+  --color-slate-500: #6b5d7a;
+  --color-slate-600: #5a4b69;
+  --color-slate-700: #45365a;
+  --color-slate-800: #34264a;
+  --color-slate-900: #2a1a38;
+  --color-slate-950: #1d1128;
+
+  --color-lamp-50: #fff9e6;
+  --color-lamp-100: #fff1c7;
+  --color-lamp-200: #ffe49a;
+  --color-lamp-300: #ffd977;
+  --color-lamp-400: #ffcf5a;
+  --color-lamp-500: #f2b81d;
+  --color-lamp-600: #e0a800;
+  --color-lamp-700: #a87a00;
+  --color-lamp-800: #6b4e00;
+  --color-lamp-900: #4a3600;
+
+  /* The deep wall colour of the building and the line under it */
+  --color-wall: #3b2350;
+  --color-roof: #2c1a3d;
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-brand), var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 html {
@@ -21,14 +54,26 @@ body {
   @apply bg-slate-50 text-slate-900 antialiased;
 }
 
+/* Headings use the rounded display face; body text stays in the reading face. */
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+/* Rooms being cleaned are drawn with diagonal stripes, like the building view. */
+.stripes {
+  background-image: repeating-linear-gradient(45deg, #cbbfd6 0 6px, #ece6f1 6px 12px);
+}
+
 /* Display face for the public landing page (set by next/font on the page wrapper) */
 .font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-display), var(--font-body), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Bigger, clearer focus ring for keyboard users */
 :focus-visible {
-  outline: 3px solid var(--color-primary-300);
+  outline: 3px solid var(--color-lamp-500);
   outline-offset: 2px;
 }
 

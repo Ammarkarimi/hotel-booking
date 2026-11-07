@@ -401,7 +401,7 @@ function EditBookingDialog({ booking, open, onClose, onDone }: { booking: Bookin
           <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} />
         </Field>
         <div className="space-y-3 border-t border-slate-100 pt-4">
-          <p className="text-sm font-bold uppercase tracking-wide text-slate-500">Travel and other adults</p>
+          <p className="text-sm font-bold text-slate-500">Travel and other adults</p>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Coming from" optional>
               <Input maxLength={80} value={form.comingFrom} onChange={(e) => setForm({ ...form, comingFrom: e.target.value })} />

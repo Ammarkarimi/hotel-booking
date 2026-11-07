@@ -14,15 +14,15 @@ export default async function PlatformLayout({ children }: { children: React.Rea
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="sticky top-0 z-20 bg-slate-900 text-white">
+      <header className="sticky top-0 z-20 bg-wall text-white">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
           <Link href="/platform" className="flex min-w-0 items-center gap-2">
             <Logo tone="dark" markClassName="h-7 w-7" wordClassName="text-lg" />
             <span className="truncate border-l border-slate-700 pl-2 text-sm font-semibold text-slate-300">Owner panel</span>
           </Link>
           <nav className="ml-auto flex items-center gap-1 text-sm font-semibold">
-            <Link href="/platform" className="rounded-lg px-3 py-2 hover:bg-slate-800">Hotels</Link>
-            <Link href="/platform/hotels/new" className="hidden rounded-lg px-3 py-2 hover:bg-slate-800 sm:block">Add hotel</Link>
+            <Link href="/platform" className="rounded-lg px-3 py-2 hover:bg-white/10">Hotels</Link>
+            <Link href="/platform/hotels/new" className="hidden rounded-lg px-3 py-2 hover:bg-white/10 sm:block">Add hotel</Link>
             <SignOutButton />
           </nav>
         </div>

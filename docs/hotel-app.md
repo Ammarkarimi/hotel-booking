@@ -29,7 +29,12 @@ The home screen shows what needs attention now:
 - **Leaving today**, each with a *Check out* button
 - guests staying, free rooms tonight, rooms to clean, money received today, and
   money still to collect
-- a colour board of every room. Tap a free room to book it.
+- **All rooms right now**: your hotel drawn as a building, top floor first. Each
+  room is a window: yellow (lit) has a guest in, plain is free, a yellow top edge
+  means a guest arrives today, light purple is booked tonight, a red bottom edge
+  means the guest leaves today, stripes mean it needs cleaning and dark means not
+  usable. Rooms are grouped by the **Floor** set in Rooms; without one, a number
+  like 204 goes on floor 2. Tap a free room to book it, any other room to open it.
 - a **Getting started** checklist for new hotels
 
 Big buttons: **New booking**, **Walk-in guest**, **Room calendar**.
@@ -377,7 +382,7 @@ Settings → Hotel details → *Download the Pathik helper for Chrome*, unzip it
 
 1. On the booking (card **Police register (Pathik)**), on the guest's page, or from
    **Today → Not entered in Pathik yet**, press **Fill in Pathik**. At the top of
-   Today an amber alert says how many guests staying now are still to enter in
+   Today a yellow alert says how many guests staying now are still to enter in
    Pathik, with their names and rooms; **Fill them now** jumps to the list.
 2. The window says what Pathik needs that is not in the software yet (for example
    the district or email). Add it on the booking or guest first, or type it in Pathik.
@@ -462,7 +467,9 @@ several hotels, it asks guests to use the link their hotel gave them.
 
 ## Colours used everywhere
 
-- **Green**: free, clean or paid
-- **Blue**: guest staying
-- **Yellow**: booked, arriving or part paid
+- **Yellow** (a lit window): guest staying
+- **Light purple**: booked
+- **Green**: clean or paid
+- **Orange**: part paid
 - **Red**: needs cleaning or money owed
+- **Stripes**: room waiting to be cleaned

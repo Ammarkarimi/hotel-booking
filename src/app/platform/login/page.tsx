@@ -39,7 +39,7 @@ export default function PlatformLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-800 via-slate-900 to-black p-4">
+    <div className="flex min-h-screen items-center justify-center bg-wall p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardContent className="px-6 py-8 sm:px-8">
           <div className="mb-8 text-center">
@@ -76,7 +76,7 @@ export default function PlatformLoginPage() {
 
             {error && <div className="rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
-            <Button type="submit" size="lg" className="w-full bg-slate-900 hover:bg-slate-800" loading={loading}>
+            <Button type="submit" size="lg" className="w-full bg-primary-600 hover:bg-primary-700" loading={loading}>
               Sign in
             </Button>
           </form>

@@ -32,7 +32,7 @@ import { AppProvider, useApp, type ShellSettings } from "@/components/app-provid
 import { Button, StatusBadge } from "@/components/ui";
 import { ShiftControl } from "@/components/shift";
 import { RateTipPopup } from "@/components/rate-tips";
-import { LogoIcon, Wordmark } from "@/components/brand";
+import { LogoMark, Wordmark } from "@/components/brand";
 import type { SessionUser } from "@/lib/session";
 
 const NAV = [
@@ -84,12 +84,12 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
   }
 
   return (
-    <div className="flex h-full flex-col bg-white">
-      <div className="flex items-center gap-3 border-b border-slate-100 px-5 py-4">
-        <LogoIcon className="h-10 w-10 shrink-0" />
+    <div className="flex h-full flex-col bg-wall text-white">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+        <LogoMark className="h-9 w-9 shrink-0" tone="dark" />
         <div className="min-w-0">
-          <p className="truncate text-base font-bold text-slate-900">{settings.hotelName}</p>
-          <Wordmark className="text-xs" />
+          <p className="truncate font-heading text-[17px] font-bold text-white">{settings.hotelName}</p>
+          <Wordmark className="text-xs" tone="dark" />
         </div>
       </div>
 
@@ -103,22 +103,22 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                active ? "bg-primary-50 text-primary-700" : "text-slate-700 hover:bg-slate-50"
+                "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                active ? "bg-lamp-400 text-primary-900" : "text-primary-50 hover:bg-white/10"
               )}
             >
-              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-600" : "text-slate-400 group-hover:text-slate-600")} />
+              <Icon className={cn("h-5 w-5 shrink-0", active ? "text-primary-800" : "text-primary-300 group-hover:text-primary-100")} />
               <span className="min-w-0 flex-1">
                 <span className="block text-[15px] font-semibold leading-tight">{item.label}</span>
-                <span className="block text-xs text-slate-400">{item.hint}</span>
+                <span className={cn("block text-xs", active ? "text-primary-800" : "text-primary-300")}>{item.hint}</span>
               </span>
               {item.href === "/guest-forms" && formsWaiting > 0 && (
-                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white" aria-label={`${formsWaiting} guest forms need a room`}>
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white ring-2 ring-wall" aria-label={`${formsWaiting} guest forms need a room`}>
                   {formsWaiting}
                 </span>
               )}
               {item.href === "/shifts" && unread > 0 && (
-                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white" aria-label={`${unread} new shift reports`}>
+                <span className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-bold text-white ring-2 ring-wall" aria-label={`${unread} new shift reports`}>
                   {unread}
                 </span>
               )}
@@ -126,14 +126,14 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
           );
         })}
 
-        <div className="my-3 border-t border-slate-100" />
+        <div className="my-3 border-t border-white/10" />
         <a
           href={`/book/${settings.bookingSlug}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
+          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-primary-50 hover:bg-white/10"
         >
-          <Globe className="h-5 w-5 text-slate-400" />
+          <Globe className="h-5 w-5 text-primary-300" />
           <span className="text-[15px] font-semibold">Online booking page</span>
         </a>
         {FOOTER_NAV.map((item) => {
@@ -145,25 +145,25 @@ function Sidebar({ onNavigate, formsWaiting }: { onNavigate?: () => void; formsW
               href={item.href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                active ? "bg-primary-50 text-primary-700" : "text-slate-700 hover:bg-slate-50"
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                active ? "bg-lamp-400 text-primary-900" : "text-primary-50 hover:bg-white/10"
               )}
             >
-              <Icon className={cn("h-5 w-5", active ? "text-primary-600" : "text-slate-400")} />
+              <Icon className={cn("h-5 w-5", active ? "text-primary-800" : "text-primary-300")} />
               <span className="text-[15px] font-semibold">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t border-slate-100 p-4">
+      <div className="border-t border-white/10 p-4">
         <div className="mb-3 px-1">
-          <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
-          <p className="text-xs text-slate-500">{label(user.role)}</p>
+          <p className="truncate text-sm font-semibold text-white">{user.name}</p>
+          <p className="text-xs text-primary-300">{label(user.role)}</p>
         </div>
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-[15px] font-semibold text-slate-600 transition hover:bg-red-50 hover:text-red-600"
+          className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-[15px] font-semibold text-primary-100 transition hover:bg-white/10 hover:text-white"
         >
           <LogOut className="h-5 w-5" />
           Sign out
@@ -225,12 +225,12 @@ function GlobalSearch() {
         }}
         onFocus={() => setOpen(true)}
         placeholder="Search guest name, phone, booking # or room"
-        className="min-h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-[15px] outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100"
+        className="min-h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3 text-[15px] outline-none transition focus:border-primary-400 focus:bg-white focus:ring-4 focus:ring-primary-100"
       />
       {open && results && (
-        <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+        <div className="absolute left-0 right-0 top-full z-40 mt-2 max-h-[70vh] overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 shadow-xl">
           {empty && <p className="px-3 py-4 text-center text-sm text-slate-500">Nothing found for “{q}”</p>}
-          {results.bookings.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400">Bookings</p>}
+          {results.bookings.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-semibold text-slate-500">Bookings</p>}
           {results.bookings.map((b) => (
             <button key={b.id} onClick={() => go(`/bookings/${b.id}`)} className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left hover:bg-slate-50">
               <span>
@@ -240,14 +240,14 @@ function GlobalSearch() {
               <StatusBadge status={b.status} />
             </button>
           ))}
-          {results.guests.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400">Guests</p>}
+          {results.guests.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-semibold text-slate-500">Guests</p>}
           {results.guests.map((g) => (
             <button key={g.id} onClick={() => go(`/guests/${g.id}`)} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-50">
               <span className="block text-sm font-semibold">{g.name}</span>
               <span className="block text-xs text-slate-500">{g.phone}</span>
             </button>
           ))}
-          {results.rooms.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-bold uppercase tracking-wide text-slate-400">Rooms</p>}
+          {results.rooms.length > 0 && <p className="px-3 pb-1 pt-2 text-xs font-semibold text-slate-500">Rooms</p>}
           {results.rooms.map((r) => (
             <button key={r.id} onClick={() => go(`/calendar?room=${r.id}`)} className="block w-full rounded-lg px-3 py-2 text-left hover:bg-slate-50">
               <span className="text-sm font-semibold">Room {r.roomNumber}</span>
@@ -296,7 +296,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-72 border-r border-slate-200 lg:block">
+      <aside className="no-print fixed inset-y-0 left-0 z-30 hidden w-72 lg:block">
         <Sidebar formsWaiting={formsWaiting} />
       </aside>
 
@@ -306,7 +306,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <div className="absolute inset-y-0 left-0 w-80 max-w-[85vw] shadow-2xl">
             <button
               onClick={() => setMenuOpen(false)}
-              className="absolute right-3 top-4 z-10 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100"
+              className="absolute right-3 top-4 z-10 rounded-lg p-1.5 text-primary-200 hover:bg-white/10 hover:text-white"
               aria-label="Close menu"
             >
               <X className="h-5 w-5" />
@@ -317,10 +317,10 @@ function Shell({ children }: { children: React.ReactNode }) {
       )}
 
       <div className="lg:pl-72 print:pl-0">
-        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur sm:px-6">
+        <header className="no-print sticky top-0 z-20 flex items-center gap-3 border-b border-slate-200 bg-slate-50/95 px-4 py-3 backdrop-blur sm:px-6">
           <button
             onClick={() => setMenuOpen(true)}
-            className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 lg:hidden"
+            className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 lg:hidden"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
@@ -346,7 +346,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         {settings.subscriptionNotice && (
-          <div role="status" className="no-print border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 sm:px-6">
+          <div role="status" className="no-print border-b border-lamp-300 bg-lamp-50 px-4 py-3 text-sm font-medium text-lamp-900 sm:px-6">
             {settings.subscriptionNotice}
           </div>
         )}

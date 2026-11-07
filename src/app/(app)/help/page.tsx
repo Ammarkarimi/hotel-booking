@@ -203,8 +203,9 @@ export default function HelpPage() {
         ))}
       </div>
       <p className="mt-6 text-sm text-slate-500">
-        Colours mean the same thing everywhere: <b className="text-emerald-700">green</b> = free / clean / paid, <b className="text-sky-700">blue</b> = guest staying,{" "}
-        <b className="text-amber-700">yellow</b> = booked / arriving / part paid, <b className="text-red-700">red</b> = needs cleaning / money owed.
+        Colours mean the same thing everywhere: <b className="text-lamp-700">yellow</b> = guest staying (a lit window), <b className="text-primary-500">light purple</b> = booked,{" "}
+        <b className="text-emerald-700">green</b> = clean / paid, <b className="text-amber-700">orange</b> = part paid, <b className="text-red-700">red</b> = needs cleaning / money owed.
+        Striped rooms are waiting to be cleaned.
       </p>
     </div>
   );

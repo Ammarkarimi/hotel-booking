@@ -51,7 +51,7 @@ export default function PlatformHotelPage() {
         }
         description={[hotel.city, `Customer since ${formatDate(hotel.createdAt)}`].filter(Boolean).join(" · ")}
         actions={
-          <Button size="lg" className="bg-slate-900 hover:bg-slate-800" onClick={() => setDialog({ kind: "payment" })}>
+          <Button size="lg" className="bg-primary-600 hover:bg-primary-700" onClick={() => setDialog({ kind: "payment" })}>
             <Plus className="h-5 w-5" /> Record a payment
           </Button>
         }

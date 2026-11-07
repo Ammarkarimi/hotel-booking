@@ -52,7 +52,7 @@ export default function PlatformHome() {
         description={`Who is using your software, and who has paid for ${monthLabel(data.month)}.`}
         actions={
           <Link href="/platform/hotels/new">
-            <Button size="lg" className="bg-slate-900 hover:bg-slate-800">
+            <Button size="lg" className="bg-primary-600 hover:bg-primary-700">
               <Plus className="h-5 w-5" /> Add a hotel
             </Button>
           </Link>

@@ -149,7 +149,7 @@ export default function NewHotelPage() {
         </Card>
 
         {error && <Tip tone="danger">{error}</Tip>}
-        <Button type="submit" size="lg" loading={saving} className="w-full bg-slate-900 hover:bg-slate-800 sm:w-auto">
+        <Button type="submit" size="lg" loading={saving} className="w-full bg-primary-600 hover:bg-primary-700 sm:w-auto">
           Create hotel and sign-in
         </Button>
       </form>
