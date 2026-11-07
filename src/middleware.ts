@@ -4,8 +4,9 @@ import { COOKIE_NAME, PLATFORM_COOKIE_NAME, verifyPlatformToken, verifySessionTo
 
 // Pages and APIs anyone can open without signing in (the guest booking website and the
 // public landing page with its video and images), the guest form sent on WhatsApp, and the
-// offline helper the browser loads (public/sw.js).
-const publicPaths = ["/login", "/api/auth/login", "/api/auth/expired", "/book", "/form", "/api/public", "/welcome", "/sw.js"];
+// offline helper the browser loads (public/sw.js), and the app manifest and icons used to install
+// Innvela as an app (the browser fetches those without the sign-in cookie).
+const publicPaths = ["/login", "/api/auth/login", "/api/auth/expired", "/book", "/form", "/api/public", "/welcome", "/sw.js", "/manifest.webmanifest", "/icons"];
 
 // The software provider's panel. It has its own sign-in; hotel accounts never get in.
 const platformPaths = ["/platform", "/api/platform"];
