@@ -149,7 +149,7 @@ export function formMessage(o: { hotelName: string; guestName?: string | null; u
   return [
     `${hello} thank you for choosing ${o.hotelName}.`,
     "",
-    "Please fill in your details for everyone staying. Bring an original photo ID for every adult (Aadhaar, driving licence, voter ID or passport) to show at check-in: nothing is uploaded. It takes about 2 minutes and saves time at check-in:",
+    "For express check-in, please fill in your details for everyone staying. Bring an original photo ID for every adult (Aadhaar, driving licence, voter ID or passport) to show at check-in: nothing is uploaded. It takes about 2 minutes and saves time at check-in:",
     o.url,
     "",
     `The link works for ${o.days ?? FORM_DAYS} days.`,

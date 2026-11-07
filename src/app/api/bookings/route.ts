@@ -323,10 +323,10 @@ type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 /** Marks a filled-in guest form as used, so two people can never make two bookings from it. */
 async function claimGuestForm(tx: Tx, id: string, by: string) {
   const claimed = await tx.guestForm.updateMany({ where: { id, status: "submitted" }, data: { status: "booked", closedAt: new Date(), closedBy: by } });
-  if (claimed.count !== 1) fail("This guest form has already been used or closed. Please refresh the page.", 409);
+  if (claimed.count !== 1) fail("This express check-in has already been used or closed. Please refresh the page.", 409);
   const form = await tx.guestForm.findUniqueOrThrow({ where: { id } });
   const details = parseDetails(form.details);
-  if (!details) fail("This guest form has no details", 409);
+  if (!details) fail("This express check-in has no details", 409);
   return { id: form.id, details };
 }
 

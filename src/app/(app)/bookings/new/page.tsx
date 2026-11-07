@@ -548,7 +548,7 @@ function NewBookingWizard() {
                 <div className="rounded-xl border-2 border-primary-200 bg-primary-50 p-4">
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <p className="flex items-center gap-2 text-lg font-bold">
-                      <ClipboardCheck className="h-5 w-5 text-primary-600" /> {guestName}: from the guest form
+                      <ClipboardCheck className="h-5 w-5 text-primary-600" /> {guestName}: from express check-in
                     </p>
                     <Button size="sm" variant="outline" onClick={() => setEditForm(true)}>
                       <Pencil className="h-4 w-4" /> Edit details

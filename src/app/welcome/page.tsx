@@ -48,7 +48,7 @@ const display = Bricolage_Grotesque({ subsets: ["latin"], weight: ["600", "700",
 export const metadata: Metadata = {
   title: { absolute: "Innvela · Hotel software for boutique and premium hotels" },
   description:
-    "Reservations, guest forms on WhatsApp, ID checks, polished GST invoices, housekeeping, staff shifts, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
+    "Reservations, express check-in on WhatsApp, ID checks, polished GST invoices, housekeeping, staff shifts, expenses, profit reports and your own commission-free booking website. Hotel software for boutique hotels, resorts and premium stays.",
   openGraph: {
     title: "Innvela · Hotel software for boutique and premium hotels",
     description: "Effortless front desk software for boutique hotels, resorts and premium stays, with your own commission-free booking website.",
@@ -79,7 +79,7 @@ const FEATURE_GROUPS = [
   {
     title: "Guests and ID",
     items: [
-      { icon: Send, name: "Guest forms on WhatsApp", text: "Send a link and guests fill in their details, journey and every adult's name on their phone. You only choose the room." },
+      { icon: Send, name: "Express check-in", text: "Send a link on WhatsApp and guests fill in their details, journey and every adult's name on their phone. You only choose the room." },
       { icon: UserCheck, name: "ID check at check-in", text: "Tick each adult's original ID at the desk, with who checked it and when. Nothing from an Aadhaar is ever saved." },
       { icon: Printer, name: "Registration card", text: "A card for every stay with each adult and the ID they showed, ready to sign. Form C details for foreign guests are written on it by hand." },
       { icon: IdCard, name: "Pathik filled in for you", text: "For hotels in Gujarat, a Chrome helper fills Pathik's Add Guest form with every adult, and the Dashboard shows who is still to enter." },
@@ -228,7 +228,7 @@ const FAQS = [
   },
   {
     q: "Can guests send their details before they arrive?",
-    a: "Yes. Send a guest form on WhatsApp. The guest fills in their address, journey, vehicle and every adult's name on their phone, and says which ID they will show at check-in. You get a pop-up, choose the room and the booking is ready.",
+    a: "Yes. Send express check-in on WhatsApp. The guest fills in their address, journey, vehicle and every adult's name on their phone, and says which ID they will show at check-in. You get a pop-up, choose the room and the booking is ready.",
   },
   {
     q: "We are in Gujarat. Does it help with Pathik?",
@@ -374,7 +374,7 @@ export default function WelcomePage() {
                 Effortless operations for exceptional stays
               </h1>
               <p className="mt-5 max-w-xl text-lg leading-relaxed text-slate-600">
-                Reservations, guest forms on WhatsApp, guest bills, GST invoices, housekeeping, staff shifts and owner reports in one refined app, on
+                Reservations, express check-in on WhatsApp, guest bills, GST invoices, housekeeping, staff shifts and owner reports in one refined app, on
                 any device. With your own
                 booking website, guests book you directly and you keep the commission.
               </p>
@@ -394,7 +394,7 @@ export default function WelcomePage() {
                 )}
               </div>
               <ul className="mt-8 grid max-w-lg grid-cols-2 gap-x-6 gap-y-2 text-[15px] text-slate-700">
-                {["Zero double bookings", "Polished GST invoices", "Guest forms on WhatsApp", "Staff shifts & handover", "Profit & RevPAR reports", "Rate tips for empty rooms"].map((t) => (
+                {["Zero double bookings", "Polished GST invoices", "Express check-in on WhatsApp", "Staff shifts & handover", "Profit & RevPAR reports", "Rate tips for empty rooms"].map((t) => (
                   <li key={t} className="flex items-center gap-2">
                     <Check className="h-5 w-5 shrink-0 text-emerald-600" /> {t}
                   </li>

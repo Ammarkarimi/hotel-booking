@@ -44,7 +44,7 @@ src/
 │   ├── reports.ts             # Report numbers; hotelMetrics() holds the occupancy, ADR, RevPAR and per-room maths (pure)
 │   ├── shifts.ts              # Staff shifts: summary of what a person did between two moments (database)
 │   ├── shift-report.ts        # Shift counts, the end-of-shift code and the WhatsApp report text (pure)
-│   ├── guest-form.ts          # WhatsApp guest form: what the guest fills in and its checks (pure)
+│   ├── guest-form.ts          # Express check-in (the WhatsApp guest form): what the guest fills in and its checks (pure)
 │   ├── messages.ts            # WhatsApp messages to guests: default wording, {fields} and filling them in (pure)
 │   ├── pathik.ts              # Pathik (Gujarat police guest register): a booking or guest as Pathik's Add Guest form (pure)
 │   ├── rate-tips.ts           # Rate tips: free rooms per type tonight, what usually still sells, the suggested price, sales insights (pure)
@@ -125,7 +125,7 @@ This is the most important design rule. It lives in `src/lib/db.ts`.
   tested end-to-end with two hotels trying to reach each other’s data.
 
 **Packages and modules:** `src/lib/modules.ts` lists the modules a package can
-switch on or off (guest forms, Pathik, expenses, reports, shifts, rate tips, the
+switch on or off (express check-in, `guest_forms`; Pathik, expenses, reports, shifts, rate tips, the
 booking website); everything else is in every package. `getSession` returns the
 hotel's modules (`resolveModules`: its package's list, or `Hotel.modules`).
 
@@ -275,7 +275,7 @@ loaded in `src/app/layout.tsx` as `--font-brand`).
 
 The app looks like desktop software. `src/components/layout.tsx` draws the window:
 a blue title bar, section tabs, a toolbar (New booking F2, Walk-in F3, Calendar F4,
-Send guest form, search on `/`, the shift button) and a status bar. All other text
+Send express check-in, search on `/`, the shift button) and a status bar. All other text
 uses the computer's own fonts (Tahoma / Segoe UI). The look is set in
 `src/app/globals.css` (`@theme`): `primary-*` is the blue for actions and links,
 `chrome` / `chrome-line` are the panel title strips and borders, and the radius and

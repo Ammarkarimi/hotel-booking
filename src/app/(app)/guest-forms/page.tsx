@@ -71,11 +71,11 @@ export default function GuestFormsPage() {
   return (
     <div>
       <PageHeader
-        title="Guest forms"
-        description="Send a form on WhatsApp. The guest fills in their details on their phone; you choose the room."
+        title="Express check-in"
+        description="Send a link on WhatsApp. The guest fills in their details on their phone before they arrive; you choose the room, and check-in takes a minute."
         actions={
           <Button onClick={() => setSendOpen(true)}>
-            <Send className="h-5 w-5" /> Send a form
+            <Send className="h-5 w-5" /> Send express check-in
           </Button>
         }
       />
@@ -95,12 +95,12 @@ export default function GuestFormsPage() {
       ) : forms.length === 0 ? (
         <EmptyState
           icon={<ClipboardCheck className="h-6 w-6" />}
-          title={view === "received" ? "No filled-in forms waiting" : view === "waiting" ? "No forms waiting for a guest" : "Nothing here yet"}
-          description={view === "received" ? "When a guest sends their form it shows here, and the menu shows a red number." : undefined}
+          title={view === "received" ? "No filled-in check-ins waiting" : view === "waiting" ? "No check-ins waiting for a guest" : "Nothing here yet"}
+          description={view === "received" ? "When a guest sends their details they show here, and the menu shows a red number." : undefined}
           action={
             view !== "done" && (
               <Button variant="outline" onClick={() => setSendOpen(true)}>
-                <Send className="h-4 w-4" /> Send a form
+                <Send className="h-4 w-4" /> Send express check-in
               </Button>
             )
           }

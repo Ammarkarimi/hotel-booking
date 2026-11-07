@@ -5,7 +5,7 @@
 // Pure: used by the server and the screens.
 
 export const MODULES = [
-  { key: "guest_forms", label: "Guest forms on WhatsApp", description: "Send guests a form on WhatsApp to fill in their own details before they arrive." },
+  { key: "guest_forms", label: "Express check-in", description: "Guests fill in their own details on WhatsApp before they arrive, so check-in takes a minute." },
   { key: "pathik", label: "Pathik (police guest register)", description: "Fill in the Gujarat police guest register from each booking." },
   { key: "expenses", label: "Expenses", description: "Record money spent: salaries, bills, supplies." },
   { key: "reports", label: "Reports", description: "The owner's business summary, takings, GST and downloads." },
@@ -85,6 +85,6 @@ export function applyModules<T extends { pathik: boolean; staffShifts: boolean; 
 /** The three packages created at the start. The provider can rename them and change what is in them. */
 export const STARTER_PACKAGES: Array<{ id: string; name: string; description: string; modules: ModuleKey[] }> = [
   { id: "pkg_basic", name: "Basic", description: "Bookings, billing, rooms and housekeeping, with Pathik.", modules: ["pathik"] },
-  { id: "pkg_standard", name: "Standard", description: "Basic, plus guest forms on WhatsApp, expenses, reports and staff shifts.", modules: ["guest_forms", "pathik", "expenses", "reports", "shifts"] },
+  { id: "pkg_standard", name: "Standard", description: "Basic, plus express check-in, expenses, reports and staff shifts.", modules: ["guest_forms", "pathik", "expenses", "reports", "shifts"] },
   { id: "pkg_premium", name: "Premium", description: "Everything, including rate tips and the online booking website.", modules: [...ALL_MODULES] },
 ];

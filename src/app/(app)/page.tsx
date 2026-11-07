@@ -345,11 +345,11 @@ export default function DashboardPage() {
       {forms.length > 0 && (
         <Card>
           <CardHeader
-            title={`Guest forms: choose a room (${forms.length})`}
+            title={`Express check-in: choose a room (${forms.length})`}
             description="These guests filled in their details on WhatsApp"
             action={
               <Link href="/guest-forms" className="text-[13px] font-semibold text-primary-700 underline">
-                All forms
+                All express check-ins
               </Link>
             }
           />
