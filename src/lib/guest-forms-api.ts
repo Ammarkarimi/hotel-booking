@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import type { GuestForm, Hotel } from "@prisma/client";
 import { rawPrisma, runForHotel } from "./db";
 import { fail } from "./api";
+import { resolveModules } from "./modules";
 import { toDateKey } from "./dates";
 import { formStatus, type GuestFormDetails } from "./guest-form";
 
@@ -45,6 +46,8 @@ export async function withFormLink<T>(token: string, fn: (form: GuestForm, hotel
   const form = token ? await rawPrisma.guestForm.findUnique({ where: { token }, include: { hotel: true } }) : null;
   if (!form) fail("This link is not valid. Please ask the hotel to send the form again.", 404);
   if (form.hotel.status !== "active") fail("This form is closed. Please contact the hotel.", 403);
+  const modules = resolveModules(await rawPrisma.hotel.findUniqueOrThrow({ where: { id: form.hotelId }, select: { modules: true, package: { select: { modules: true } } } }));
+  if (!modules.includes("guest_forms")) fail("This form is closed. Please contact the hotel.", 403);
   const { hotel, ...rest } = form;
   return runForHotel(form.hotelId, () => fn(rest, hotel));
 }

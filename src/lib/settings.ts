@@ -1,15 +1,35 @@
-import { currentHotelId, prisma } from "./db";
+import { currentHotelId, prisma, rawPrisma } from "./db";
+import { applyModules, resolveModules } from "./modules";
 import { parseGstSlabs, type PricingRules, type TaxRules } from "./pricing";
 import { todayKey } from "./dates";
 
-/** The current hotel's profile and preferences (created with defaults on first use). */
-export async function getSettings() {
+/** The current hotel's profile and preferences as the owner saved them (created with defaults on first use). */
+export async function getStoredSettings() {
   const hotelId = currentHotelId();
   return prisma.hotelSettings.upsert({
     where: { hotelId },
     update: {},
     create: { hotelId },
   });
+}
+
+/** The modules the current hotel's package includes. */
+export async function getHotelModules() {
+  const hotel = await rawPrisma.hotel.findUniqueOrThrow({
+    where: { id: currentHotelId() },
+    select: { modules: true, package: { select: { modules: true } } },
+  });
+  return resolveModules(hotel);
+}
+
+/**
+ * The current hotel's settings as the software uses them: a feature the package does not
+ * include (Pathik, shifts, rate tips, the booking website) reads as switched off.
+ * Only the Settings screen reads and writes the stored values (getStoredSettings).
+ */
+export async function getSettings() {
+  const [stored, modules] = await Promise.all([getStoredSettings(), getHotelModules()]);
+  return applyModules(stored, modules);
 }
 
 export type HotelSettingsRecord = Awaited<ReturnType<typeof getSettings>>;

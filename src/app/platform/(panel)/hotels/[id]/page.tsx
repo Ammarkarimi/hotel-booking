@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, ExternalLink, KeyRound, Pause, Play, Plus, Trash2 } from "lucide-react";
 import { Badge, Button, Card, CardContent, CardHeader, Field, Input, Loading, Modal, PageHeader, Row, Select, Textarea, Tip, Toggle } from "@/components/ui";
-import { CredentialsCard, HotelStatusBadge, MonthStatusBadge, PAYMENT_METHOD_LABELS, money, type HotelDetail } from "@/components/platform-ui";
+import { CredentialsCard, HotelStatusBadge, ModuleChecklist, MonthStatusBadge, PAYMENT_METHOD_LABELS, money, type HotelDetail, type PackageRow } from "@/components/platform-ui";
+import { cleanModules, type ModuleKey } from "@/lib/modules";
 import { api } from "@/lib/client";
 import { addMonths, monthLabel, monthRange } from "@/lib/subscription";
 import { formatDate, formatDateTime } from "@/lib/utils";
@@ -121,6 +122,8 @@ export default function PlatformHotelPage() {
           </CardContent>
         </Card>
       </div>
+
+      <PackageForm hotel={hotel} onSaved={setHotel} />
 
       <Card>
         <CardHeader title="Payment history" description="Every payment you recorded from this hotel." />
@@ -472,6 +475,78 @@ function PaymentDialog({ hotel, onClose, onSaved }: { hotel: HotelDetail; onClos
         {error && <div className="sm:col-span-2"><Tip tone="danger">{error}</Tip></div>}
       </div>
     </Modal>
+  );
+}
+
+/** Which package the hotel is on, or a custom choice of modules. */
+function PackageForm({ hotel, onSaved }: { hotel: HotelDetail; onSaved: (h: HotelDetail) => void }) {
+  const [packages, setPackages] = useState<PackageRow[] | null>(null);
+  const [packageId, setPackageId] = useState<string>(hotel.packageId ?? "");
+  const [custom, setCustom] = useState<ModuleKey[]>(hotel.packageId ? hotel.activeModules : hotel.modules);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{ tone: "success" | "danger"; text: string } | null>(null);
+
+  useEffect(() => {
+    api<PackageRow[]>("/api/platform/packages").then(setPackages, () => setPackages([]));
+  }, []);
+
+  const chosen = packages?.find((p) => p.id === packageId) ?? null;
+  const shown = packageId ? cleanModules(chosen?.modules ?? hotel.package?.modules ?? []) : custom;
+  const changed = packageId !== (hotel.packageId ?? "") || (!packageId && JSON.stringify(custom) !== JSON.stringify(hotel.modules));
+
+  async function save() {
+    setSaving(true);
+    setMessage(null);
+    try {
+      const updated = await api<HotelDetail>(`/api/platform/hotels/${hotel.id}`, {
+        method: "PATCH",
+        body: packageId ? { packageId } : { packageId: null, modules: custom },
+      });
+      onSaved(updated);
+      setMessage({ tone: "success", text: "Saved. The hotel sees the change on its next click." });
+    } catch (e) {
+      setMessage({ tone: "danger", text: (e as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title="Package and features"
+        description={hotel.package ? `On the ${hotel.package.name} package.` : "On a custom choice of features."}
+      />
+      <CardContent className="space-y-4">
+        <Field label="Package" className="max-w-sm" hint={chosen && chosen.monthlyFee > 0 ? `Suggested fee ${money(chosen.monthlyFee)} a month. Change the fee below in Hotel details.` : undefined}>
+          <Select
+            value={packageId}
+            onChange={(e) => {
+              // Starting a custom choice from what the hotel has now saves ticking every box again.
+              if (!e.target.value) setCustom(shown);
+              setPackageId(e.target.value);
+            }}
+          >
+            {(packages ?? []).map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+            {hotel.package && !packages?.some((p) => p.id === hotel.package!.id) && <option value={hotel.package.id}>{hotel.package.name}</option>}
+            <option value="">Custom (choose features for this hotel only)</option>
+          </Select>
+        </Field>
+        <div>
+          <p className="mb-2 text-sm font-semibold text-slate-700">
+            {packageId ? `What ${chosen?.name ?? "this package"} includes (change it in Packages)` : "Features for this hotel"}
+          </p>
+          <ModuleChecklist value={shown} onChange={packageId ? undefined : setCustom} />
+        </div>
+        <div className="flex flex-wrap items-center gap-3 border-t border-slate-200 pt-3">
+          <Button loading={saving} disabled={!changed} onClick={save}>Save package</Button>
+          <Link href="/platform/packages" className="text-sm font-semibold text-primary-700 underline">Edit packages</Link>
+          {message && <span className={message.tone === "success" ? "text-sm font-semibold text-emerald-700" : "text-sm font-semibold text-red-700"}>{message.text}</span>}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

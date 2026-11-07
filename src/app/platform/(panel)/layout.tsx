@@ -22,6 +22,7 @@ export default async function PlatformLayout({ children }: { children: React.Rea
           </Link>
           <nav className="ml-auto flex items-center gap-1 text-sm font-semibold">
             <Link href="/platform" className="rounded-lg px-3 py-2 hover:bg-white/10">Hotels</Link>
+            <Link href="/platform/packages" className="rounded-lg px-3 py-2 hover:bg-white/10">Packages</Link>
             <Link href="/platform/hotels/new" className="hidden rounded-lg px-3 py-2 hover:bg-white/10 sm:block">Add hotel</Link>
             <SignOutButton />
           </nav>

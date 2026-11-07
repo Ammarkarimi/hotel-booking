@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { fail, isAdmin, withAuth } from "@/lib/api";
+import { fail, isAdmin, withModule } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { closeShift, serializeShift, startShift } from "@/lib/shift-api";
 
@@ -17,7 +17,7 @@ const answerSchema = z.object({
  * already left; the person who asked can cancel. Accepting ends the shift and starts the new person's at the same moment.
  */
 export async function POST(request: NextRequest, { params }: Params) {
-  return withAuth(async (user) => {
+  return withModule("shifts", async (user) => {
     const { id } = await params;
     const body = answerSchema.parse(await request.json());
     const transfer = await prisma.shiftTransfer.findUnique({ where: { id }, include: { fromShift: true } });

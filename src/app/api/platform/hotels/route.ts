@@ -4,7 +4,7 @@ import { rawPrisma } from "@/lib/db";
 import { fail } from "@/lib/api";
 import { hashPassword } from "@/lib/auth";
 import { generatePassword, withPlatform } from "@/lib/platform";
-import { assertEmailFree, chooseSlug, currentMonth, hotelFields, platformOverview } from "@/lib/platform-hotels";
+import { assertEmailFree, chooseSlug, currentMonth, hotelFields, packageChoice, platformOverview } from "@/lib/platform-hotels";
 
 export async function GET() {
   return withPlatform(async () => NextResponse.json(await platformOverview()));
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     const slug = await chooseSlug(body.slug || undefined, body.name);
     const password = body.password || generatePassword();
     const passwordHash = await hashPassword(password);
+    const pkg = await packageChoice(body);
 
     const hotel = await rawPrisma.$transaction(async (tx) => {
       const created = await tx.hotel.create({
@@ -42,6 +43,7 @@ export async function POST(request: NextRequest) {
           monthlyFee: body.monthlyFee,
           billingStart: body.billingStart ?? currentMonth(),
           notes: body.notes || null,
+          ...pkg,
         },
       });
       await tx.hotelSettings.create({

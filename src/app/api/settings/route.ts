@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentHotelId, prisma } from "@/lib/db";
 import { withAuth, withAdmin } from "@/lib/api";
-import { getSettings } from "@/lib/settings";
+import { getStoredSettings } from "@/lib/settings";
 import { logActivity } from "@/lib/activity";
 import { parseGstSlabs } from "@/lib/pricing";
 import { parseFloors } from "@/lib/rate-tips";
 
 export async function GET() {
   return withAuth(async () => {
-    const settings = await getSettings();
+    const settings = await getStoredSettings();
     const seasonalRates = await prisma.seasonalRate.findMany({ orderBy: { startDate: "asc" } });
     const hotel = await prisma.hotel.findUniqueOrThrow({ where: { id: currentHotelId() }, select: { slug: true } });
     return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors), seasonalRates, bookingSlug: hotel.slug });
@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest) {
       ...(gstSlabs && { gstSlabs: JSON.stringify(gstSlabs) }),
       ...(rateTipsFloors && { rateTipsFloors: JSON.stringify(Object.fromEntries(Object.entries(rateTipsFloors).filter(([, n]) => n > 0))) }),
     };
-    const current = await getSettings();
+    const current = await getStoredSettings();
     const settings = await prisma.hotelSettings.update({ where: { id: current.id }, data });
     if (body.hotelName) await prisma.hotel.update({ where: { id: currentHotelId() }, data: { name: body.hotelName } });
     // The screen sends every setting on each save: write down only the ones that changed.

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, LogOut, MessageCircle } from "lucide-react";
 import { Badge, Button, Tip } from "@/components/ui";
 import { whatsappLink } from "@/lib/client";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
+import { MODULES, type ModuleKey } from "@/lib/modules";
 
 export const money = (n: number) => formatCurrency(n, "INR");
 
@@ -133,7 +134,47 @@ export interface HotelRow {
   staff: number;
   lastLoginAt: string | null;
   bookings30d: number;
+  package: { id: string; name: string } | null;
+  activeModules: ModuleKey[];
   subscription: { currentStatus: string; overdueMonths: string[]; outstanding: number; paidUntil: string | null };
+}
+
+export interface PackageRow {
+  id: string;
+  name: string;
+  description: string | null;
+  monthlyFee: number;
+  modules: ModuleKey[];
+  sortOrder: number;
+  hotels: number;
+}
+
+/** A tick box for every module. Read-only when `onChange` is left out. */
+export function ModuleChecklist({ value, onChange, className }: { value: readonly ModuleKey[]; onChange?: (v: ModuleKey[]) => void; className?: string }) {
+  return (
+    <ul className={cn("grid gap-x-6 gap-y-2 sm:grid-cols-2", className)}>
+      {MODULES.map((m) => {
+        const on = value.includes(m.key);
+        return (
+          <li key={m.key}>
+            <label className={cn("flex items-start gap-2", onChange ? "cursor-pointer" : "cursor-default")}>
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-primary-600"
+                checked={on}
+                disabled={!onChange}
+                onChange={(e) => onChange?.(e.target.checked ? MODULES.map((x) => x.key).filter((k) => k === m.key || value.includes(k)) : value.filter((k) => k !== m.key))}
+              />
+              <span className="min-w-0">
+                <span className={cn("block text-sm font-semibold", on ? "text-slate-900" : "text-slate-500")}>{m.label}</span>
+                <span className="block text-xs text-slate-500">{m.description}</span>
+              </span>
+            </label>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 export interface Overview {
@@ -166,6 +207,12 @@ export interface HotelDetail {
   notes: string | null;
   createdAt: string;
   today: string;
+  packageId: string | null;
+  package: { id: string; name: string; modules: string[] } | null;
+  /** The hotel's own list, used when it has no package. */
+  modules: ModuleKey[];
+  /** What the hotel can use right now. */
+  activeModules: ModuleKey[];
   staff: Array<{ id: string; name: string; email: string; role: string; active: boolean; lastLoginAt: string | null }>;
   payments: Array<{ id: string; month: string; amount: number; clearsMonth: boolean; method: string; reference: string | null; notes: string | null; paidOn: string }>;
   usage: { rooms: number; bookings: number; guests: number; bookings30d: number };

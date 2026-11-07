@@ -22,6 +22,10 @@ model Hotel {
   billingStart         String // first month that is charged, "YYYY-MM"
   notes                String?
   bookingSeq           Int                   @default(1000) // last booking number handed out
+  // What the hotel can use (src/lib/modules.ts): its package's modules, or `modules` when it has no package.
+  packageId            String?
+  modules              String[]              @default(["guest_forms", "pathik", "expenses", "reports", "shifts", "rate_tips", "website"])
+  package              Package?              @relation(fields: [packageId], references: [id])
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   staff                Staff[]
@@ -41,6 +45,20 @@ model Hotel {
   idChecks             IdCheck[]
   rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
+}
+
+// A package the software provider sells, such as Basic, Standard or Premium: the modules
+// (src/lib/modules.ts) a hotel on it can use. Changing a package changes it for every hotel on it.
+model Package {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  monthlyFee  Float    @default(0) // suggested fee for a new hotel on this package; 0 = not set
+  modules     String[]
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  hotels      Hotel[]
 }
 
 // Money a hotel paid the software provider for its monthly subscription.

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { fail, withAuth } from "@/lib/api";
+import { fail, withModule } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { assertOnShift } from "@/lib/shift-api";
 import { FORM_DAYS, cleanDetails, formStatus, staffFormSchema } from "@/lib/guest-form";
@@ -16,7 +16,7 @@ async function load(id: string) {
 }
 
 export async function GET(_request: NextRequest, { params }: Params) {
-  return withAuth(async () => {
+  return withModule("guest_forms", async () => {
     const { id } = await params;
     return NextResponse.json(serializeGuestForm(await load(id)));
   });
@@ -34,7 +34,7 @@ const actionSchema = z.discriminatedUnion("action", [
  * edit: the front desk corrects what the guest filled in, before choosing the room.
  */
 export async function POST(request: NextRequest, { params }: Params) {
-  return withAuth(async (user) => {
+  return withModule("guest_forms", async (user) => {
     await assertOnShift(user);
     const { id } = await params;
     const body = actionSchema.parse(await request.json());

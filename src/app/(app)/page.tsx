@@ -209,7 +209,9 @@ function RoomsTonight({ data }: { data: Dashboard }) {
 }
 
 export default function TodayPage() {
-  const { isAdmin, settings } = useApp();
+  const { isAdmin, settings, has } = useApp();
+  const shiftsOn = has("shifts");
+  const formsOn = has("guest_forms");
   const [data, setData] = useState<Dashboard | null>(null);
   const [error, setError] = useState("");
   const [shifts, setShifts] = useState<CurrentShiftDTO | null>(null);
@@ -224,9 +226,9 @@ export default function TodayPage() {
         setLoadedAt(new Date());
       })
       .catch((e) => setError(e.message));
-    api<CurrentShiftDTO>("/api/shifts/current").then(setShifts).catch(() => undefined);
-    api<GuestFormDTO[]>("/api/guest-forms?view=received").then(setForms).catch(() => undefined);
-  }, []);
+    if (shiftsOn) api<CurrentShiftDTO>("/api/shifts/current").then(setShifts).catch(() => undefined);
+    if (formsOn) api<GuestFormDTO[]>("/api/guest-forms?view=received").then(setForms).catch(() => undefined);
+  }, [shiftsOn, formsOn]);
 
   useEffect(() => {
     load();

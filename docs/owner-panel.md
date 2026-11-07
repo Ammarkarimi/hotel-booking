@@ -52,6 +52,8 @@ At the bottom is **Latest payments received**.
      another hotel.
    - **Password** (optional). Leave it empty to get an easy-to-type one, like
      `kq7m-29xh-ptd4`.
+   - **Package**. Decides which features the hotel gets; the boxes under it show
+     what is included. If the package has a suggested fee, it fills in the fee.
    - **Monthly fee (₹)**. Use `0` for a free account.
    - **First month to charge**. Choose a later month to give free months, for
      example “Dec 2026 (2 free months)”.
@@ -140,6 +142,44 @@ When an owner or staff member forgets their password:
 3. Send the new password with **Send on WhatsApp** or **Copy message**.
 
 Hotel owners can also reset their own staff’s passwords in *Settings → Staff*.
+
+## Packages: which features a hotel gets
+
+Open **Packages** at the top. Three packages are there to start with: **Basic**,
+**Standard** and **Premium**. You can rename them, change what each includes, set
+a suggested monthly fee, add more packages, and delete a package no hotel is on.
+
+Every package includes the everyday front desk: Today, room calendar, bookings,
+check-in and check-out, bills and GST invoices, payments, guests, ID check, rooms
+and prices, housekeeping, WhatsApp messages to guests, staff sign-ins and
+settings. These can be switched on or off per package:
+
+| Feature | What the hotel loses without it |
+|---|---|
+| Guest forms on WhatsApp | The Guest forms tab, the Send guest form button, and form links already sent stop working |
+| Pathik (police guest register) | Fill in Pathik buttons and the Pathik reminders on Today; booking no longer asks for the Pathik details |
+| Expenses | The Expenses tab and the expenses line in the cash drawer |
+| Reports | The Reports tab and downloads |
+| Staff shifts | The Shifts tab, the shift button, handover notes; staff no longer have to start a shift |
+| Rate tips | The Rate tips tab and pop-up, and the tips in New booking |
+| Online booking website | The hotel's booking page says it is closed, and the link is hidden |
+
+Starting packages:
+
+| Package | Includes |
+|---|---|
+| Basic | Pathik |
+| Standard | Guest forms, Pathik, Expenses, Reports, Staff shifts |
+| Premium | Everything |
+
+**Change a hotel's package** in its page, under **Package and features**. Choose
+**Custom** to tick features for that hotel only. Changing a package, or a hotel's
+package, applies the next time someone at the hotel clicks anything. Nothing is
+deleted when a feature is taken away: the hotel's expenses, shifts and settings are
+kept and come back when the feature is added again. Hotels added before packages
+existed are on **Custom** with everything ticked.
+
+The monthly fee is not changed by switching packages. Change it in **Hotel details**.
 
 ## Edit a hotel’s details
 

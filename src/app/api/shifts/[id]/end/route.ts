@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
-import { fail, isAdmin, withAuth } from "@/lib/api";
+import { fail, isAdmin, withModule } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { codeMatches, durationLabel, parseSummary } from "@/lib/shifts";
 import { closeShift, serializeShift } from "@/lib/shift-api";
@@ -18,7 +18,7 @@ const endSchema = z.object({
  * The owner can close a shift that someone forgot to end, without the code.
  */
 export async function POST(request: NextRequest, { params }: Params) {
-  return withAuth(async (user) => {
+  return withModule("shifts", async (user) => {
     const { id } = await params;
     const body = endSchema.parse(await request.json());
     const shift = await prisma.shift.findUnique({ where: { id } });

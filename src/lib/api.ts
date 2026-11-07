@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getSession, type SessionUser } from "./auth";
 import { runForHotel } from "./db";
+import { notInPackageMessage, type ModuleKey } from "./modules";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -63,12 +64,16 @@ export function isAdmin(user: SessionUser | null | undefined) {
 
 export async function withAuth<T>(
   handler: (user: SessionUser) => Promise<T>,
-  opts: { admin?: boolean } = {}
+  opts: { admin?: boolean; module?: ModuleKey } = {}
 ): Promise<T | NextResponse> {
   try {
     const session = await getSession();
     if (!session) return unauthorized();
     if (opts.admin && !isAdmin(session)) return forbidden();
+    // A part of the software the hotel's package does not include.
+    if (opts.module && !session.modules?.includes(opts.module)) {
+      return NextResponse.json({ error: notInPackageMessage(opts.module) }, { status: 403 });
+    }
     // Everything the handler reads or writes is limited to this person's hotel.
     return await runForHotel(session.hotelId, () => handler(session));
   } catch (error) {
@@ -76,8 +81,18 @@ export async function withAuth<T>(
   }
 }
 
-export function withAdmin<T>(handler: (user: SessionUser) => Promise<T>) {
-  return withAuth(handler, { admin: true });
+export function withAdmin<T>(handler: (user: SessionUser) => Promise<T>, opts: { module?: ModuleKey } = {}) {
+  return withAuth(handler, { ...opts, admin: true });
+}
+
+/** Like withAuth, for a part of the software only some packages include. */
+export function withModule<T>(module: ModuleKey, handler: (user: SessionUser) => Promise<T>) {
+  return withAuth(handler, { module });
+}
+
+/** Like withAdmin, for a part of the software only some packages include. */
+export function withModuleAdmin<T>(module: ModuleKey, handler: (user: SessionUser) => Promise<T>) {
+  return withAuth(handler, { module, admin: true });
 }
 
 export function csvResponse(filename: string, rows: Array<Array<string | number | null | undefined>>) {

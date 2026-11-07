@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { fail, withAuth } from "@/lib/api";
+import { fail, withModule } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { pathikRecord } from "@/lib/pathik";
 import { addDays, dateFromKey, todayKey } from "@/lib/dates";
@@ -10,7 +10,7 @@ import { addDays, dateFromKey, todayKey } from "@/lib/dates";
  * (guest, room, dates and the other adults), or `?guestId=` for a guest's own details only.
  */
 export async function GET(request: NextRequest) {
-  return withAuth(async () => {
+  return withModule("pathik", async () => {
     const bookingId = request.nextUrl.searchParams.get("bookingId");
     const guestId = request.nextUrl.searchParams.get("guestId");
     const include = { room: true, idChecks: { select: { person: true, idType: true } } } as const;

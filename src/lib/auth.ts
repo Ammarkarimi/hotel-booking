@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import bcrypt from "bcryptjs";
 import { rawPrisma } from "./db";
+import { resolveModules } from "./modules";
 import {
   COOKIE_NAME,
   createSessionToken,
@@ -38,9 +39,13 @@ export async function getSession(): Promise<SessionUser | null> {
   if (!session) return null;
   // Removed or disabled staff lose access immediately, role changes apply,
   // and a paused hotel is signed out everywhere.
-  const staff = await rawPrisma.staff.findUnique({ where: { id: session.id }, include: { hotel: true } });
+  // The package is read here too, so a change in the provider's panel applies on the next click.
+  const staff = await rawPrisma.staff.findUnique({
+    where: { id: session.id },
+    include: { hotel: { include: { package: { select: { modules: true } } } } },
+  });
   if (!staff || !staff.active || staff.hotel.status !== "active") return null;
-  return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, hotelId: staff.hotelId };
+  return { id: staff.id, email: staff.email, name: staff.name, role: staff.role, hotelId: staff.hotelId, modules: resolveModules(staff.hotel) };
 }
 
 export async function requireSession(): Promise<SessionUser> {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { currentHotelId, prisma } from "@/lib/db";
-import { csvResponse, fail, isAdmin, withAuth } from "@/lib/api";
+import { csvResponse, fail, isAdmin, withModule } from "@/lib/api";
 import { getSettings } from "@/lib/settings";
 import { addDays, isDateKey, todayKey } from "@/lib/dates";
 import { logActivity } from "@/lib/activity";
@@ -11,7 +11,7 @@ import { deskStatus, recentHandovers, serializeShift, startShift } from "@/lib/s
 
 /** Attendance: shifts that started in a date range (hotel's own days). The owner sees everyone; staff see their own. */
 export async function GET(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("shifts", async (user) => {
     const { searchParams } = new URL(request.url);
     const settings = await getSettings();
     const tz = settings.timezone;
@@ -115,7 +115,7 @@ const startSchema = z.object({ startNote: z.string().trim().max(1000).optional()
 
 /** Start a shift. Starting again while a shift is open returns that shift. */
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("shifts", async (user) => {
     const body = startSchema.parse(await request.json().catch(() => ({})));
     const open = await prisma.shift.findFirst({ where: { staffId: user.id, endedAt: null } });
     if (open) return NextResponse.json(await serializeShift(open));

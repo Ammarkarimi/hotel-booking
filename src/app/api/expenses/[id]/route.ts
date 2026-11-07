@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { withAuth, fail } from "@/lib/api";
+import { withModule, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
 import { dateFromKey, toDateKey } from "@/lib/dates";
 import { canChangeExpense, checkExpenseDate, expenseSchema, serializeExpense } from "@/lib/expenses";
@@ -21,7 +21,7 @@ async function loadForChange(id: string, user: Parameters<typeof canChangeExpens
 }
 
 export async function PATCH(request: NextRequest, { params }: Params) {
-  return withAuth(async (user) => {
+  return withModule("expenses", async (user) => {
     await assertOnShift(user);
     const { id } = await params;
     const body = expenseSchema.parse(await request.json());
@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: Params) {
-  return withAuth(async (user) => {
+  return withModule("expenses", async (user) => {
     await assertOnShift(user);
     const { id } = await params;
     const { ctx, expense } = await loadForChange(id, user);

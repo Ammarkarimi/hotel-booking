@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentHotelId, prisma } from "@/lib/db";
-import { fail, withAdmin, withAuth } from "@/lib/api";
+import { fail, withModuleAdmin, withModule } from "@/lib/api";
 import { logActivity } from "@/lib/activity";
 import { deskStatus } from "@/lib/shift-api";
 
 /** The owner's list of people waiting to take over a shift. */
 export async function GET() {
-  return withAdmin(async () => {
+  return withModuleAdmin("shifts", async () => {
     const pending = await prisma.shiftTransfer.findMany({ where: { status: "pending" }, orderBy: { createdAt: "asc" } });
     return NextResponse.json(pending);
   });
@@ -20,7 +20,7 @@ const requestSchema = z.object({
 
 /** Ask the person on shift to hand it over. Only one request per person is waiting at a time. */
 export async function POST(request: NextRequest) {
-  return withAuth(async (user) => {
+  return withModule("shifts", async (user) => {
     const body = requestSchema.parse(await request.json());
     if (await prisma.shift.count({ where: { staffId: user.id, endedAt: null } })) fail("You are already on shift");
     const from = await prisma.shift.findFirst({ where: { id: body.shiftId, endedAt: null } });

@@ -23,7 +23,8 @@ interface PaymentRow {
 type Period = "today" | "yesterday" | "week" | "month" | "custom";
 
 export default function PaymentsPage() {
-  const { settings } = useApp();
+  const { settings, has } = useApp();
+  const expensesOn = has("expenses");
   const today = settings.today;
   const [period, setPeriod] = useState<Period>("today");
   const [from, setFrom] = useState(today);
@@ -51,10 +52,11 @@ export default function PaymentsPage() {
       .then(setRows)
       .catch(() => setRows([]));
     // Cash paid out for expenses also leaves the drawer.
+    if (!expensesOn) return setCashSpent(0);
     api<{ cashSpent: number }>(`/api/expenses?summary=cash&from=${from}&to=${to}`)
       .then((r) => setCashSpent(r.cashSpent))
       .catch(() => setCashSpent(0));
-  }, [from, to]);
+  }, [from, to, expensesOn]);
 
   // Payments are real moments in time; group them by the hotel's local date.
   const inRange = useMemo(
@@ -111,7 +113,7 @@ export default function PaymentsPage() {
         <CardHeader title="Cash drawer" description="Count the cash at the end of a shift. It should match the last line." />
         <CardContent className="max-w-md">
           <Row label="Cash received from guests">{formatCurrency(byMethod.cash || 0)}</Row>
-          <Row label={<Link href="/expenses" className="text-primary-700 hover:underline">Cash paid for expenses</Link>}>− {formatCurrency(cashSpent)}</Row>
+          {expensesOn && <Row label={<Link href="/expenses" className="text-primary-700 hover:underline">Cash paid for expenses</Link>}>− {formatCurrency(cashSpent)}</Row>}
           <Row label="Cash that should be in the drawer" strong>
             {formatCurrency((byMethod.cash || 0) - cashSpent)}
           </Row>
