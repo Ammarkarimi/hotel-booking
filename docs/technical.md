@@ -54,6 +54,7 @@ src/
 │   ├── periods.ts             # Day / week / month / year ranges and grouping (pure)
 │   ├── day-sheet.ts           # Day sheet lists and its WhatsApp text (pure)
 │   ├── offline.ts             # Registers public/sw.js, clears its caches on sign-out, online/offline hook
+│   ├── install-app.ts         # Keeps the browser's install offer for the title bar's Install app button
 │   ├── expenses.ts            # Expense validation and who may change what
 │   ├── settings.ts, public.ts, api.ts, …
 │   └── __tests__/             # Unit tests
@@ -66,7 +67,13 @@ scripts/vercel-build.mjs       # Build script used by Vercel
 scripts/tour/                  # Records the landing-page video and screenshots
 public/welcome/                # Landing-page video (MP4 + WebM), poster and screenshots
 public/sw.js                   # Offline copy of the Dashboard and Day sheet (service worker)
+public/icons/                  # Installed-app icons, made from src/app/icon.svg by scripts/make-app-icons.mjs
 ```
+
+The app manifest is `src/app/manifest.ts` (served at `/manifest.webmanifest`).
+It and `/icons` are public in the middleware, because browsers fetch the
+manifest without cookies. The title bar shows **Install app** when Chrome or
+Edge fire `beforeinstallprompt` and the window is not already the installed app.
 
 ## Data model
 

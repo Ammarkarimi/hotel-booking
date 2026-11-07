@@ -133,6 +133,15 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     ],
   },
   {
+    q: "Can I open Innvela like normal software, without the browser?",
+    steps: [
+      "Yes. In Chrome or Microsoft Edge, press “Install app” in the blue bar at the top (or the install icon at the right end of the address bar), then Install.",
+      "Innvela gets an icon on the desktop, the taskbar and the Start menu, and opens in its own window. Right-click the taskbar icon for New booking, Walk-in, Calendar and Day sheet.",
+      "It is the same software with the same sign-in, and it updates by itself. It still needs the internet, like before.",
+      "On an Android phone: Chrome menu (⋮) → Install app. On an iPhone: Safari → Share → Add to Home Screen.",
+    ],
+  },
+  {
     q: "The internet or power went. What do we do?",
     steps: [
       "Every morning, press “Day sheet” on the Dashboard and print it, or send it on WhatsApp. It lists every guest with their room, phone and amount due, today's arrivals and free rooms.",

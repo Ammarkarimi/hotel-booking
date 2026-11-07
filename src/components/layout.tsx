@@ -22,6 +22,7 @@ import { LogoMark } from "@/components/brand";
 import type { SessionUser } from "@/lib/session";
 import { moduleForPath, notInPackageMessage, type ModuleKey } from "@/lib/modules";
 import { clearOffline, startOffline, useOnline } from "@/lib/offline";
+import { useInstallApp } from "@/lib/install-app";
 
 const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; module?: ModuleKey }> = [
   { href: "/", label: "Dashboard", hint: "What is happening now" },
@@ -293,6 +294,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const pageModule = moduleForPath(pathname);
   const lockedModule = pageModule && !has(pageModule) ? pageModule : null;
   const online = useOnline();
+  const app = useInstallApp();
 
   // Keep a copy of the Dashboard and Day sheet on this computer for when the internet goes.
   useEffect(() => {
@@ -326,6 +328,11 @@ function Shell({ children }: { children: React.ReactNode }) {
             <a href={`/book/${settings.bookingSlug}`} target="_blank" rel="noopener noreferrer" className={cn(barLink, "hidden md:inline")}>
               Online booking page
             </a>
+          )}
+          {app.canInstall && (
+            <button onClick={app.install} className={cn(barLink, "font-bold")} title="Adds Innvela to this computer's desktop and taskbar, opening in its own window">
+              Install app
+            </button>
           )}
           <Link href="/help" className={barLink}>
             Help

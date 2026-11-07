@@ -335,6 +335,20 @@ received date and UTR, to tick off against the site's own statement).
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
 
+## Installing Innvela as an app
+
+In Chrome or Microsoft Edge, press **Install app** in the blue bar at the top
+(it shows only when the browser can install it; the install icon at the right
+of the address bar does the same), then **Install**. Innvela then has its own
+icon on the desktop, taskbar and Start menu and opens in its own window without
+the browser's address bar. Right-clicking the taskbar icon offers **New
+booking**, **Walk-in guest**, **Calendar** and **Day sheet**.
+
+It is the same software as the website: same sign-in, updated automatically,
+and it still needs the internet (see below for what works without it). On an
+Android phone use Chrome's menu → *Install app*; on an iPhone, Safari → *Share*
+→ *Add to Home Screen*.
+
 ## When the power or internet goes
 
 The software runs on the internet, so nothing can be **saved** without it. Two
