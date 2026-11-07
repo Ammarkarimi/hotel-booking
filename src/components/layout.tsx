@@ -23,7 +23,7 @@ import type { SessionUser } from "@/lib/session";
 import { moduleForPath, notInPackageMessage, type ModuleKey } from "@/lib/modules";
 
 const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; module?: ModuleKey }> = [
-  { href: "/", label: "Today", hint: "What is happening now" },
+  { href: "/", label: "Dashboard", hint: "What is happening now" },
   { href: "/calendar", label: "Calendar", hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", hint: "All reservations" },
   { href: "/guests", label: "Guests", hint: "Guest records & IDs" },
@@ -444,7 +444,7 @@ function NotInPackage({ module }: { module: ModuleKey }) {
       <div className="space-y-3 p-4 text-[14px] text-slate-700">
         <p>{notInPackageMessage(module)}</p>
         <Link href="/" className="font-semibold text-primary-700 underline">
-          Back to Today
+          Back to Dashboard
         </Link>
       </div>
     </div>

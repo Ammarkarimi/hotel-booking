@@ -273,7 +273,7 @@ function RoomsTonight({ data }: { data: Dashboard }) {
   );
 }
 
-export default function TodayPage() {
+export default function DashboardPage() {
   const { isAdmin, settings, has } = useApp();
   const shiftsOn = has("shifts");
   const formsOn = has("guest_forms");
@@ -313,7 +313,7 @@ export default function TodayPage() {
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2 border-b border-chrome-line pb-2">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Today</h1>
+          <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-[13px] text-slate-600">{formatDate(data.today)}</p>
         </div>
         <Button size="sm" variant="outline" onClick={load} title="Updates by itself every minute">

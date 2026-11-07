@@ -387,7 +387,7 @@ function NewBookingWizard() {
         description={walkIn ? "The guest is at the desk now. They will be checked in straight away." : "Follow the 4 steps. You can go back at any time."}
         back={
           <Link href="/" className="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-800">
-            <ArrowLeft className="h-4 w-4" /> Back to Today
+            <ArrowLeft className="h-4 w-4" /> Back to Dashboard
           </Link>
         }
       />

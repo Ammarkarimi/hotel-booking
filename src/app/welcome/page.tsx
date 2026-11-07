@@ -68,7 +68,7 @@ const FEATURE_GROUPS = [
   {
     title: "Front desk",
     items: [
-      { icon: ClipboardCheck, name: "Today screen", text: "Arrivals, departures, rooms ready tonight, today's takings and the last handover note, on one calm screen." },
+      { icon: ClipboardCheck, name: "Dashboard", text: "Arrivals, departures, rooms ready tonight, today's takings and the last handover note, on one calm screen." },
       { icon: CalendarPlus, name: "Reservations in under a minute", text: "Dates, room, guest and advance in four steps. Walk-in guests are checked in straight away." },
       { icon: CalendarDays, name: "Room calendar", text: "Every room, one or two weeks ahead. Tap an open night to reserve it." },
       { icon: DoorOpen, name: "One-tap arrivals and departures", text: "A gentle reminder if the room isn't clean yet or an adult's ID hasn't been checked." },
@@ -82,7 +82,7 @@ const FEATURE_GROUPS = [
       { icon: Send, name: "Guest forms on WhatsApp", text: "Send a link and guests fill in their details, journey and every adult's name on their phone. You only choose the room." },
       { icon: UserCheck, name: "ID check at check-in", text: "Tick each adult's original ID at the desk, with who checked it and when. Nothing from an Aadhaar is ever saved." },
       { icon: Printer, name: "Registration card", text: "A card for every stay with each adult and the ID they showed, ready to sign. Form C details for foreign guests are written on it by hand." },
-      { icon: IdCard, name: "Pathik filled in for you", text: "For hotels in Gujarat, a Chrome helper fills Pathik's Add Guest form with every adult, and Today shows who is still to enter." },
+      { icon: IdCard, name: "Pathik filled in for you", text: "For hotels in Gujarat, a Chrome helper fills Pathik's Add Guest form with every adult, and the Dashboard shows who is still to enter." },
       { icon: Star, name: "Guest history and VIP flags", text: "Every stay and payment on record, returning guests recognised by phone, and VIP or “do not allow” flags." },
       { icon: MessageSquareText, name: "WhatsApp messages in your words", text: "Booking confirmation, welcome at check-in and thank-you at check-out, ready to send in one tap." },
     ],
@@ -125,9 +125,9 @@ const FEATURE_GROUPS = [
 const SPOTLIGHTS = [
   {
     image: "/welcome/today.webp",
-    eyebrow: "Today screen",
+    eyebrow: "Dashboard",
     title: "Your whole property, the moment you sign in",
-    text: "The Today screen lists who is arriving and departing, with clear Check in and Check out buttons. Below, a box for every room shows who is in tonight, which rooms are free and ready, and which still need cleaning, with today's takings at the top.",
+    text: "The Dashboard lists who is arriving and departing, with clear Check in and Check out buttons. Below, a box for every room shows who is in tonight, which rooms are free and ready, and which still need cleaning, with today's takings at the top.",
     points: ["Arrivals and departures, one tap each", "Every room at a glance", "Takings received and balances still due"],
   },
   {
@@ -232,7 +232,7 @@ const FAQS = [
   },
   {
     q: "We are in Gujarat. Does it help with Pathik?",
-    a: "Yes. A small Chrome helper fills Pathik's Add Guest form from the booking, every adult included. Staff type only the Aadhaar details, press Submit in Pathik, and Today shows who is still to enter.",
+    a: "Yes. A small Chrome helper fills Pathik's Add Guest form from the booking, every adult included. Staff type only the Aadhaar details, press Submit in Pathik, and the Dashboard shows who is still to enter.",
   },
   {
     q: "Can I see what each shift did?",
@@ -402,7 +402,7 @@ export default function WelcomePage() {
               </ul>
             </div>
             <div className="relative min-w-0 pb-10 lg:pb-0">
-              <BrowserFrame src="/welcome/today.webp" alt="The Today screen showing arrivals, departures and every room tonight" priority />
+              <BrowserFrame src="/welcome/today.webp" alt="The Dashboard showing arrivals, departures and every room tonight" priority />
               <PhoneFrame
                 src="/welcome/guest-site.webp"
                 alt="The hotel's own booking website on a phone"

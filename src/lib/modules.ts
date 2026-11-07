@@ -16,7 +16,7 @@ export const MODULES = [
 
 /** Parts of the software every hotel has, whatever its package. */
 export const ALWAYS_INCLUDED =
-  "Today, room calendar, bookings, check-in and check-out, bills and GST invoices, payments, guests, ID check, rooms and prices, housekeeping, WhatsApp messages to guests, staff sign-ins and settings.";
+  "Dashboard, room calendar, bookings, check-in and check-out, bills and GST invoices, payments, guests, ID check, rooms and prices, housekeeping, WhatsApp messages to guests, staff sign-ins and settings.";
 
 export type ModuleKey = (typeof MODULES)[number]["key"];
 

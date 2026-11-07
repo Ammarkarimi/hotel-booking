@@ -16,13 +16,13 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
   },
   {
     q: "A guest walked in without a booking",
-    steps: ["On the Today screen, press the green “Walk-in guest” button.", "Follow the same steps as a booking. The guest is checked in as soon as you confirm."],
+    steps: ["On the Dashboard, press “Walk-in” in the toolbar (or the F3 key).", "Follow the same steps as a booking. The guest is checked in as soon as you confirm."],
     link: { href: "/bookings/new?walkin=1", text: "Walk-in guest" },
   },
   {
     q: "How do I check a guest in?",
     steps: [
-      "Open the Today screen. Guests arriving today are listed under “Arriving today”.",
+      "Open the Dashboard. Guests arriving today are listed under “Arriving today”.",
       "Press “Check in” next to the guest's name and confirm.",
       "Look at each adult's original ID and tick it under “ID check” on the booking. No copy is kept.",
     ],
@@ -30,7 +30,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
   {
     q: "How do I check a guest out and take payment?",
     steps: [
-      "On the Today screen, find the guest under “Leaving today” and press “Check out”.",
+      "On the Dashboard, find the guest under “Leaving today” and press “Check out”.",
       "The bill is shown with the amount still to pay. Choose Cash / UPI / Card and press “Take … & check out”.",
       "Print the invoice from the booking page if the guest wants one.",
       "The room is automatically marked “Needs cleaning”.",
@@ -91,7 +91,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
   {
     q: "How do I get a guest's details and ID before they arrive?",
     steps: [
-      "Press “Send guest form” on Today. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
+      "Press “Send guest form” in the toolbar. Type the guest's WhatsApp number (and name and dates if you know them), then press “Send on WhatsApp”.",
       "The guest fills in their details, and for each adult says which ID they will show at check-in. Nothing is uploaded.",
       "When they send it you get a pop-up and a red number on “Guest forms”. Press “Choose room & book”: everything is filled in, you only pick the room and price.",
       "Something wrong in what the guest filled in? Press “Edit details” on the form and correct it. After booking, use “Change” on the booking for the journey, vehicle and other adults' names, and “Edit” on the guest's profile for their own details.",
@@ -102,7 +102,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     q: "How do I enter a guest in Pathik?",
     steps: [
       "Once: in Settings → Hotel details, download the Pathik helper, unzip it, open chrome://extensions in Chrome, turn on Developer mode and press Load unpacked to choose the pathik-helper folder.",
-      "On the booking (or the guest's page, or Today → Not entered in Pathik yet) press “Fill in Pathik”, then “Open Pathik and fill the form”. Pathik opens and the Add Guest form is filled in, with every other adult.",
+      "On the booking (or the guest's page, or Dashboard → Not entered in Pathik yet) press “Fill in Pathik”, then “Open Pathik and fill the form”. Pathik opens and the Add Guest form is filled in, with every other adult.",
       "Attach the ID photos and type any Aadhaar number by hand in Pathik (no ID copies are kept here), check the form, press Submit in Pathik, then press “Entered in Pathik” in this software.",
     ],
   },
@@ -137,7 +137,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     steps: [
       "Open “Staff shifts” for attendance: when each person started and ended, hours worked, check-ins, check-outs and money received.",
       "Press “Download staff report” for one Excel file with a row for every shift (date, times, hours, bookings checked in and out, money, notes as saved) and totals per person.",
-      "Every handover note is there, and the latest ones also show on the Today screen.",
+      "Every handover note is there, and the latest ones also show on the Dashboard.",
       "If someone forgot to end their shift, press “Close shift”. Turn shifts on or off, and set your WhatsApp number for shift reports, in Settings → Staff.",
     ],
     link: { href: "/shifts", text: "Open staff shifts" },
@@ -204,7 +204,7 @@ export default function HelpPage() {
       </div>
       <p className="mt-6 text-sm text-slate-500">
         Colours mean the same thing everywhere: <b className="text-emerald-700">green</b> = free / clean / paid, <b className="text-primary-600">blue</b> = guest staying,{" "}
-        <b className="text-amber-700">yellow</b> = booked / arriving / part paid, <b className="text-red-700">red</b> = needs cleaning / money owed. On Today, a grey
+        <b className="text-amber-700">yellow</b> = booked / arriving / part paid, <b className="text-red-700">red</b> = needs cleaning / money owed. On the Dashboard, a grey
         room box has a guest in tonight and a white one does not.
       </p>
     </div>
