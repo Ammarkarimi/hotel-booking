@@ -269,13 +269,13 @@ function ContactButtons({ dark = false }: { dark?: boolean }) {
     );
   }
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="mx-auto flex w-full max-w-sm flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center">
       {whatsappHref && (
         <a
           href={whatsappHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex min-h-12 items-center gap-2 rounded-xl bg-emerald-600 px-6 text-base font-bold text-white shadow-lg hover:bg-emerald-700"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 text-base font-bold text-white shadow-lg hover:bg-emerald-700"
         >
           <MessageCircle className="h-5 w-5" /> Talk to us on WhatsApp
         </a>
@@ -284,11 +284,11 @@ function ContactButtons({ dark = false }: { dark?: boolean }) {
         <a
           href={emailHref}
           className={
-            "inline-flex min-h-12 items-center gap-2 rounded-xl px-6 text-base font-bold " +
+            "inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl px-6 text-base font-bold " +
             (dark ? "bg-white/10 text-white ring-1 ring-white/30 hover:bg-white/20" : "bg-white text-slate-900 ring-1 ring-slate-300 hover:bg-slate-50")
           }
         >
-          <Mail className="h-5 w-5" /> {salesEmail}
+          <Mail className="h-5 w-5 shrink-0" /> <span className="truncate">{salesEmail}</span>
         </a>
       )}
     </div>
@@ -316,10 +316,10 @@ function PhoneFrame({ src, alt, className = "" }: { src: string; alt: string; cl
   );
 }
 
-function CellValue({ value, highlight = false }: { value: Cell; highlight?: boolean }) {
-  if (value === true) return <Check className={"mx-auto h-5 w-5 " + (highlight ? "text-primary-600" : "text-emerald-600")} aria-label="Yes" />;
+function CellValue({ value, highlight = false, compact = false }: { value: Cell; highlight?: boolean; compact?: boolean }) {
+  if (value === true) return <Check className={"mx-auto h-5 w-5 " + (highlight ? "text-primary-600" : "text-emerald-600")} strokeWidth={2.5} aria-label="Yes" />;
   if (value === false) return <X className="mx-auto h-5 w-5 text-slate-300" aria-label="No" />;
-  return <span className={"text-sm " + (highlight ? "font-semibold text-primary-700" : "text-slate-500")}>{value}</span>;
+  return <span className={(compact ? "text-xs leading-snug " : "text-sm ") + (highlight ? "font-semibold text-primary-700" : "text-slate-500")}>{value}</span>;
 }
 
 export default function WelcomePage() {
@@ -539,37 +539,61 @@ export default function WelcomePage() {
           <div className="mx-auto max-w-4xl px-4 sm:px-6">
             <h2 className="font-display text-3xl font-bold tracking-tight text-balance sm:text-4xl">Why premium properties switch</h2>
             <p className="mt-3 text-lg text-slate-600">The polish your guests expect, with the simplicity your team needs.</p>
-            <div className="mt-8 overflow-x-auto rounded-2xl ring-1 ring-slate-200">
-              <table className="w-full min-w-[560px] border-collapse text-left">
+            {/* Phones: one card per feature, with the three columns named once in a header that stays in view. */}
+            <div className="mt-8 sm:hidden">
+              <div className="sticky top-14 z-10 grid grid-cols-3 gap-2 rounded-t-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold leading-tight text-slate-600 shadow-sm">
+                <span>Register or Excel</span>
+                <span>Other software</span>
+                <span className="rounded-lg bg-primary-600 py-1 font-bold text-white">Innvela</span>
+              </div>
+              <ul className="rounded-b-2xl border-x border-b border-slate-200">
+                {COMPARISON.map((r) => (
+                  <li key={r.row} className="border-t border-slate-200 px-3 py-3 first:border-t-0">
+                    <p className="text-[15px] font-semibold text-slate-800">{r.row}</p>
+                    <div className="mt-2 grid grid-cols-3 items-center gap-2 text-center">
+                      <CellValue value={r.paper} compact />
+                      <CellValue value={r.typical} compact />
+                      <div className="flex min-h-9 items-center justify-center rounded-lg bg-primary-50 px-1 py-1.5 ring-1 ring-primary-100">
+                        <CellValue value={r.ours} highlight compact />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Tablets and computers: the full table. */}
+            <div className="mt-8 hidden overflow-x-auto rounded-2xl border border-slate-200 shadow-sm sm:block">
+              <table className="w-full border-collapse text-left">
                 <thead>
                   <tr className="bg-slate-50 text-sm text-slate-600">
-                    <th className="px-4 py-3 font-semibold" scope="col">
+                    <th className="w-[40%] px-5 py-4 font-semibold" scope="col">
                       <span className="sr-only">Feature</span>
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold" scope="col">
+                    <th className="w-[20%] px-4 py-4 text-center font-semibold" scope="col">
                       Register or Excel
                     </th>
-                    <th className="px-4 py-3 text-center font-semibold" scope="col">
+                    <th className="w-[20%] px-4 py-4 text-center font-semibold" scope="col">
                       Typical hotel software
                     </th>
-                    <th className="bg-primary-600 px-4 py-3 text-center font-bold text-white" scope="col">
+                    <th className="w-[20%] bg-primary-600 px-4 py-4 text-center text-base font-bold text-white" scope="col">
                       Innvela
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {COMPARISON.map((r) => (
-                    <tr key={r.row} className="border-t border-slate-200">
-                      <th scope="row" className="px-4 py-3 text-[15px] font-medium text-slate-800">
+                    <tr key={r.row} className="border-t border-slate-200 transition-colors hover:bg-slate-50/70">
+                      <th scope="row" className="px-5 py-3.5 text-[15px] font-medium text-slate-800">
                         {r.row}
                       </th>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3.5 text-center">
                         <CellValue value={r.paper} />
                       </td>
-                      <td className="px-4 py-3 text-center">
+                      <td className="px-4 py-3.5 text-center">
                         <CellValue value={r.typical} />
                       </td>
-                      <td className="bg-primary-50 px-4 py-3 text-center">
+                      <td className="border-x border-primary-100 bg-primary-50 px-4 py-3.5 text-center">
                         <CellValue value={r.ours} highlight />
                       </td>
                     </tr>
@@ -623,7 +647,7 @@ export default function WelcomePage() {
                 ? "Message us for a private demo. We'll set up your property, add your rooms with you and send your sign-in the same day."
                 : "Watch the 2-minute tour for a few highlights, from the first booking to the owner's profit."}
             </p>
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8">
               <ContactButtons dark />
             </div>
             <p className="mt-6 text-sm text-slate-400">
