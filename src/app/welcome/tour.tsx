@@ -7,30 +7,14 @@ import { cn } from "@/lib/utils";
 // Chapter start times (seconds) in public/welcome/innvela-tour.mp4.
 export const CHAPTERS = [
   { t: 0, title: "Guests book on your own website" },
-  { t: 17.3, title: "Staff start their shift" },
-  { t: 26.9, title: "Your whole day on one screen" },
-  { t: 34.4, title: "Express check-in on WhatsApp" },
-  { t: 44, title: "The guest fills it in on their phone" },
-  { t: 60, title: "Check the form, then book" },
-  { t: 81.4, title: "A walk-in guest in under a minute" },
-  { t: 95.7, title: "See every room at a glance" },
-  { t: 107.4, title: "Check each guest's ID by hand" },
-  { t: 118.7, title: "Check in with one tap" },
-  { t: 129, title: "Add food, laundry and extras" },
-  { t: 140.8, title: "Check out and take payment" },
-  { t: 153.8, title: "A GST invoice in one tap" },
-  { t: 158.6, title: "Housekeeping from any phone" },
-  { t: 168, title: "Write down every expense" },
-  { t: 175, title: "Count the cash drawer in seconds" },
-  { t: 180.8, title: "End the shift with a code" },
-  { t: 197.9, title: "Rate tips for tonight's empty rooms" },
-  { t: 209.1, title: "The Rate tips page" },
-  { t: 216.3, title: "Use the tip when you book" },
-  { t: 228.3, title: "WhatsApp messages in your own words" },
-  { t: 251, title: "Booking-site payouts" },
-  { t: 264.1, title: "Your profit, day by day" },
-  { t: 274.1, title: "Staff shifts and reports" },
-  { t: 285.1, title: "Your prices, GST and staff" },
+  { t: 24.1, title: "Every room on one screen" },
+  { t: 32.1, title: "Express check-in on WhatsApp" },
+  { t: 45.1, title: "Check in with one tap" },
+  { t: 53.2, title: "Check out, and the GST invoice is ready" },
+  { t: 68.2, title: "The day sheet" },
+  { t: 77.3, title: "When the internet goes" },
+  { t: 84, title: "Install it like desktop software" },
+  { t: 89.8, title: "Your profit, day by day" },
 ];
 
 const PLAY_EVENT = "welcome:play-tour";
@@ -122,13 +106,13 @@ export function TourPlayer() {
             type="button"
             onClick={() => playFrom(0)}
             className="group absolute inset-0 flex items-center justify-center bg-slate-950/35 transition hover:bg-slate-950/25"
-            aria-label="Play the 5-minute tour"
+            aria-label="Play the 2-minute tour"
           >
             <span className="flex items-center gap-3 rounded-full bg-white px-6 py-4 text-lg font-bold text-slate-900 shadow-xl transition group-hover:scale-105">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-white">
                 <Play className="h-5 w-5 translate-x-0.5" fill="currentColor" />
               </span>
-              Play the tour · 4:53
+              Play the tour · 1:37
             </span>
           </button>
         )}
