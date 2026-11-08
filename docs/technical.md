@@ -325,7 +325,12 @@ The page reads `SALES_WHATSAPP` and `SALES_EMAIL` at build time, so redeploy aft
 changing them.
 
 The video (`public/welcome/innvela-tour.mp4`, plus a WebM copy for browsers
-without H.264) and the screenshots are recorded from the real app with the demo hotel.
+without H.264, and its poster `tour-poster.webp`) and the screenshots are recorded
+from the real app with the demo hotel. The video shows only a few highlights: on
+each screen the part being explained stays sharp and the rest is blurred (`spot()`
+in the script), the section tabs are always blurred, and every new screen opens
+fully blurred until the script picks what to show, so competitors cannot copy the
+whole software from it.
 Re-record them after changing the screens:
 
 ```bash
@@ -335,12 +340,14 @@ npm run build && npm start                      # in one terminal
 npm i --no-save playwright && npx playwright install chromium
 node scripts/tour/capture-screens.mjs http://localhost:3000   # needs Python + Pillow
 npm run db:seed:demo                            # only if the database was used since seeding
-node scripts/tour/record-tour.mjs http://localhost:3000       # needs ffmpeg
+node scripts/tour/record-tour.mjs http://localhost:3000       # needs ffmpeg (or FFMPEG=<path>)
 ```
 
 The recording changes the demo data (it books, checks in and checks out guests), so
-start from a freshly seeded database each time. It prints new chapter times: paste
-them into `CHAPTERS` in `src/app/welcome/tour.tsx`.
+start from a freshly seeded database each time, and use a production build (the
+offline chapter needs the service worker). It prints new chapter times and the
+length: paste them into `CHAPTERS` and the "Play the tour" label in
+`src/app/welcome/tour.tsx`.
 
 ## Pathik helper (Chrome add-on)
 
