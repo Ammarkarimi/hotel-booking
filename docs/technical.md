@@ -330,7 +330,9 @@ from the real app with the demo hotel. The video shows only a few highlights: on
 each screen the part being explained stays sharp and the rest is blurred (`spot()`
 in the script), the section tabs are always blurred, and every new screen opens
 fully blurred until the script picks what to show, so competitors cannot copy the
-whole software from it.
+whole software from it. The landing-page screenshots (`scripts/tour/capture-screens.mjs`)
+use the same blur: each keeps only the feature its section describes sharp. The phone
+screenshot of the public booking website is not blurred.
 Re-record them after changing the screens:
 
 ```bash
@@ -338,7 +340,7 @@ Re-record them after changing the screens:
 npm run db:setup:dev
 npm run build && npm start                      # in one terminal
 npm i --no-save playwright && npx playwright install chromium
-node scripts/tour/capture-screens.mjs http://localhost:3000   # needs Python + Pillow
+node scripts/tour/capture-screens.mjs http://localhost:3000
 npm run db:seed:demo                            # only if the database was used since seeding
 node scripts/tour/record-tour.mjs http://localhost:3000       # needs ffmpeg (or FFMPEG=<path>)
 ```

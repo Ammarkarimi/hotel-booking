@@ -124,7 +124,7 @@ const FEATURE_GROUPS = [
 
 const SPOTLIGHTS = [
   {
-    image: "/welcome/today.webp",
+    image: "/welcome/dashboard.webp",
     eyebrow: "Dashboard",
     title: "Your whole property, the moment you sign in",
     text: "The Dashboard lists who is arriving and departing, with clear Check in and Check out buttons. Below, a box for every room shows who is in tonight, which rooms are free and ready, and which still need cleaning, with today's takings at the top.",
@@ -402,7 +402,7 @@ export default function WelcomePage() {
               </ul>
             </div>
             <div className="relative min-w-0 pb-10 lg:pb-0">
-              <BrowserFrame src="/welcome/today.webp" alt="The Dashboard showing arrivals, departures and every room tonight" priority />
+              <BrowserFrame src="/welcome/dashboard.webp" alt="The Dashboard showing arrivals, departures and every room tonight" priority />
               <PhoneFrame
                 src="/welcome/guest-site.webp"
                 alt="The hotel's own booking website on a phone"
