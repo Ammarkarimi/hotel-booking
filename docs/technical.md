@@ -326,13 +326,10 @@ changing them.
 
 The video (`public/welcome/innvela-tour.mp4`, plus a WebM copy for browsers
 without H.264, and its poster `tour-poster.webp`) and the screenshots are recorded
-from the real app with the demo hotel. The video shows only a few highlights: on
-each screen the part being explained stays sharp and the rest is blurred (`spot()`
-in the script), the section tabs are always blurred, and every new screen opens
-fully blurred until the script picks what to show, so competitors cannot copy the
-whole software from it. The landing-page screenshots (`scripts/tour/capture-screens.mjs`)
-use the same blur: each keeps only the feature its section describes sharp. The phone
-screenshot of the public booking website is not blurred.
+from the real app with the demo hotel. The video shows a few highlights and the
+landing-page screenshots (`scripts/tour/capture-screens.mjs`) show the feature each
+section describes. Nothing in them is blurred.
+
 Re-record them after changing the screens:
 
 ```bash

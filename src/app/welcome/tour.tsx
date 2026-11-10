@@ -7,14 +7,14 @@ import { cn } from "@/lib/utils";
 // Chapter start times (seconds) in public/welcome/innvela-tour.mp4.
 export const CHAPTERS = [
   { t: 0, title: "Guests book on your own website" },
-  { t: 24.1, title: "Every room on one screen" },
-  { t: 32.1, title: "Express check-in on WhatsApp" },
-  { t: 45.1, title: "Check in with one tap" },
-  { t: 53.2, title: "Check out, and the GST invoice is ready" },
-  { t: 68.2, title: "The day sheet" },
-  { t: 77.3, title: "When the internet goes" },
-  { t: 84, title: "Install it like desktop software" },
-  { t: 89.8, title: "Your profit, day by day" },
+  { t: 24.3, title: "Every room on one screen" },
+  { t: 31.1, title: "Express check-in on WhatsApp" },
+  { t: 43.1, title: "Check in with one tap" },
+  { t: 50.2, title: "Check out, and the GST invoice is ready" },
+  { t: 63.9, title: "The day sheet" },
+  { t: 72.7, title: "When the internet goes" },
+  { t: 78.6, title: "Install it like desktop software" },
+  { t: 84.2, title: "Your profit, day by day" },
 ];
 
 const PLAY_EVENT = "welcome:play-tour";
@@ -112,7 +112,7 @@ export function TourPlayer() {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-600 text-white">
                 <Play className="h-5 w-5 translate-x-0.5" fill="currentColor" />
               </span>
-              Play the tour · 1:37
+              Play the tour · 1:29
             </span>
           </button>
         )}
