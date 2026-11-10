@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_TALLY_LEDGERS, moneyLedger, parseTallyLedgers, partyFor, salesEntries, splitGst, tallyMastersXml, tallyVouchersXml } from "../tally";
+import { DEFAULT_TALLY_LEDGERS, expenseLedger, moneyLedger, parseTallyLedgers, partyFor, salesEntries, splitGst, tallyMastersXml, tallyVouchersXml } from "../tally";
 
 const L = DEFAULT_TALLY_LEDGERS;
 const invoice = {
@@ -66,6 +66,45 @@ test("the Tally files: ledgers first, then Sales, Receipt and Payment vouchers",
   assert.match(vouchers, /ref UTR&lt;1&gt;/);
   assert.match(vouchers, /VCHTYPE="Payment".*<LEDGERNAME>Cash<\/LEDGERNAME><ISDEEMEDPOSITIVE>No<\/ISDEEMEDPOSITIVE><AMOUNT>500.00<\/AMOUNT>/);
   // Every voucher balances.
+  for (const v of vouchers.split("</VOUCHER>").slice(0, -1)) {
+    const amounts = [...v.matchAll(/<AMOUNT>(-?[\d.]+)<\/AMOUNT>/g)].map((m) => Math.round(Number(m[1]) * 100));
+    assert.equal(amounts.reduce((s, a) => s + a, 0), 0);
+  }
+});
+
+test("expense ledgers: the defaults, the owner's own names, and an unknown kind goes to other", () => {
+  const L2 = parseTallyLedgers('{"expenses":{"salaries":"Staff Salary","rent":" "}}');
+  assert.equal(expenseLedger("salaries", L2), "Staff Salary");
+  assert.equal(expenseLedger("rent", L2), "Rent");
+  assert.equal(expenseLedger("something_new", L2), "Miscellaneous Expenses");
+  // Saved names survive a round trip, as the settings save them.
+  assert.deepEqual(parseTallyLedgers(JSON.stringify(L2)), L2);
+});
+
+test("with expenses: their ledgers in file 1 and a Payment voucher for each in file 2; without: none", () => {
+  const expenses = [
+    { id: "e1", date: "2026-11-05", category: "salaries", title: "Pooja's salary", amount: 15000, method: "bank_transfer", addedBy: "Anil" },
+    { id: "e2", date: "2026-11-05", category: "utilities", title: "Electricity bill", description: "October", amount: 4200.5, method: "upi" },
+    { id: "e3", date: "2026-11-06", category: "supplies", title: "Soap & towels", amount: 850, method: "cash" },
+  ];
+  const base = { ledgers: L, invoices: [invoice], payments: [] };
+  const without = tallyVouchersXml(base);
+  assert.doesNotMatch(without, /expense-/);
+  assert.doesNotMatch(tallyMastersXml(base), /Indirect Expenses/);
+
+  const masters = tallyMastersXml({ ...base, expenses });
+  assert.match(masters, /<LEDGER NAME="Salary" ACTION="Create">.*<PARENT>Indirect Expenses<\/PARENT>/);
+  assert.match(masters, /<LEDGER NAME="Electricity and Water"/);
+  assert.match(masters, /<LEDGER NAME="Housekeeping Supplies"/);
+  assert.doesNotMatch(masters, /<LEDGER NAME="Rent"/); // only kinds used in the period
+
+  const vouchers = tallyVouchersXml({ ...base, expenses });
+  assert.equal((vouchers.match(/REMOTEID="innvela-expense-/g) ?? []).length, 3);
+  assert.match(vouchers, /<VOUCHERNUMBER>E-20261105-1<\/VOUCHERNUMBER>[\s\S]*<VOUCHERNUMBER>E-20261105-2<\/VOUCHERNUMBER>[\s\S]*<VOUCHERNUMBER>E-20261106-1<\/VOUCHERNUMBER>/);
+  // Salary is debited, the bank credited; cash expenses come out of Cash.
+  assert.match(vouchers, /<LEDGERNAME>Salary<\/LEDGERNAME><ISDEEMEDPOSITIVE>Yes<\/ISDEEMEDPOSITIVE><AMOUNT>-15000.00<\/AMOUNT>.*?<LEDGERNAME>Bank Account<\/LEDGERNAME><ISDEEMEDPOSITIVE>No<\/ISDEEMEDPOSITIVE><ISPARTYLEDGER>Yes<\/ISPARTYLEDGER><AMOUNT>15000.00<\/AMOUNT>/);
+  assert.match(vouchers, /<LEDGERNAME>Housekeeping Supplies<\/LEDGERNAME>.*?<LEDGERNAME>Cash<\/LEDGERNAME><ISDEEMEDPOSITIVE>No<\/ISDEEMEDPOSITIVE><ISPARTYLEDGER>Yes<\/ISPARTYLEDGER><AMOUNT>850.00<\/AMOUNT>/);
+  assert.match(vouchers, /<NARRATION>Soap &amp; towels, Room &amp; cleaning supplies, paid by cash<\/NARRATION>/);
   for (const v of vouchers.split("</VOUCHER>").slice(0, -1)) {
     const amounts = [...v.matchAll(/<AMOUNT>(-?[\d.]+)<\/AMOUNT>/g)].map((m) => Math.round(Number(m[1]) * 100));
     assert.equal(amounts.reduce((s, a) => s + a, 0), 0);

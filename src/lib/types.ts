@@ -1,4 +1,5 @@
 import type { GroupSummary } from "./groups";
+import type { TallyLedgers } from "./tally";
 // Shapes of the JSON our API returns, used by the screens.
 import type { Folio } from "./pricing";
 import type { PayoutSummary } from "./payouts";
@@ -175,7 +176,7 @@ export interface SettingsDTO {
   razorpaySecretSet?: boolean;
   /** Typed into Settings to replace the saved secret; never filled in from the server. */
   razorpayKeySecret?: string;
-  tallyLedgers: Record<string, string>;
+  tallyLedgers: TallyLedgers;
 }
 
 export type BookingDetailDTO = BookingDTO & { guest: GuestDTO; settings: SettingsDTO; group: GroupSummary | null };

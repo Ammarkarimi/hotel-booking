@@ -1,18 +1,40 @@
 // Files for the accountant's Tally (TallyPrime / Tally.ERP 9) in Tally's XML import format: first
 // the ledgers (Import → Masters), then the period's GST invoices as Sales vouchers, money received
-// as Receipt vouchers and money given back as Payment vouchers (Import → Transactions).
-// Pure: no database code, so tests can use it.
+// as Receipt vouchers and money given back as Payment vouchers (Import → Transactions). The owner
+// can include expenses too: each one becomes a Payment voucher from Cash or Bank to its expense
+// ledger. Pure: no database code, so tests can use it.
 //
 // Accounting: a Sales voucher debits the guest (or their company) with the invoice total and
 // credits room sales, other sales and CGST/SGST. A receipt debits Cash or Bank and credits the
 // guest. Hotel stays are taxed where the hotel is, so there is never IGST.
 import { round2 } from "./pricing";
+import { EXPENSE_CATEGORIES, label } from "./utils";
 
 export const TALLY_LEDGER_KEYS = ["roomSales", "extrasSales", "cgst", "sgst", "guests", "cash", "bank", "bookingSites"] as const;
 export type TallyLedgerKey = (typeof TALLY_LEDGER_KEYS)[number];
-export type TallyLedgers = Record<TallyLedgerKey, string>;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+/** The ledger names: the main ones, and one expense ledger per kind of expense. */
+export type TallyLedgers = Record<TallyLedgerKey, string> & { expenses: Record<ExpenseCategory, string> };
+
+/** Expense ledgers as accountants usually name them. All go under Indirect Expenses. */
+export const DEFAULT_EXPENSE_LEDGERS: Record<ExpenseCategory, string> = {
+  salaries: "Salary",
+  utilities: "Electricity and Water",
+  supplies: "Housekeeping Supplies",
+  kitchen: "Kitchen Expenses",
+  laundry: "Laundry Expenses",
+  repairs: "Repairs and Maintenance",
+  rent: "Rent",
+  internet_phone: "Telephone and Internet",
+  commission: "Commission Paid",
+  marketing: "Advertisement",
+  taxes_fees: "Rates and Taxes",
+  other: "Miscellaneous Expenses",
+};
+export const EXPENSE_LEDGER_GROUP = "Indirect Expenses";
 
 export const DEFAULT_TALLY_LEDGERS: TallyLedgers = {
+  expenses: DEFAULT_EXPENSE_LEDGERS,
   roomSales: "Room Sales",
   extrasSales: "Food and Other Sales",
   cgst: "Output CGST",
@@ -44,12 +66,24 @@ export function parseTallyLedgers(raw: string | null | undefined): TallyLedgers 
   } catch {
     // the defaults
   }
-  const out = { ...DEFAULT_TALLY_LEDGERS };
+  const out: TallyLedgers = { ...DEFAULT_TALLY_LEDGERS, expenses: { ...DEFAULT_EXPENSE_LEDGERS } };
   for (const k of TALLY_LEDGER_KEYS) {
     const v = saved[k];
     if (typeof v === "string" && v.trim()) out[k] = v.trim().slice(0, 100);
   }
+  const exp = saved.expenses;
+  if (exp && typeof exp === "object" && !Array.isArray(exp)) {
+    for (const c of EXPENSE_CATEGORIES) {
+      const v = (exp as Record<string, unknown>)[c];
+      if (typeof v === "string" && v.trim()) out.expenses[c] = v.trim().slice(0, 100);
+    }
+  }
   return out;
+}
+
+/** The ledger an expense goes to; an unknown kind goes to "other". */
+export function expenseLedger(category: string, ledgers: TallyLedgers) {
+  return ledgers.expenses[category as ExpenseCategory] ?? ledgers.expenses.other;
 }
 
 export interface TallyInvoice {
@@ -79,6 +113,17 @@ export interface TallyPayment {
   method: string; // cash, upi, card, bank_transfer, ota, other
   type: string; // advance, balance, full, refund
   reference?: string | null;
+}
+
+export interface TallyExpense {
+  id: string;
+  date: string;
+  category: string;
+  title: string;
+  description?: string | null;
+  amount: number;
+  method: string; // cash, upi, card, bank_transfer, other
+  addedBy?: string | null;
 }
 
 const xml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
@@ -170,6 +215,8 @@ export interface TallyExport {
   company?: string | null;
   invoices: TallyInvoice[];
   payments: TallyPayment[];
+  /** Left out (or empty) for the files without expenses. */
+  expenses?: TallyExpense[];
   ledgers: TallyLedgers;
 }
 
@@ -195,6 +242,11 @@ export function tallyMastersXml(opts: TallyExport): string {
   const L = opts.ledgers;
   const masters = new Map<string, string>();
   for (const k of TALLY_LEDGER_KEYS) masters.set(L[k], ledgerMaster(L[k], TALLY_LEDGER_INFO[k].group));
+  // Only the expense ledgers this period uses.
+  for (const e of opts.expenses ?? []) {
+    const name = expenseLedger(e.category, L);
+    if (!masters.has(name)) masters.set(name, ledgerMaster(name, EXPENSE_LEDGER_GROUP));
+  }
   for (const x of [...opts.invoices, ...opts.payments]) {
     const p = partyFor(x, L);
     if (p.gstin && !masters.has(p.name)) masters.set(p.name, ledgerMaster(p.name, "Sundry Debtors", p.gstin, "state" in x ? x.state : null));
@@ -248,6 +300,28 @@ export function tallyVouchersXml(opts: TallyExport): string {
               { ledger: money, amount: p.amount },
               { ledger: party, amount: -p.amount, party: true },
             ],
+      })
+    );
+  }
+  // Expenses: money out of Cash or Bank (credit) to the expense ledger (debit).
+  const perDay = new Map<string, number>();
+  for (const e of opts.expenses ?? []) {
+    if (!(e.amount > 0)) continue;
+    const money = moneyLedger(e.method, L);
+    const n = (perDay.get(e.date) ?? 0) + 1;
+    perDay.set(e.date, n);
+    vouchers.push(
+      voucher({
+        type: "Payment",
+        id: `expense-${e.id}`,
+        date: e.date,
+        number: `E-${day(e.date)}-${n}`,
+        party: money,
+        narration: [e.title, e.description, label(e.category), `paid by ${e.method.replace(/_/g, " ")}`, e.addedBy ? `entered by ${e.addedBy}` : ""].filter(Boolean).join(", "),
+        entries: [
+          { ledger: expenseLedger(e.category, L), amount: e.amount },
+          { ledger: money, amount: -e.amount, party: true },
+        ],
       })
     );
   }

@@ -256,7 +256,7 @@ const FAQS = [
   },
   {
     q: "Does it work with Tally?",
-    a: "Yes. Reports make two files for TallyPrime: the ledgers, then the period's GST invoices as Sales vouchers and every payment and refund as Receipt and Payment vouchers. Your accountant imports them in two steps, with your own ledger names.",
+    a: "Yes. Reports make two files for TallyPrime: the ledgers, then the period's GST invoices as Sales vouchers and every payment and refund as Receipt and Payment vouchers, with or without your expenses. Your accountant imports them in two steps, with your own ledger names.",
   },
   {
     q: "Do we need internet?",

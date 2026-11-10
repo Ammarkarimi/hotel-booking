@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withModuleAdmin, csvResponse, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
-import { addDays, dateFromKey, diffDays, isDateKey, todayKey } from "@/lib/dates";
+import { addDays, dateFromKey, diffDays, isDateKey, toDateKey, todayKey } from "@/lib/dates";
 import { parseTallyLedgers, tallyMastersXml, tallyVouchersXml } from "@/lib/tally";
 import { defaultGroupBy, type GroupBy } from "@/lib/periods";
 import { buildReport } from "@/lib/reports";
@@ -25,11 +25,16 @@ export async function GET(request: NextRequest) {
 
     if (type === "tally_masters" || type === "tally_vouchers") {
       // Files for Tally: the ledgers first (Import → Masters), then the vouchers (Import → Transactions).
+      // &expenses=1 adds the period's expenses as Payment vouchers (and their ledgers).
+      const withExpenses = searchParams.get("expenses") === "1";
       const local = (d: Date) => todayKey(ctx.settings.timezone, d);
       const widened = { gte: dateFromKey(addDays(from, -1)), lt: dateFromKey(addDays(to, 2)) };
-      const [bills, payments] = await Promise.all([
+      const [bills, payments, expenses] = await Promise.all([
         prisma.bill.findMany({ where: { generatedAt: widened, invoiceNumber: { not: null } }, include: { booking: { include: { guest: true, room: true } } }, orderBy: { generatedAt: "asc" } }),
         prisma.payment.findMany({ where: { status: "completed", paidAt: widened }, include: { booking: { include: { guest: true, bill: true } } }, orderBy: { paidAt: "asc" } }),
+        withExpenses
+          ? prisma.expense.findMany({ where: { date: { gte: dateFromKey(from), lt: dateFromKey(addDays(to, 1)) } }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] })
+          : Promise.resolve([]),
       ]);
       const inRange = (d: Date) => local(d) >= from && local(d) <= to;
       const data = {
@@ -62,12 +67,22 @@ export async function GET(request: NextRequest) {
           type: p.type,
           reference: p.reference,
         })),
+        expenses: expenses.map((e) => ({
+          id: e.id,
+          date: toDateKey(e.date),
+          category: e.category,
+          title: e.title,
+          description: e.description,
+          amount: e.amount,
+          method: e.method,
+          addedBy: e.addedBy,
+        })),
       };
       const masters = type === "tally_masters";
       return new NextResponse(masters ? tallyMastersXml(data) : tallyVouchersXml(data), {
         headers: {
           "Content-Type": "application/xml; charset=utf-8",
-          "Content-Disposition": `attachment; filename="tally_${masters ? "1_ledgers" : "2_vouchers"}_${from}_to_${to}.xml"`,
+          "Content-Disposition": `attachment; filename="tally_${masters ? "1_ledgers" : "2_vouchers"}${withExpenses ? "_with_expenses" : ""}_${from}_to_${to}.xml"`,
         },
       });
     }

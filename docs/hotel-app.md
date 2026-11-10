@@ -342,8 +342,13 @@ ledger with the GSTIN for each guest company with a GSTIN. **2. Vouchers** (Impo
 Transactions) has a **Sales** voucher for each GST invoice made in the period (guest
 or company Dr; room sales, food and other sales, CGST and SGST Cr; invoice number and
 date), a **Receipt** for each payment (Cash, Bank, or Booking Sites for prepaid
-booking-site stays Dr; guest Cr) and a **Payment** voucher for each refund. Import
-each period once.
+booking-site stays Dr; guest Cr) and a **Payment** voucher for each refund. Choose
+**Without expenses** or **With expenses** first (when the hotel has Expenses): with
+expenses, each expense of the period also becomes a **Payment** voucher (its expense
+ledger Dr, Cash or Bank Cr, with the title, kind, method and who entered it), and
+file 1 adds the expense ledgers used, under Indirect Expenses. The expense ledger
+names (Salary, Electricity and Water, Rent…) can be changed in Settings. Pick the
+same choice for both files. Import each period once.
 
 - **Bookings** has three columns for Edit bill: **First total (as first agreed)**,
   **Final total (after edit)** and **Difference** (final minus first, so ₹1,500
@@ -359,7 +364,7 @@ each period once.
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; **Room prices include GST** (on: a room priced ₹1,800 costs the guest ₹1,800 and the bill shows ₹1,714.29 + ₹85.71 GST; off: GST is added on top, ₹1,800 + ₹90; a change applies only to bookings made afterwards); weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
 | Rate tips | Rate tips on or off, the time tips start (1 pm by default), the biggest cut a tip may suggest (20% by default), whether front-desk staff see tips, and the lowest price you accept for each room type (see below) |
-| Payments & Tally | **Online payments:** the hotel's UPI ID and the name guests see, and Razorpay (key ID and key secret, checked with Razorpay when saved; the secret is kept encrypted and never shown again; Disconnect removes it). **Tally ledger names** for the Tally files |
+| Payments & Tally | **Online payments:** the hotel's UPI ID and the name guests see, and Razorpay (key ID and key secret, checked with Razorpay when saved; the secret is kept encrypted and never shown again; Disconnect removes it). **Tally ledger names** for the Tally files, and the expense ledger for each kind of expense (used for “With expenses”) |
 | WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |

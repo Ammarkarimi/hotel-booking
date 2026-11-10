@@ -582,7 +582,7 @@ function SettingsView() {
       {tab === "payments" && (
         <>
           <OnlinePaymentSettings s={s} set={set} />
-          {has("reports") && <TallySettings s={s} set={set} />}
+          {has("reports") && <TallySettings s={s} set={set} expenses={has("expenses")} />}
         </>
       )}
       {tab === "messages" && <MessageSettings s={s} set={set} today={shell.today} />}

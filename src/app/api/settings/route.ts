@@ -7,6 +7,7 @@ import { isUpiId } from "@/lib/online-payments";
 import { checkKeys } from "@/lib/razorpay";
 import { openSecret, sealSecret } from "@/lib/secret-box";
 import { TALLY_LEDGER_KEYS, parseTallyLedgers } from "@/lib/tally";
+import { EXPENSE_CATEGORIES } from "@/lib/utils";
 import { logActivity } from "@/lib/activity";
 import { parseGstSlabs } from "@/lib/pricing";
 import { parseFloors } from "@/lib/rate-tips";
@@ -64,7 +65,12 @@ const settingsSchema = z.object({
   upiName: z.string().trim().max(50).optional().nullable(),
   razorpayKeyId: z.string().trim().regex(/^(rzp_(test|live)_[A-Za-z0-9]+)?$/, "A Razorpay key ID starts with rzp_live_ (or rzp_test_ for trying it out)").optional().nullable(),
   razorpayKeySecret: z.string().trim().max(100).optional(),
-  tallyLedgers: z.record(z.enum(TALLY_LEDGER_KEYS), z.string().trim().max(100)).optional(),
+  tallyLedgers: z
+    .object({
+      ...Object.fromEntries(TALLY_LEDGER_KEYS.map((k) => [k, z.string().trim().max(100).optional()])),
+      expenses: z.record(z.enum(EXPENSE_CATEGORIES), z.string().trim().max(100)).optional(),
+    })
+    .optional(),
 });
 
 /** What the screens get: no Razorpay secret, lists and JSON ready to use. */
@@ -111,7 +117,7 @@ export async function PUT(request: NextRequest) {
     const data = {
       ...rest,
       ...(sealed !== undefined && { razorpayKeySecret: sealed }),
-      ...(tallyLedgers && { tallyLedgers: JSON.stringify(Object.fromEntries(Object.entries(tallyLedgers).filter(([, v]) => v))) }),
+      ...(tallyLedgers && { tallyLedgers: JSON.stringify(parseTallyLedgers(JSON.stringify(tallyLedgers))) }),
       ...(rest.currency && { currency: rest.currency.toUpperCase() }),
       ...(rest.gstin !== undefined && { gstin: rest.gstin ? rest.gstin.toUpperCase() : null }),
       ...(gstSlabs && { gstSlabs: JSON.stringify(gstSlabs) }),

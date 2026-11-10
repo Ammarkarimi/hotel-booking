@@ -205,9 +205,10 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     q: "For owners: sending the accounts to Tally",
     steps: [
       "Settings → Payments & Tally: type your ledger names as they are in your Tally company (or keep the suggested ones). Save.",
-      "Reports: choose the period (for example last month), then under “Download for Tally” press “1. Ledgers” and “2. Vouchers”.",
+      "Reports: choose the period (for example last month). Under “Download for Tally” choose “Without expenses” or “With expenses”, then press “1. Ledgers” and “2. Vouchers”.",
       "In TallyPrime open your company. Import → Masters, choose file 1. Then Import → Transactions, choose file 2.",
       "Each GST invoice becomes a Sales voucher (room sales, other sales, CGST, SGST), each payment a Receipt, each refund a Payment voucher. Guests with a GSTIN get their own ledger. Import each period once.",
+      "With expenses: every expense also becomes a Payment voucher from Cash or Bank to its ledger (Salary, Rent, Electricity and Water…). Choose this only if your accountant does not enter the expenses in Tally from the bills, or they will be counted twice.",
     ],
     link: { href: "/reports", text: "Open reports" },
   },

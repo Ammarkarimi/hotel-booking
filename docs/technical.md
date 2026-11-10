@@ -411,8 +411,11 @@ room. Each room keeps its own bill and invoice number; `/print/group/<id>` lists
 Tally XML (`ENVELOPE/IMPORTDATA`), masters first (`All Masters`), then `Vouchers`. Sales
 voucher per invoice (party Dr; room sales, other sales, CGST, SGST Cr; always
 balanced), Receipt per payment, Payment per refund, `REMOTEID="innvela-…"`. Guests with a
-GSTIN get their own Sundry Debtors ledger with `PARTYGSTIN`. Ledger names in
-`HotelSettings.tallyLedgers` (JSON; defaults in `DEFAULT_TALLY_LEDGERS`).
+GSTIN get their own Sundry Debtors ledger with `PARTYGSTIN`. With `&expenses=1` each
+expense of the period is a Payment voucher (expense ledger Dr, Cash/Bank Cr, number
+`E-<yyyymmdd>-<n>`), and file 1 adds the expense ledgers used (Indirect Expenses).
+Ledger names in `HotelSettings.tallyLedgers` (JSON, with an `expenses` object per
+expense category; defaults in `DEFAULT_TALLY_LEDGERS` / `DEFAULT_EXPENSE_LEDGERS`).
 
 ## Not built yet
 

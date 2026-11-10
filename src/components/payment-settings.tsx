@@ -4,7 +4,8 @@ import { useState } from "react";
 import { CheckCircle2, ExternalLink } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, Field, Input, Tip } from "@/components/ui";
 import { isUpiId } from "@/lib/online-payments";
-import { DEFAULT_TALLY_LEDGERS, TALLY_LEDGER_INFO, TALLY_LEDGER_KEYS } from "@/lib/tally";
+import { DEFAULT_EXPENSE_LEDGERS, DEFAULT_TALLY_LEDGERS, EXPENSE_LEDGER_GROUP, TALLY_LEDGER_INFO, TALLY_LEDGER_KEYS } from "@/lib/tally";
+import { EXPENSE_CATEGORIES, label } from "@/lib/utils";
 import type { SettingsDTO } from "@/lib/types";
 
 type Props = { s: SettingsDTO; set: (p: Partial<SettingsDTO>) => void };
@@ -86,8 +87,8 @@ export function OnlinePaymentSettings({ s, set }: Props) {
 }
 
 /** Settings → Payments & Tally: the ledger names used in the Tally files. */
-export function TallySettings({ s, set }: Props) {
-  const ledgers = { ...DEFAULT_TALLY_LEDGERS, ...s.tallyLedgers };
+export function TallySettings({ s, set, expenses }: Props & { expenses: boolean }) {
+  const ledgers = { ...DEFAULT_TALLY_LEDGERS, ...s.tallyLedgers, expenses: { ...DEFAULT_EXPENSE_LEDGERS, ...s.tallyLedgers?.expenses } };
   return (
     <Card className="mb-6">
       <CardHeader
@@ -106,6 +107,30 @@ export function TallySettings({ s, set }: Props) {
             />
           </Field>
         ))}
+        {expenses && (
+          <div className="space-y-3 border-t border-slate-100 pt-4 sm:col-span-2">
+            <div>
+              <p className="font-semibold text-slate-800">Expense ledgers</p>
+              <p className="text-sm text-slate-500">
+                Used when you download for Tally with “Include expenses” ticked. Each kind of expense goes to its own ledger under {EXPENSE_LEDGER_GROUP}; two kinds can share
+                one name.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {EXPENSE_CATEGORIES.map((c) => (
+                <Field key={c} label={label(c)} htmlFor={`tally-exp-${c}`}>
+                  <Input
+                    id={`tally-exp-${c}`}
+                    value={ledgers.expenses[c]}
+                    onChange={(e) => set({ tallyLedgers: { ...ledgers, expenses: { ...ledgers.expenses, [c]: e.target.value } } })}
+                    placeholder={DEFAULT_EXPENSE_LEDGERS[c]}
+                    maxLength={100}
+                  />
+                </Field>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
