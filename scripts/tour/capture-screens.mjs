@@ -1,7 +1,5 @@
 // Takes the landing-page screenshots (public/welcome/*.webp and og-image.jpg) from the running
-// demo app. Like the video tour, each screenshot keeps only the feature it describes sharp and
-// blurs everything around it (and always the menu of sections), so competitors cannot copy the
-// whole software from the landing page. The guest booking website is public, so it stays sharp.
+// demo app. Each screenshot scrolls the feature it describes into view; nothing is blurred.
 //
 // Requirements as for record-tour.mjs (fresh demo database, production build, Playwright).
 //   node scripts/tour/capture-screens.mjs http://localhost:3000
@@ -15,31 +13,8 @@ const base = process.argv[2] || "http://localhost:3000";
 const out = fs.mkdtempSync(path.join(os.tmpdir(), "innvela-screens-"));
 const publicDir = path.resolve("public/welcome");
 
-// The same blur as the video tour (scripts/tour/record-tour.mjs): spot(els) keeps those
-// elements sharp and blurs every other branch of the page around them.
-const SPOTLIGHT = `
-(() => {
-  const css = '.demo-blur { filter: blur(7px) saturate(.7) !important; opacity: .8; } nav[aria-label="Main"] { filter: blur(6px) saturate(.7); }';
-  const add = () => { const s = document.createElement('style'); s.textContent = css; document.head.appendChild(s); };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();
-  window.__spot = (els) => {
-    document.querySelectorAll('.demo-blur').forEach((e) => e.classList.remove('demo-blur'));
-    const keep = new Set();
-    for (const el of els) for (let n = el; n; n = n.parentElement) keep.add(n);
-    for (const a of keep) {
-      if (els.includes(a) || a === document.documentElement) continue;
-      for (const c of a.children) {
-        if (keep.has(c) || ['SCRIPT', 'STYLE', 'LINK', 'HEAD', 'NOSCRIPT'].includes(c.tagName)) continue;
-        c.classList.add('demo-blur');
-      }
-    }
-  };
-})();
-`;
-
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1.5 });
-await ctx.addInitScript(SPOTLIGHT);
 const login = await ctx.request.post(base + "/api/auth/login", { data: { email: "admin@hotel.com", password: "admin123" } });
 if (!login.ok()) throw new Error("login failed " + login.status());
 const page = await ctx.newPage();
@@ -59,14 +34,15 @@ async function open(url) {
   }
 }
 
-/** Keep `sharp` elements sharp, put the first of them in view (scrollTo: page y, or "center"), and save. */
-async function shot(name, keepSharp, { scrollTo = "center" } = {}) {
+/** Put the feature in view (scrollTo: page y, "center" or "top" on the first element) and save. */
+async function shot(name, focus, { scrollTo = "center" } = {}) {
   const handles = [];
-  for (const l of keepSharp) handles.push(...(await l.elementHandles()));
-  if (!handles.length) throw new Error(`${name}: nothing to keep sharp`);
+  for (const l of focus) handles.push(...(await l.elementHandles()));
+  if (!handles.length) throw new Error(`${name}: the feature was not found on the page`);
   if (scrollTo === "center") await handles[0].evaluate((el) => el.scrollIntoView({ block: "center" }));
+  // "top": just below the bar of buttons that stays at the top of the screen.
+  else if (scrollTo === "top") await handles[0].evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 60));
   else await page.evaluate((y) => window.scrollTo(0, y), scrollTo);
-  await page.evaluate((els) => window.__spot(els), handles);
   await page.waitForTimeout(500);
   await page.screenshot({ path: `${out}/${name}.png` });
   console.log("saved", name);
@@ -80,7 +56,7 @@ const invoiceBooking = left.find((b) => b.charges?.length > 0) || left[0];
 
 // Dashboard: the room board.
 await open("/");
-await shot("dashboard", [page.locator("main").getByRole("heading", { name: "Dashboard" }), panel(page.getByText("Rooms tonight", { exact: true }))], { scrollTo: 300 });
+await shot("dashboard", [panel(page.getByText(/^Arriving today/).first())], { scrollTo: "top" });
 
 // New reservation: the free rooms with their full price.
 await open("/bookings/new");
@@ -99,7 +75,7 @@ await shot("calendar", [panel(page.locator("button[title^='#']").first())], { sc
 await open(`/bookings/${withExtras.id}`);
 await shot("booking", [panel(page.getByText(/^Running total|^Final invoice/).first())]);
 
-// GST invoice: the hotel's header and the tax totals; the lines are blurred.
+// GST invoice: the hotel's header, the lines and the tax totals.
 await open(`/print/invoice/${invoiceBooking.id}`);
 const invoice = page.locator(".print-page");
 await shot("invoice", [invoice.locator("> div").first(), invoice.locator("table").nth(1), invoice.getByText("Amount in words:").locator("..")], { scrollTo: 40 });
@@ -120,7 +96,7 @@ await page.waitForTimeout(500);
 await shot("reports", [panel(page.getByText(/^Profit · /).first())]);
 await ctx.close();
 
-// The guest booking website on a phone (public, so nothing is blurred).
+// The guest booking website on a phone.
 const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 const pp = await phone.newPage();
 await pp.goto(base + "/book/sunrise-residency", { waitUntil: "networkidle" });

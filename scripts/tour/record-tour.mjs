@@ -1,8 +1,6 @@
 // Records the landing-page video tour from the running app.
 //
-// It shows only a few highlights. On every screen the part being explained stays sharp and
-// everything else (including the menu with every section) is blurred, so the video sells the
-// software without handing out the whole of it.
+// It shows a few highlights, with the whole screen visible: nothing is blurred.
 //
 // Before running (see docs/technical.md, "Landing page and video tour"):
 //   1. A fresh demo database:  npm run db:setup:dev   (on an empty database)
@@ -51,11 +49,6 @@ const OVERLAY = `
     #demo-card .k { font-size: 17px; font-weight: 600; color: #93a4c3; }
     #demo-card .h { font-size: 52px; font-weight: 800; margin: 8px 0 10px; letter-spacing: -.01em; }
     #demo-card .p { font-size: 21px; color: #dbe3ef; max-width: 780px; line-height: 1.4; }
-    /* Blurred: everything outside the part being shown, and always the full list of sections. */
-    .demo-blur { filter: blur(7px) saturate(.7) !important; opacity: .8; transition: filter .45s, opacity .45s; }
-    nav[aria-label="Main"] { filter: blur(6px) saturate(.7); }
-    /* Veiled: a page just opened is fully blurred until spot() chooses what to show. */
-    html.demo-veil body > *:not([id^="demo-"]) { filter: blur(7px) saturate(.7); opacity: .8; }
   \`;
   function mount() {
     if (document.getElementById('demo-cursor')) return;
@@ -69,7 +62,6 @@ const OVERLAY = `
     card.innerHTML = '<div><div class="m"><svg viewBox="0 0 64 64"><path d="M10 30L32 12l22 18" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 33l13 19 13-19" fill="none" stroke="#7c93ff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="k"></div><div class="h"></div><div class="p"></div></div>';
     document.body.append(cur, ripple, cap, card);
     const saved = JSON.parse(sessionStorage.getItem('demo-state') || '{}');
-    if (saved.veil) document.documentElement.classList.add('demo-veil');
     cur.style.transition = 'none';
     cur.style.left = (saved.x ?? 640) + 'px'; cur.style.top = (saved.y ?? 400) + 'px';
     requestAnimationFrame(() => { cur.style.transition = ''; });
@@ -91,32 +83,7 @@ const OVERLAY = `
     card(k, h, p) { const c = document.getElementById('demo-card'); if (!c) return;
       if (k === null) { c.style.opacity = '0'; setTimeout(() => { c.hidden = true; c.style.opacity = ''; }, 600); return; }
       c.querySelector('.k').textContent = k; c.querySelector('.h').textContent = h; c.querySelector('.p').textContent = p; c.hidden = false; },
-    // Keep only these elements sharp: blur every other branch of the page around them.
-    veil(on) { save({ veil: on }); document.documentElement.classList.toggle('demo-veil', on); },
-    spot(els) {
-      document.documentElement.classList.remove('demo-veil');
-      document.querySelectorAll('.demo-blur').forEach((e) => e.classList.remove('demo-blur'));
-      if (!els || !els.length) return;
-      const keep = new Set();
-      for (const el of els) for (let n = el; n; n = n.parentElement) keep.add(n);
-      for (const a of keep) {
-        if (els.includes(a) || a === document.documentElement) continue;
-        for (const c of a.children) {
-          if (keep.has(c) || (c.id || '').startsWith('demo-') || ['SCRIPT', 'STYLE', 'LINK', 'HEAD', 'NOSCRIPT'].includes(c.tagName)) continue;
-          c.classList.add('demo-blur');
-        }
-      }
-    },
   };
-  // Blur a new page from its very first paint (before the rest of the overlay is added).
-  try {
-    if (JSON.parse(sessionStorage.getItem('demo-state') || '{}').veil) {
-      document.documentElement.classList.add('demo-veil');
-      const early = document.createElement('style');
-      early.textContent = 'html.demo-veil body > *:not([id^="demo-"]) { filter: blur(7px) saturate(.7); opacity: .8; }';
-      document.documentElement.appendChild(early);
-    }
-  } catch {}
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else mount();
 })();
 `;
@@ -146,13 +113,6 @@ async function caption(n, title, sub) {
   chapters.push({ n, title, sub, at: Date.now() / 1000 });
   await page.evaluate(([n, t, s]) => window.__demo.caption(String(n), t, s), [n, title, sub]);
   await wait(1500);
-}
-/** Keep these sharp and blur the rest of the screen. No arguments: nothing blurred. */
-async function spot(...locators) {
-  const handles = [];
-  for (const l of locators) handles.push(...(await l.elementHandles()));
-  await page.evaluate((els) => window.__demo.spot(els), handles);
-  await wait(500);
 }
 async function point(locator, pause = 650) {
   await locator.scrollIntoViewIfNeeded();
@@ -231,25 +191,20 @@ await wait(2600);
 // ---------------- 2. Dashboard ----------------
 const login = await ctx.request.post(base + "/api/auth/login", { data: { email: "admin@hotel.com", password: "admin123" } });
 if (!login.ok()) throw new Error("login failed");
-await page.evaluate(() => window.__demo.veil(true)); // from here on, each screen opens blurred
 await openApp("/");
 const roomsTonight = panel(page.getByText("Rooms tonight", { exact: true }));
-await spot(page.locator("main").getByRole("heading", { name: "Dashboard" }), roomsTonight);
 await caption(2, "Every room on one screen", "Who is in, who is arriving, what is free tonight, its category and tonight's price.");
 await point(roomsTonight, 900);
 await point(roomsTonight.getByText("Free tonight", { exact: true }), 1800);
 await scrollTo(0, 600);
 const arriving = panel(page.getByText(/^Arriving today/).first());
 const leaving = panel(page.getByText(/^Leaving today/).first());
-await spot(arriving, leaving);
 await point(arriving.getByText("Kavya Rao").first(), 1600);
 
 // ---------------- 3. Express check-in ----------------
-await spot(page.getByRole("button", { name: /Send express check-in/ }).first());
 await caption(3, "Express check-in on WhatsApp", "Send a link. The guest fills in their own details before they arrive.");
 await click(page.getByRole("button", { name: /Send express check-in/ }).first(), 900);
 const sendBox = page.getByRole("dialog");
-await spot(sendBox);
 await type(sendBox.getByLabel("Guest's WhatsApp number"), "98201 33445");
 await type(sendBox.getByLabel(/Guest's name/), "Arjun Mehta");
 await click(sendBox.getByRole("button", { name: /Make the link/ }), 1200);
@@ -258,27 +213,22 @@ await page.keyboard.press("Escape");
 await wait(600);
 
 // ---------------- 4. Check in ----------------
-await spot(arriving);
 await caption(4, "Check in with one tap", "Reminders if the room isn't clean yet or an adult's ID hasn't been checked.");
 await click(arriving.locator("tr", { has: page.getByText("Kavya Rao", { exact: true }) }).getByRole("button", { name: "Check in" }), 1200);
-await spot(page.getByRole("dialog"));
 await wait(1800);
 await click(page.getByRole("button", { name: "Yes, check in" }), 800);
 // Straight after check-in the desk is offered the welcome message for WhatsApp.
 const welcome = page.getByRole("dialog");
 if (await welcome.isVisible().catch(() => false)) {
-  await spot(welcome);
   await wait(2200);
   await page.keyboard.press("Escape");
   await wait(600);
 }
 
 // ---------------- 5. Check out + GST invoice ----------------
-await spot(leaving);
 await caption(5, "Check out, and the GST invoice is ready", "Take cash, UPI or card. The invoice has CGST, SGST and the amount in words.");
 await click(leaving.getByRole("button", { name: "Check out" }).first(), 1200);
 const outBox = page.getByRole("dialog");
-await spot(outBox);
 await wait(1400);
 await click(outBox.getByRole("button", { name: "Cash", exact: true }), 600);
 await click(outBox.getByRole("button", { name: /check out/i }).last(), 1200);
@@ -288,20 +238,17 @@ const lastOut = await page.evaluate(async () => {
 });
 await page.goto(base + `/print/invoice/${lastOut}`, { waitUntil: "networkidle" });
 const invoice = page.locator(".print-page");
-await spot(invoice.locator("> div").first(), invoice.getByText("Amount in words:").locator(".."), invoice.locator("table").nth(1));
 await wait(600);
 await point(invoice.getByText("Amount in words:"), 2600);
 
 // ---------------- 6. Day sheet ----------------
 await openApp("/");
-await spot(page.getByRole("link", { name: /Day sheet/ }).first());
 await caption(6, "The day sheet", "Print it each morning or send it on WhatsApp: every guest, phone and amount due.");
 await point(page.getByRole("link", { name: /Day sheet/ }).first(), 300);
 await page.evaluate(() => window.__demo.ripple());
 await wait(500);
 await page.goto(base + "/print/day-sheet", { waitUntil: "networkidle" });
 await page.getByText(/^In the hotel/).waitFor();
-await spot(page.getByText(/^In the hotel/).locator(".."), page.getByRole("button", { name: /Send on WhatsApp/ }), page.getByRole("button", { name: "Print" }));
 await point(page.getByText(/^In the hotel/), 1400);
 await point(page.getByRole("button", { name: /Send on WhatsApp/ }), 1600);
 
@@ -313,7 +260,6 @@ await ctx.setOffline(true);
 await page.reload({ waitUntil: "load" });
 await dismissRateTip();
 await page.getByText("Cannot reach the server.").waitFor();
-await spot(page.getByRole("alert").filter({ hasText: "No internet." }), page.getByRole("alert").filter({ hasText: "Cannot reach the server." }), roomsTonight);
 await point(page.getByText("Cannot reach the server."), 2600);
 await ctx.setOffline(false);
 
@@ -328,7 +274,6 @@ await page.evaluate(() => {
 });
 await wait(300);
 const installButton = page.getByRole("button", { name: "Install app" });
-await spot(installButton, page.locator("div.bg-primary-600 span").first());
 await caption(8, "Install it like desktop software", "Its own window and an icon on the desktop and taskbar. Updates arrive by themselves.");
 await point(installButton, 2600);
 
@@ -336,7 +281,6 @@ await point(installButton, 2600);
 await openApp("/reports");
 await page.getByText(/^Profit · /).first().waitFor();
 const profit = panel(page.getByText(/^Profit · /).first());
-await spot(profit);
 await caption(9, "Your profit, day by day", "Earnings minus expenses for any day, week, month or year.");
 await point(profit.getByText("Total earnings", { exact: true }), 1200);
 await point(profit.getByText(/^(Profit|Loss)$/).first(), 2200);
