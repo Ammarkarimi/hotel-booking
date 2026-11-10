@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CheckCircle2, MessageCircle, Phone, Printer } from "lucide-react";
+import { CheckCircle2, CreditCard, MessageCircle, Phone, Printer } from "lucide-react";
 import { Button, Card, CardContent, Loading, Tip } from "@/components/ui";
 import { formatCurrency, formatDate, label } from "@/lib/utils";
 import { whatsappLink } from "@/lib/client";
@@ -21,6 +21,7 @@ interface Confirmation {
   total: number;
   paid: number;
   balance: number;
+  payOnline?: boolean;
   hotel: { slug: string; hotelName: string; phone: string | null; address: string | null; city: string | null; checkInTime: string; checkOutTime: string; bookingTerms: string | null; currency: string };
 }
 
@@ -63,8 +64,16 @@ export default function ConfirmationPage() {
             <div className="flex justify-between"><span className="text-slate-500">Guests</span><b>{c.adults} adult(s){c.children ? `, ${c.children} child(ren)` : ""}</b></div>
             <div className="flex justify-between border-t border-slate-200 pt-2 text-lg"><span>Total</span><b>{fmt(c.total)}</b></div>
             {c.paid > 0 && <div className="flex justify-between"><span className="text-slate-500">Paid</span><b>{fmt(c.paid)}</b></div>}
-            <div className="flex justify-between"><span className="text-slate-500">Pay at hotel</span><b>{fmt(Math.max(0, c.balance))}</b></div>
+            <div className="flex justify-between"><span className="text-slate-500">{c.payOnline ? "To pay" : "Pay at hotel"}</span><b>{fmt(Math.max(0, c.balance))}</b></div>
           </div>
+          {c.payOnline && (
+            <a href={`/pay/${token}`} className="no-print block">
+              <Button className="w-full" size="lg">
+                <CreditCard className="h-5 w-5" /> Pay now online
+              </Button>
+              <p className="mt-1 text-center text-sm text-slate-500">Or pay at the hotel when you arrive.</p>
+            </a>
+          )}
           <Tip>Please save this page or take a screenshot. Bring a photo ID for every adult guest.</Tip>
           {c.hotel.bookingTerms && <p className="whitespace-pre-line text-sm text-slate-600">{c.hotel.bookingTerms}</p>}
           <div className="no-print grid gap-2 sm:grid-cols-2">

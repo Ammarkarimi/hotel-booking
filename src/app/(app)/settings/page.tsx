@@ -8,11 +8,12 @@ import { useApp } from "@/components/app-provider";
 import { api } from "@/lib/client";
 import { ROOM_TYPES, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { SettingsDTO } from "@/lib/types";
+import { OnlinePaymentSettings, TallySettings } from "@/components/payment-settings";
 import { MessageSettings } from "@/components/message-settings";
 import { RateTipSettings } from "@/components/rate-tips";
 import { PathikSettings } from "@/components/pathik";
 
-type Tab = "hotel" | "prices" | "tips" | "website" | "messages" | "staff" | "activity";
+type Tab = "hotel" | "prices" | "tips" | "website" | "payments" | "messages" | "staff" | "activity";
 
 const TIMEZONES = ["Asia/Kolkata", "Asia/Dubai", "Asia/Kathmandu", "Asia/Dhaka", "Asia/Colombo", "Asia/Singapore", "Europe/London", "America/New_York", "UTC"];
 
@@ -515,6 +516,7 @@ function SettingsView() {
     { value: "prices", label: "Prices & tax" },
     ...(has("rate_tips") ? [{ value: "tips" as Tab, label: "Rate tips" }] : []),
     ...(has("website") ? [{ value: "website" as Tab, label: "Online booking" }] : []),
+    { value: "payments", label: has("reports") ? "Payments & Tally" : "Online payments" },
     { value: "messages", label: "WhatsApp messages" },
     { value: "staff", label: "Staff" },
     { value: "activity", label: "Activity history" },
@@ -540,8 +542,12 @@ function SettingsView() {
     try {
       const body: Partial<SettingsDTO> = { ...s };
       delete body.seasonalRates;
+      delete body.razorpaySecretSet;
+      if (!body.razorpayKeySecret) delete body.razorpayKeySecret;
       await api("/api/settings", { method: "PUT", body });
       toast("Settings saved");
+      // Fresh from the server: the typed Razorpay secret is cleared from the screen.
+      load();
       router.refresh();
     } catch (e) {
       toast((e as Error).message, "error");
@@ -557,7 +563,7 @@ function SettingsView() {
 
   return (
     <div>
-      <PageHeader title="Settings" description="Your hotel details, prices, rate tips, tax, website, WhatsApp messages and staff." />
+      <PageHeader title="Settings" description="Your hotel details, prices, rate tips, tax, website, online payments, WhatsApp messages and staff." />
       <Tabs
         className="mb-6"
         value={tab}
@@ -573,6 +579,12 @@ function SettingsView() {
       {tab === "prices" && <PricesTab s={s} set={set} reload={load} />}
       {tab === "tips" && <RateTipSettings s={s} set={set} />}
       {tab === "website" && <WebsiteTab s={s} set={set} />}
+      {tab === "payments" && (
+        <>
+          <OnlinePaymentSettings s={s} set={set} />
+          {has("reports") && <TallySettings s={s} set={set} />}
+        </>
+      )}
       {tab === "messages" && <MessageSettings s={s} set={set} today={shell.today} />}
       {tab === "staff" && (
         <>
@@ -581,7 +593,7 @@ function SettingsView() {
         </>
       )}
       {tab === "activity" && <ActivityTab />}
-      {(tab === "hotel" || tab === "prices" || tab === "tips" || tab === "website" || tab === "messages" || tab === "staff") && <SaveBar saving={saving} onSave={save} />}
+      {(tab === "hotel" || tab === "prices" || tab === "tips" || tab === "website" || tab === "payments" || tab === "messages" || tab === "staff") && <SaveBar saving={saving} onSave={save} />}
     </div>
   );
 }

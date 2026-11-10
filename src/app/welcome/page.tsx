@@ -248,7 +248,15 @@ const FAQS = [
   },
   {
     q: "Can guests pay online?",
-    a: "Not yet. Guests settle at the property by cash, UPI or card, and you record the payment in one tap. Your booking website shows “pay at hotel”.",
+    a: "Yes. Send a payment link on WhatsApp for the full bill or an advance. Guests pay by UPI straight to your own account (QR code, no charges), or by UPI, card or net banking through your own Razorpay account, which marks the booking as paid by itself. Bills with money still due print a UPI QR code too.",
+  },
+  {
+    q: "Can we book several rooms for one family or group?",
+    a: "Yes. Tap every room in one booking: same guest and dates, the same special price if you agree one, and one advance shared over the rooms. Each room keeps its own bill and GST invoice, and the group has one page, one payment button and a group bill.",
+  },
+  {
+    q: "Does it work with Tally?",
+    a: "Yes. Reports make two files for TallyPrime: the ledgers, then the period's GST invoices as Sales vouchers and every payment and refund as Receipt and Payment vouchers. Your accountant imports them in two steps, with your own ledger names.",
   },
   {
     q: "Do we need internet?",

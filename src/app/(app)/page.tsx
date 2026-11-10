@@ -302,6 +302,19 @@ export default function DashboardPage() {
     return () => clearInterval(t);
   }, [load]);
 
+  // Guests who paid through a Razorpay link and closed the page: their payments are added here.
+  const onlineOn = settings.onlinePayments;
+  useEffect(() => {
+    if (!onlineOn) return;
+    const check = () =>
+      api<{ recorded: number }>("/api/payments/online", { method: "POST" })
+        .then((r) => r.recorded > 0 && load())
+        .catch(() => undefined);
+    check();
+    const t = setInterval(check, 5 * 60_000);
+    return () => clearInterval(t);
+  }, [onlineOn, load]);
+
   const actions = useBookingActions(() => load());
 
   if (error && !data) return <EmptyState title="Could not load today's information" description={error} action={<Button onClick={load}>Try again</Button>} />;

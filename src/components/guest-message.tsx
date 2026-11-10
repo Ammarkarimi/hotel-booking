@@ -9,7 +9,8 @@ import { bookingMessage, type MessageBooking, type MessageKind } from "@/lib/mes
 /** Builds a guest message in the owner's wording (Settings → WhatsApp messages). */
 export function useGuestMessage() {
   const { settings } = useApp();
-  return (kind: MessageKind, b: MessageBooking) => bookingMessage(kind, b, settings);
+  const siteUrl = typeof window === "undefined" ? undefined : window.location.origin;
+  return (kind: MessageKind, b: MessageBooking) => bookingMessage(kind, b, { ...settings, siteUrl });
 }
 
 const TITLES: Record<MessageKind, string> = {

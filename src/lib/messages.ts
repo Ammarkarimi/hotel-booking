@@ -2,6 +2,7 @@
 // in from the booking. A line whose field has nothing to show (for example no invoice yet) is left
 // out. No database code here, so screens and tests can use it.
 import { formatCurrency, formatDate, formatDateTime, label } from "./utils";
+import type { GroupSummary } from "./groups";
 
 export const MESSAGE_KINDS = ["booking", "checkIn", "checkOut"] as const;
 export type MessageKind = (typeof MESSAGE_KINDS)[number];
@@ -25,6 +26,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "Total: {total}",
     "Paid: {paid}",
     "Balance to pay: {balance}",
+    "Pay online: {pay_link}",
     "",
     "Questions? Call us on {hotel_phone}",
     "Thank you for choosing {hotel}!",
@@ -42,6 +44,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "Bill so far: {total}",
     "Paid: {paid}",
     "Balance: {balance}",
+    "Pay online: {pay_link}",
     "",
     "Please check out by {check_out_time} on {leaving_date}. Staying later may be charged extra.",
     "For anything you need, call the front desk on {hotel_phone}.",
@@ -59,6 +62,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "Total bill: {total}",
     "Paid: {paid}",
     "Balance: {balance}",
+    "Pay online: {pay_link}",
     "",
     "Thank you for staying at {hotel}! We hope to see you again.",
     "For your next booking call us on {hotel_phone}.",
@@ -83,6 +87,7 @@ export const MESSAGE_FIELDS: { key: string; label: string }[] = [
   { key: "paid", label: "Paid so far" },
   { key: "balance", label: "Balance to pay" },
   { key: "invoice_no", label: "Invoice number" },
+  { key: "pay_link", label: "Link to pay online (only while something is left to pay)" },
   { key: "hotel_phone", label: "Hotel phone" },
   { key: "hotel_address", label: "Hotel address" },
 ];
@@ -107,6 +112,10 @@ export interface MessageBooking {
   room: { roomNumber: string; type: string };
   folio: { grandTotal: number; netPaid: number; balance: number; nightCount: number };
   bill?: { invoiceNumber: string | null } | null;
+  /** For the payment link: the booking's secret page address. */
+  publicToken?: string;
+  /** Several rooms booked together: the message is about all the rooms and the group's totals. */
+  group?: GroupSummary | null;
 }
 
 export interface MessageHotel {
@@ -117,18 +126,28 @@ export interface MessageHotel {
   address?: string | null;
   currency?: string;
   timezone?: string;
+  /** The hotel takes payments online (UPI or Razorpay), and this website's address for the link. */
+  onlinePayments?: boolean;
+  siteUrl?: string;
 }
 
 export function messageValues(b: MessageBooking, h: MessageHotel): Record<string, string> {
   const money = (n: number) => formatCurrency(n, h.currency);
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  // A group's message is about every room: their numbers, types, people and the group's totals.
+  const g = b.group && b.group.rooms.length > 1 ? b.group : null;
+  const live = g ? g.rooms.filter((r) => r.status !== "cancelled" && r.status !== "no_show") : [];
+  const folio = g ? { grandTotal: g.total, netPaid: g.paid, balance: g.balance, nightCount: b.folio.nightCount } : b.folio;
+  const adults = g?.adults ?? b.adults;
+  const children = g?.children ?? b.children;
+  const balance = Math.max(0, folio.balance);
   return {
     hotel: h.hotelName,
     guest: b.guestName,
     booking_no: String(b.number),
-    room_type: label(b.room.type),
-    room_no: b.room.roomNumber,
-    guests: [plural(b.adults, "adult", "adults"), b.children ? plural(b.children, "child", "children") : ""].filter(Boolean).join(", "),
+    room_type: g ? roomTypesLabel(live.map((r) => r.roomType)) : label(b.room.type),
+    room_no: g ? live.map((r) => r.roomNumber).join(", ") : b.room.roomNumber,
+    guests: [plural(adults, "adult", "adults"), children ? plural(children, "child", "children") : ""].filter(Boolean).join(", "),
     arrival_date: formatDate(b.checkInDate),
     leaving_date: formatDate(b.checkOutDate),
     nights: plural(b.folio.nightCount, "night", "nights"),
@@ -136,10 +155,11 @@ export function messageValues(b: MessageBooking, h: MessageHotel): Record<string
     check_out_time: clockLabel(h.checkOutTime),
     checked_in_at: b.actualCheckIn ? formatDateTime(b.actualCheckIn, h.timezone) : "",
     checked_out_at: b.actualCheckOut ? formatDateTime(b.actualCheckOut, h.timezone) : "",
-    total: money(b.folio.grandTotal),
-    paid: money(b.folio.netPaid),
-    balance: money(Math.max(0, b.folio.balance)),
+    total: money(folio.grandTotal),
+    paid: money(folio.netPaid),
+    balance: money(balance),
     invoice_no: b.bill?.invoiceNumber ?? "",
+    pay_link: h.onlinePayments && h.siteUrl && b.publicToken && balance >= 1 ? `${h.siteUrl.replace(/\/$/, "")}/pay/${b.publicToken}` : "",
     hotel_phone: h.phone ?? "",
     hotel_address: h.address ?? "",
   };
@@ -168,7 +188,17 @@ export function fillMessage(template: string, values: Record<string, string>) {
 
 /** The message to send for a booking: the owner's wording if set, otherwise the default. */
 export function bookingMessage(kind: MessageKind, b: MessageBooking, h: MessageHotel & { messages?: Partial<Record<MessageKind, string | null>> }) {
-  return fillMessage(h.messages?.[kind]?.trim() || DEFAULT_MESSAGES[kind], messageValues(b, h));
+  let template = h.messages?.[kind]?.trim() || DEFAULT_MESSAGES[kind];
+  // "Deluxe room" reads "2 Deluxe, 1 Double rooms" for a group.
+  if (b.group && b.group.rooms.length > 1) template = template.replace(/\{room_type\} room\b/g, "{room_type} rooms");
+  return fillMessage(template, messageValues(b, h));
+}
+
+/** "2 Deluxe, 1 Double" for the rooms of a group. */
+export function roomTypesLabel(types: string[]) {
+  const counts = new Map<string, number>();
+  for (const t of types) counts.set(t, (counts.get(t) ?? 0) + 1);
+  return [...counts].map(([t, n]) => `${n} ${label(t)}`).join(", ");
 }
 
 /** Which message suits a booking now: confirmation before arrival, welcome while staying, thanks after. */

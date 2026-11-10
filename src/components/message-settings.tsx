@@ -5,6 +5,7 @@ import { MessageCircle, RotateCcw } from "lucide-react";
 import { Button, Card, CardContent, CardHeader, Tip } from "@/components/ui";
 import { DEFAULT_MESSAGES, MESSAGE_FIELDS, MESSAGE_KINDS, MESSAGE_TITLES, bookingMessage, type MessageKind } from "@/lib/messages";
 import { addDays } from "@/lib/dates";
+import { onlinePaymentWays } from "@/lib/online-payments";
 import type { SettingsDTO } from "@/lib/types";
 
 const FIELD_OF: Record<MessageKind, "msgBooking" | "msgCheckIn" | "msgCheckOut"> = { booking: "msgBooking", checkIn: "msgCheckIn", checkOut: "msgCheckOut" };
@@ -24,6 +25,7 @@ function sampleBooking(kind: MessageKind, today: string) {
     room: { roomNumber: "204", type: "deluxe" },
     folio: { grandTotal: 10080, netPaid: kind === "checkOut" ? 10080 : 2000, balance: kind === "checkOut" ? 0 : 8080, nightCount: 2 },
     bill: kind === "checkOut" ? { invoiceNumber: "INV-1022" } : null,
+    publicToken: "c1a2b3sample",
   };
 }
 
@@ -61,6 +63,8 @@ function MessageEditor({ kind, s, set, today }: { kind: MessageKind; s: Settings
     currency: s.currency,
     timezone: s.timezone,
     messages: { [kind]: text },
+    onlinePayments: onlinePaymentWays({ ...s, razorpayKeySecret: s.razorpaySecretSet }).any,
+    siteUrl: typeof window === "undefined" ? "" : window.location.origin,
   });
 
   // Details typed by hand that the software does not know, e.g. {room} instead of {room_no}.

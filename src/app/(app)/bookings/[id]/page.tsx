@@ -8,6 +8,7 @@ import {
   CalendarClock,
   DoorOpen,
   FileText,
+  Link2,
   LogIn,
   MessageCircle,
   Pencil,
@@ -28,6 +29,8 @@ import { Badge, Button, Card, CardContent, CardHeader, CountInput, EmptyState, F
 import { GstPicker, MethodPicker, PaymentDialog, useBookingActions } from "@/components/booking-actions";
 import { IdCheckCard } from "@/components/id-checks";
 import { useGuestMessage } from "@/components/guest-message";
+import { GroupCard, GroupPaymentDialog } from "@/components/group-booking";
+import { PaymentLinkDialog } from "@/components/payment-link";
 import { messageKindFor } from "@/lib/messages";
 import { VEHICLE_LABELS, VEHICLE_TYPES, type VehicleType } from "@/lib/guest-form";
 import { PathikButton } from "@/components/pathik";
@@ -687,6 +690,8 @@ export default function BookingDetailPage() {
   const [refundOpen, setRefundOpen] = useState(false);
   const [payoutOpen, setPayoutOpen] = useState(false);
   const [showNights, setShowNights] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [groupPayOpen, setGroupPayOpen] = useState(false);
 
   const load = useCallback(() => {
     api<BookingDetailDTO>(`/api/bookings/${id}`)
@@ -695,6 +700,18 @@ export default function BookingDetailPage() {
   }, [id]);
 
   useEffect(() => load(), [load]);
+  // A guest who paid through a Razorpay link: their payment is added when the booking opens.
+  useEffect(() => {
+    if (!shell.onlinePayments) return;
+    api<{ recorded: number }>(`/api/bookings/${id}/online-payments`, { method: "POST" })
+      .then((r) => {
+        if (r.recorded > 0) {
+          toast(`${formatCurrency(r.recorded)} paid online was added to the bill`);
+          load();
+        }
+      })
+      .catch(() => undefined);
+  }, [id, shell.onlinePayments, toast, load]);
   const actions = useBookingActions(() => load());
 
   if (error) return <EmptyState title="Booking not found" description={error} action={<Button onClick={() => router.push("/bookings")}>All bookings</Button>} />;
@@ -704,6 +721,9 @@ export default function BookingDetailPage() {
   const open = b.status === "reserved" || b.status === "checked_in";
   const pState = paymentState(f.grandTotal, f.netPaid);
   const s = b.settings;
+  const group = b.group && b.group.rooms.length > 1 ? b.group : null;
+  // Rooms booked together are asked to pay together.
+  const dueOnline = group ? group.balance : f.balance;
 
   // The message for where the guest is now: confirmation, welcome while staying, thanks after leaving.
   const shareKind = messageKindFor(b.status);
@@ -778,6 +798,11 @@ export default function BookingDetailPage() {
             {f.balance > 0.5 && b.status !== "cancelled" && b.status !== "no_show" && (
               <Button size="lg" variant={b.status === "checked_out" ? "success" : "outline"} onClick={() => actions.takePayment(b)}>
                 <Wallet className="h-5 w-5" /> Take payment
+              </Button>
+            )}
+            {shell.onlinePayments && dueOnline > 0.5 && b.status !== "cancelled" && b.status !== "no_show" && (
+              <Button size="lg" variant="outline" onClick={() => setLinkOpen(true)}>
+                <Link2 className="h-5 w-5" /> Payment link
               </Button>
             )}
           </div>
@@ -919,6 +944,7 @@ export default function BookingDetailPage() {
         </div>
 
         <div className="space-y-6">
+          {group && <GroupCard group={group} currentId={b.id} onPay={() => setGroupPayOpen(true)} />}
           <Card>
             <CardHeader title="Guest" action={<Link href={`/guests/${b.guest.id}`} className="text-sm font-semibold text-primary-600 hover:underline">Open profile</Link>} />
             <CardContent className="space-y-2 text-[15px]">
@@ -1078,6 +1104,8 @@ export default function BookingDetailPage() {
       <EditBookingDialog booking={b} open={editOpen} onClose={() => setEditOpen(false)} onDone={load} />
       {isAdmin && <PayoutDialog booking={b} open={payoutOpen} onClose={() => setPayoutOpen(false)} onDone={load} />}
       <PaymentDialog booking={b} open={refundOpen} refund onClose={() => setRefundOpen(false)} onDone={() => load()} />
+      {shell.onlinePayments && <PaymentLinkDialog open={linkOpen} onClose={() => setLinkOpen(false)} booking={b} due={dueOnline} />}
+      {group && <GroupPaymentDialog bookingId={b.id} group={group} open={groupPayOpen} onClose={() => setGroupPayOpen(false)} onDone={load} />}
       {actions.dialogs}
     </div>
   );

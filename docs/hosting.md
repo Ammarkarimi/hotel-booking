@@ -31,6 +31,7 @@ After changing any of them, **redeploy**: *Deployments* → latest → ⋯ → *
 |---|---|---|
 | `DATABASE_URL` | Yes | PostgreSQL connection. Set automatically when a database is connected under *Storage* |
 | `JWT_SECRET` | Yes | Secret used to sign everyone’s sign-in sessions. A long random string |
+| `SETTINGS_SECRET` | No, but recommended | Locks (encrypts) secrets hotels type into Settings, such as their Razorpay key secret. When it is not set, `JWT_SECRET` is used. A long random string, different from `JWT_SECRET` |
 | `BLOB_READ_WRITE_TOKEN` | Only until old ID copies are deleted | Vercel Blob, where ID copies used to be saved. The app deletes the old files in the background after migration `20261127000000_remove_id_copies`; once the Blob store is empty it can be disconnected |
 | `PLATFORM_ADMIN_EMAIL` | For `/platform` | Your owner-panel email |
 | `PLATFORM_ADMIN_PASSWORD` | For `/platform` | Your owner-panel password, at least 10 characters |
@@ -61,7 +62,9 @@ login in Vercel and GitHub).
 ## Change `JWT_SECRET`
 
 Changing it signs **everyone** out: all hotels’ staff and you. Do it only if
-you think it has leaked. Generate a new value (for example with
+you think it has leaked. If `SETTINGS_SECRET` is not set, it also unlocks the
+hotels’ saved Razorpay secrets, so each owner must type theirs again in Settings →
+Payments (set `SETTINGS_SECRET` to avoid this). Generate a new value (for example with
 `openssl rand -base64 32`, or any password generator set to 40+ characters),
 save it, and redeploy.
 

@@ -15,6 +15,27 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/bookings/new", text: "Make a booking now" },
   },
   {
+    q: "How do I book several rooms for one family or group?",
+    steps: [
+      "Press “New booking”, choose the dates and press “Next: choose a room”.",
+      "Turn on “Book more than one room” and tap every room. The first room you tap is the guest's own; tap a room again to take it off.",
+      "Type the guest's details once. On the last step choose how many adults are in each of the other rooms. A price typed there is used for every room.",
+      "An advance is shared over the rooms' bills. Press “Confirm … rooms”.",
+      "Each room has its own booking, bill and invoice. On any of them, the “Group booking” box lists all the rooms, with “Take payment for all rooms” and the group bill.",
+    ],
+    link: { href: "/bookings/new", text: "Make a booking now" },
+  },
+  {
+    q: "How do I ask a guest to pay online?",
+    steps: [
+      "The owner first adds the hotel's UPI ID (and Razorpay, if you use it) in Settings → Payments.",
+      "Open the booking and press “Payment link”. Leave the full amount, or type a smaller amount for an advance, and press “Send on WhatsApp”.",
+      "The guest opens the link and pays by UPI (QR code or the UPI app button), or presses “Pay online” for Razorpay.",
+      "Paid through Razorpay: the payment is added to the booking by itself. Paid by UPI to your own ID: check your bank or UPI app, then press “Take payment” as usual.",
+      "Booking confirmations and welcome messages also carry the link while money is still due.",
+    ],
+  },
+  {
     q: "A guest walked in without a booking",
     steps: ["On the Dashboard, press “Walk-in” in the toolbar (or the F3 key).", "Follow the same steps as a booking. The guest is checked in as soon as you confirm."],
     link: { href: "/bookings/new?walkin=1", text: "Walk-in guest" },
@@ -181,6 +202,16 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/reports", text: "Open reports" },
   },
   {
+    q: "For owners: sending the accounts to Tally",
+    steps: [
+      "Settings → Payments & Tally: type your ledger names as they are in your Tally company (or keep the suggested ones). Save.",
+      "Reports: choose the period (for example last month), then under “Download for Tally” press “1. Ledgers” and “2. Vouchers”.",
+      "In TallyPrime open your company. Import → Masters, choose file 1. Then Import → Transactions, choose file 2.",
+      "Each GST invoice becomes a Sales voucher (room sales, other sales, CGST, SGST), each payment a Receipt, each refund a Payment voucher. Guests with a GSTIN get their own ledger. Import each period once.",
+    ],
+    link: { href: "/reports", text: "Open reports" },
+  },
+  {
     q: "For owners: setting up the hotel",
     steps: [
       "Settings → Hotel details: name, address, phone, GSTIN, check-in and check-out time.",
@@ -188,6 +219,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Settings → Prices & tax: choose Indian GST slabs or a fixed tax, weekend price change and festival prices.",
       "Settings → Staff: give each staff member their own sign-in. Front-desk accounts cannot see reports or delete records.",
       "Settings → Online booking: copy your booking link and share it on WhatsApp, Instagram and Google Maps.",
+      "Settings → Payments: add your UPI ID so guests can pay from a link or a QR code on the bill. Add Razorpay too if you have an account.",
     ],
   },
 ];

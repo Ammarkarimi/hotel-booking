@@ -1,8 +1,9 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withModuleAdmin, csvResponse, fail } from "@/lib/api";
 import { getBillingContext } from "@/lib/settings";
-import { addDays, dateFromKey, diffDays, isDateKey } from "@/lib/dates";
+import { addDays, dateFromKey, diffDays, isDateKey, todayKey } from "@/lib/dates";
+import { parseTallyLedgers, tallyMastersXml, tallyVouchersXml } from "@/lib/tally";
 import { defaultGroupBy, type GroupBy } from "@/lib/periods";
 import { buildReport } from "@/lib/reports";
 import { bookingInclude, serializeBooking } from "@/lib/bookings";
@@ -21,6 +22,55 @@ export async function GET(request: NextRequest) {
     const from = isDateKey(searchParams.get("from")) ? searchParams.get("from")! : addDays(to, -29);
     if (to < from || diffDays(from, to) > 366) fail("Please choose a valid period of one year or less");
     const suffix = `${from}_to_${to}.csv`;
+
+    if (type === "tally_masters" || type === "tally_vouchers") {
+      // Files for Tally: the ledgers first (Import → Masters), then the vouchers (Import → Transactions).
+      const local = (d: Date) => todayKey(ctx.settings.timezone, d);
+      const widened = { gte: dateFromKey(addDays(from, -1)), lt: dateFromKey(addDays(to, 2)) };
+      const [bills, payments] = await Promise.all([
+        prisma.bill.findMany({ where: { generatedAt: widened, invoiceNumber: { not: null } }, include: { booking: { include: { guest: true, room: true } } }, orderBy: { generatedAt: "asc" } }),
+        prisma.payment.findMany({ where: { status: "completed", paidAt: widened }, include: { booking: { include: { guest: true, bill: true } } }, orderBy: { paidAt: "asc" } }),
+      ]);
+      const inRange = (d: Date) => local(d) >= from && local(d) <= to;
+      const data = {
+        company: ctx.settings.hotelName,
+        ledgers: parseTallyLedgers(ctx.settings.tallyLedgers),
+        invoices: bills.filter((b) => inRange(b.generatedAt)).map((b) => ({
+          id: b.id,
+          invoiceNumber: b.invoiceNumber!,
+          date: local(b.generatedAt),
+          bookingNumber: b.booking.number,
+          guestName: `${b.booking.guest.firstName} ${b.booking.guest.lastName}`.trim(),
+          company: b.booking.guest.company,
+          gstin: b.booking.guest.gstin,
+          state: b.booking.guest.state,
+          room: b.booking.room.roomNumber,
+          roomTaxable: round2(b.roomCharges - b.discount),
+          extrasTaxable: b.additionalCharges,
+          tax: b.taxAmount,
+        })),
+        payments: payments.filter((p) => inRange(p.paidAt)).map((p) => ({
+          id: p.id,
+          date: local(p.paidAt),
+          bookingNumber: p.booking.number,
+          invoiceNumber: p.booking.bill?.invoiceNumber ?? null,
+          guestName: `${p.booking.guest.firstName} ${p.booking.guest.lastName}`.trim(),
+          company: p.booking.guest.company,
+          gstin: p.booking.guest.gstin,
+          amount: p.amount,
+          method: p.method,
+          type: p.type,
+          reference: p.reference,
+        })),
+      };
+      const masters = type === "tally_masters";
+      return new NextResponse(masters ? tallyMastersXml(data) : tallyVouchersXml(data), {
+        headers: {
+          "Content-Type": "application/xml; charset=utf-8",
+          "Content-Disposition": `attachment; filename="tally_${masters ? "1_ledgers" : "2_vouchers"}_${from}_to_${to}.xml"`,
+        },
+      });
+    }
 
     if (type === "bookings") {
       const bookings = await prisma.booking.findMany({

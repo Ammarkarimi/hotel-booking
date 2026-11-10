@@ -105,6 +105,7 @@ function BookingsList() {
                     </p>
                     <p className="flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                       #{b.number} · {label(b.source)} <StatusBadge status={b.status} />
+                      {b.groupId && <Badge variant="purple">Group</Badge>}
                     </p>
                   </Link>
                   <div className="col-span-1 text-[15px] font-semibold">

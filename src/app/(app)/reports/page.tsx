@@ -555,6 +555,27 @@ export default function ReportsPage() {
             </CardContent>
           </Card>
 
+          <Card className="no-print">
+            <CardHeader
+              title="Download for Tally"
+              description="For your accountant's TallyPrime: this period's GST invoices as Sales vouchers, and payments received and refunds as Receipt and Payment vouchers."
+            />
+            <CardContent className="space-y-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button variant="outline" onClick={() => download("tally_masters")}>
+                  <Download className="h-4 w-4" /> 1. Ledgers (import first)
+                </Button>
+                <Button variant="outline" onClick={() => download("tally_vouchers")}>
+                  <Download className="h-4 w-4" /> 2. Vouchers
+                </Button>
+              </div>
+              <p className="text-sm text-slate-500">
+                In TallyPrime open the company, then <b>Import → Masters</b> and choose file 1, then <b>Import → Transactions</b> and choose file 2. Import each period once. The ledger names can
+                be changed in <Link href="/settings?tab=payments" className="font-semibold text-primary-600 hover:underline">Settings → Payments &amp; Tally</Link>.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader title={`Guests who still owe money (${data.outstanding.length})`} description="Includes guests staying now and guests who already left." />
             {data.outstanding.length === 0 ? (

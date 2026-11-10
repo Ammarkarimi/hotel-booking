@@ -51,6 +51,9 @@ jump to it). The bar at the bottom shows the date, time and these keys.
 
 1. **Dates.** Quick buttons for “1 night”, “2 nights” and so on.
 2. **Room.** Only free rooms are shown, each with its total price.
+   **Book more than one room** (not for a walk-in): for a family or group, tap
+   every room. The first room tapped is the guest's own (numbered 1); tapping a
+   room again takes it off. See *Group bookings* below.
 3. **Guest.** Search a returning guest by name or phone, or type a new one, with
    everything the police register (Pathik) asks for: last name, mobile, email,
    house and street, area/locality, city,
@@ -81,6 +84,19 @@ Afterwards, **Send on WhatsApp** sends the guest a confirmation. It names the
 kind of room (for example “Deluxe room”), not the room number, so the hotel can
 still move the guest before arrival. The printed confirmation does the same.
 **Walk-in guest** uses the same steps and checks the guest in immediately.
+
+**Group bookings.** With several rooms, each room gets its own booking (its own
+number, bill and invoice), tied together as a group: the same guest, dates, source
+and GST, and a price typed on step 4 is used for every room (left empty, each room
+keeps its normal price). The discount, the other adults' names and the ID checks
+typed during booking belong to the first room; on step 4 choose how many adults
+are in each other room, and add their names on each room's booking later. An
+advance is shared over the rooms' bills, the first room first. The confirmation
+message lists every room with the group's total. Each room is checked in and out
+on its own booking. On any of them a **Group booking** box lists all the rooms with
+their status and balance, the group total, **Take payment for all rooms** (one
+payment shared over the rooms' bills; anything extra stays on the room you are on)
+and **Group bill** (all rooms on one sheet; not a tax invoice).
 
 **No double bookings:** the room is locked while a booking is saved, so two
 people can never book the same room for the same night.
@@ -115,6 +131,9 @@ Open any booking (search at the top of the screen) to:
   pays (worked out from the deductions, or typed in), then ticks when the money
   reaches the bank, with the UTR. The bill and GST invoice stay on the gross
   amount; the payout is for the owner's accounts only
+- **Payment link** (when the hotel takes online payments): a WhatsApp message with
+  the booking's payment page, for the whole balance or a smaller advance (a group:
+  the group's balance). See *Online payments* below
 - print the **tax invoice**, the **proforma bill** (during the stay), the
   **booking confirmation** and the **guest registration card**
 
@@ -317,6 +336,15 @@ bookings, payments, GST invoices, room types, and **booking site payouts** (one
 row per stay with the site's booking ID, gross bill, each deduction, net, and
 received date and UTR, to tick off against the site's own statement).
 
+**Download for Tally:** two files for TallyPrime. **1. Ledgers** (Import → Masters)
+makes the ledgers named in Settings → Payments & Tally, plus one Sundry Debtors
+ledger with the GSTIN for each guest company with a GSTIN. **2. Vouchers** (Import →
+Transactions) has a **Sales** voucher for each GST invoice made in the period (guest
+or company Dr; room sales, food and other sales, CGST and SGST Cr; invoice number and
+date), a **Receipt** for each payment (Cash, Bank, or Booking Sites for prepaid
+booking-site stays Dr; guest Cr) and a **Payment** voucher for each refund. Import
+each period once.
+
 - **Bookings** has three columns for Edit bill: **First total (as first agreed)**,
   **Final total (after edit)** and **Difference** (final minus first, so ₹1,500
   lowered to ₹1,200 shows −300), with a total row. A bill never edited shows the
@@ -331,6 +359,7 @@ received date and UTR, to tick off against the site's own statement).
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; **Room prices include GST** (on: a room priced ₹1,800 costs the guest ₹1,800 and the bill shows ₹1,714.29 + ₹85.71 GST; off: GST is added on top, ₹1,800 + ₹90; a change applies only to bookings made afterwards); weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
 | Rate tips | Rate tips on or off, the time tips start (1 pm by default), the biggest cut a tip may suggest (20% by default), whether front-desk staff see tips, and the lowest price you accept for each room type (see below) |
+| Payments & Tally | **Online payments:** the hotel's UPI ID and the name guests see, and Razorpay (key ID and key secret, checked with Razorpay when saved; the secret is kept encrypted and never shown again; Disconnect removes it). **Tally ledger names** for the Tally files |
 | WhatsApp messages | The wording of the three messages staff send guests: booking confirmation, welcome at check-in, thank-you at check-out (see below) |
 | Staff | Shifts on or off, how many people work at the front desk at the same time, and your WhatsApp number for shift reports; add staff, choose owner / manager or front desk, reset passwords, switch accounts off |
 | Activity history | Who did what and when: bookings, payments, check-ins, setting changes, sign-ins, and password resets done by you from `/platform` |
@@ -460,6 +489,32 @@ Express check-in on WhatsApp asks for the area/locality, district, the next city
 how the guest travels too, and New booking has the same boxes for walk-ins, so most
 stays need nothing typed in Pathik. Hotels outside Gujarat can switch Pathik off
 in Settings → Hotel details.
+
+## Online payments
+
+Guests can pay from a link sent on WhatsApp, for the whole bill or an advance.
+The owner sets it up in **Settings → Payments**, with one or both of:
+
+- **UPI to your own account** (no charges): your UPI ID, for example
+  `sunrise@okaxis`. The payment page shows a QR code with the amount filled in and,
+  on a phone, a button that opens the guest's UPI app. Invoices, booking
+  confirmations and group bills with money still due print the same QR code.
+  UPI does not tell the software that the guest paid, so check your bank or UPI
+  app and press **Take payment** as usual. The page asks the guest to send their
+  payment screenshot on WhatsApp.
+- **Razorpay** (UPI, cards, net banking; Razorpay charges its own fee): your key
+  ID and key secret from the Razorpay dashboard. The guest presses **Pay online**,
+  pays on Razorpay's page and comes back to a thank-you. The payment is added to
+  the booking by itself (method UPI / card / bank transfer, "by Paid online",
+  Razorpay's payment ID as the reference), and also when the booking or the
+  Payments screen is opened, and every few minutes on the Dashboard, in case the
+  guest closed the page. A group's payment is shared over its rooms.
+
+To send a link, open the booking and press **Payment link**: leave the full amount
+or type an advance, then **Send on WhatsApp** or **Copy link**. The booking
+confirmation, welcome and thank-you messages also carry the link (`{pay_link}`)
+while money is still due; owners who changed the wording can add `{pay_link}`
+themselves.
 
 ## WhatsApp messages to guests
 

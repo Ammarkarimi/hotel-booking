@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
@@ -9,6 +10,8 @@ import {
   assertRoomFree,
   bookingInclude,
   bookingLabel,
+  folioFor,
+  groupOf,
   lockRooms,
   nextBookingNumber,
   parseStayDate,
@@ -17,6 +20,7 @@ import {
   validateStay,
 } from "@/lib/bookings";
 import { logActivity } from "@/lib/activity";
+import { splitAcross } from "@/lib/groups";
 import { BOOKING_SOURCES, DOCUMENT_TYPES, GUEST_PAYMENT_METHODS } from "@/lib/utils";
 import { assertOnShift } from "@/lib/shift-api";
 import { VEHICLE_TYPES, deskPathikMissing, hasOwnVehicle, type GuestFormDetails } from "@/lib/guest-form";
@@ -117,6 +121,12 @@ const createSchema = z.object({
     .max(49)
     .optional(),
   roomId: z.string().min(1, "Please choose a room"),
+  // More rooms for the same guest and dates (a family or a group). Each room gets its own booking,
+  // tied together by a groupId. The guest's details, ID checks and companions go with the first room.
+  moreRooms: z
+    .array(z.object({ roomId: z.string().min(1), adults: z.coerce.number().int().min(1).max(50).default(1), children: z.coerce.number().int().min(0).max(50).default(0) }))
+    .max(30, "Please book at most 31 rooms at once")
+    .default([]),
   checkInDate: z.string(),
   checkOutDate: z.string(),
   adults: z.coerce.number().int().min(1).max(50).default(1),
@@ -156,14 +166,20 @@ export async function POST(request: NextRequest) {
       fail("A guest can only be checked in now if the arrival date is today");
     }
     if (!body.guestId && !body.guest && !body.guestFormId) fail("Please choose or add a guest");
+    const roomIds = [body.roomId, ...body.moreRooms.map((r) => r.roomId)];
+    if (new Set(roomIds).size !== roomIds.length) fail("The same room was chosen twice. Please check the rooms");
+    if (body.moreRooms.length && body.checkInNow) fail("Book the rooms first, then check each room in from its booking");
     const companions = body.guestFormId ? [] : (body.companions ?? []).filter((c) => c.name);
     if (companions.length > body.adults - 1) fail("There are more names than adults. Please check the number of adults");
     const names = companions.map((c) => c.name.toLowerCase());
     if (new Set(names).size !== names.length) fail("Two adults have the same name. Please add a surname so they can be told apart");
 
     const booking = await prisma.$transaction(async (tx) => {
-      await lockRooms(tx, [body.roomId]);
+      await lockRooms(tx, roomIds);
       const room = await assertRoomFree({ roomId: body.roomId, checkIn, checkOut, today: ctx.today }, tx);
+      const moreRooms = [];
+      for (const r of body.moreRooms) moreRooms.push({ ...r, room: await assertRoomFree({ roomId: r.roomId, checkIn, checkOut, today: ctx.today }, tx) });
+      const groupId = moreRooms.length ? randomUUID() : null;
 
       let guestId = body.guestId;
       const form = body.guestFormId ? await claimGuestForm(tx, body.guestFormId, user.name) : null;
@@ -265,23 +281,63 @@ export async function POST(request: NextRequest) {
               : null,
           }),
           createdById: user.id,
+          groupId,
           status: body.checkInNow ? "checked_in" : "reserved",
           actualCheckIn: body.checkInNow ? new Date() : null,
         },
       });
 
-      if (body.advance && body.advance.amount > 0) {
-        await tx.payment.create({
+      // The other rooms of a group: same guest, dates, price deal and GST; their own people.
+      // Names of the other adults and their ID checks are added on each room's booking.
+      for (const r of moreRooms) {
+        await tx.booking.create({
           data: {
             hotelId: currentHotelId(),
-            bookingId: created.id,
-            amount: body.advance.amount,
-            method: body.advance.method,
-            type: "advance",
-            reference: body.advance.reference || null,
-            receivedBy: user.name,
+            number: await nextBookingNumber(tx),
+            guestId: guest.id,
+            roomId: r.room.id,
+            checkInDate: dateFromKey(checkIn),
+            checkOutDate: dateFromKey(checkOut),
+            adults: r.adults,
+            children: r.children,
+            source: body.source,
+            ratePerNight: body.ratePerNight ?? r.room.pricePerNight,
+            fixedRate: body.ratePerNight !== undefined && body.ratePerNight !== r.room.pricePerNight,
+            gstRate: body.gstRate ?? null,
+            pricesIncludeTax: ctx.settings.roomPricesIncludeTax,
+            notes: body.notes || null,
+            otaReference: body.otaReference || null,
+            comingFrom: created.comingFrom,
+            goingTo: created.goingTo,
+            vehicleType: created.vehicleType,
+            vehicleNumber: created.vehicleNumber,
+            createdById: user.id,
+            groupId,
+            status: "reserved",
           },
         });
+      }
+
+      if (body.advance && body.advance.amount > 0) {
+        // A group's advance is shared out over the rooms' bills, the first room first.
+        const rooms = groupId ? await tx.booking.findMany({ where: { groupId }, include: bookingInclude, orderBy: { number: "asc" } }) : [];
+        const shares = groupId
+          ? splitAcross(body.advance.amount, rooms.map((b) => ({ id: b.id, balance: folioFor(b, ctx).balance })))
+          : [{ id: created.id, amount: body.advance.amount }];
+        for (const share of shares) {
+          await tx.payment.create({
+            data: {
+              hotelId: currentHotelId(),
+              bookingId: share.id,
+              amount: share.amount,
+              method: body.advance.method,
+              type: "advance",
+              reference: body.advance.reference || null,
+              ...(groupId && { notes: `Group advance of ${body.advance.amount}` }),
+              receivedBy: user.name,
+            },
+          });
+        }
       }
 
       if (body.idChecks.length) {
@@ -306,15 +362,18 @@ export async function POST(request: NextRequest) {
       return tx.booking.findUniqueOrThrow({ where: { id: created.id }, include: bookingInclude });
     });
 
+    const group = await groupOf(booking, ctx);
     await logActivity(
       user,
       body.checkInNow ? "Walk-in checked in" : "New booking",
-      `${bookingLabel(booking)}, ${checkIn} to ${checkOut}`
+      group
+        ? `Group of ${group.rooms.length} rooms: ${group.rooms.map((r) => `#${r.number} (Room ${r.roomNumber})`).join(", ")} for ${booking.guest.firstName} ${booking.guest.lastName}`.trimEnd() + `, ${checkIn} to ${checkOut}`
+        : `${bookingLabel(booking)}, ${checkIn} to ${checkOut}`
     );
     if (body.advance && body.advance.amount > 0) {
       await logActivity(user, "Payment received", `${bookingLabel(booking)}: ${body.advance.amount} by ${body.advance.method}`);
     }
-    return NextResponse.json(serializeBooking(booking, ctx), { status: 201 });
+    return NextResponse.json({ ...serializeBooking(booking, ctx), group }, { status: 201 });
   });
 }
 

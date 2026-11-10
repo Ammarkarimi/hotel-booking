@@ -58,6 +58,7 @@ const HOTEL_MODELS = new Set([
   "GuestForm",
   "IdCheck",
   "RateTipSeen",
+  "PaymentLink",
 ]);
 
 type Args = Record<string, unknown> & { where?: object; data?: unknown; create?: object };

@@ -45,6 +45,7 @@ model Hotel {
   idChecks             IdCheck[]
   rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
+  paymentLinks         PaymentLink[]
 }
 
 // A package the software provider sells, such as Basic, Standard or Premium: the modules
@@ -135,6 +136,13 @@ model HotelSettings {
   rateTipsStaff       Boolean  @default(true) // front-desk staff see the tips too, not only the owner
   pathik              Boolean  @default(true) // show "Fill in Pathik" (the Gujarat police guest register)
   roomPricesIncludeTax Boolean @default(false) // the room prices the owner enters already include the room GST
+  // Online payments (src/lib/online-payments.ts): guests pay by UPI to this ID, or through Razorpay.
+  upiId               String? // the hotel's UPI ID, e.g. sunrise@okaxis
+  upiName             String? // the name shown in the guest's UPI app; empty = the hotel name
+  razorpayKeyId       String?
+  razorpayKeySecret   String? // encrypted (src/lib/secret-box.ts); never sent to the screens
+  // Tally export: the ledger names the hotel's accountant uses (src/lib/tally.ts); {} = the defaults.
+  tallyLedgers        String  @default("{}")
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -259,6 +267,8 @@ model Booking {
   pathikAt            DateTime? // when the front desk marked the stay as entered in Pathik
   pathikByName        String?
   companions          String? // JSON: [{ name, phone? }] for the other adults in the room
+  // Several rooms booked together (a family or a group): every booking of the group has the same groupId.
+  groupId             String?
   originalPrice       String? // JSON: the price first agreed, saved on the first Edit bill: { ratePerNight, fixedRate, discount, gstRate }; null = bill never edited
   createdById         String?
   createdAt           DateTime  @default(now())
@@ -279,9 +289,11 @@ model Booking {
   charges             Charge[]
   bill                Bill?
   idChecks            IdCheck[]
+  paymentLinks        PaymentLink[]
   hotel               Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, number])
+  @@index([hotelId, groupId])
   @@index([roomId, checkInDate, checkOutDate])
   @@index([hotelId, status])
 }
@@ -321,6 +333,25 @@ model Payment {
   hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, paidAt])
+}
+
+// A Razorpay payment link sent to a guest. When it is paid the payment is written down on the
+// booking (src/lib/online-payments.ts), once, using Razorpay's payment ID as the reference.
+model PaymentLink {
+  id        String   @id @default(cuid())
+  hotelId   String
+  bookingId String
+  linkId    String   @unique // Razorpay's plink_… ID
+  shortUrl  String
+  amount    Float
+  status    String   @default("created") // created, partially_paid, paid, cancelled, expired
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 // Final invoice snapshot created when the guest checks out.
