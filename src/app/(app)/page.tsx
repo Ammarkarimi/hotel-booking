@@ -315,6 +315,23 @@ export default function DashboardPage() {
     return () => clearInterval(t);
   }, [onlineOn, load]);
 
+  // Booking sites: bring their bookings in when the Dashboard opens, and say when one needs a person.
+  const channelsOn = has("channel_manager");
+  const [siteIssues, setSiteIssues] = useState(0);
+  useEffect(() => {
+    if (!channelsOn) return;
+    const check = () =>
+      api<{ openIssues: number; calendars: { created: number; updated: number; cancelled: number } | null; channex: { pulled: number } | null }>("/api/channels/sync", { method: "POST", body: {} })
+        .then((r) => {
+          setSiteIssues(r.openIssues);
+          if ((r.calendars?.created ?? 0) + (r.calendars?.updated ?? 0) + (r.calendars?.cancelled ?? 0) + (r.channex?.pulled ?? 0) > 0) load();
+        })
+        .catch(() => undefined);
+    check();
+    const t = setInterval(check, 5 * 60_000);
+    return () => clearInterval(t);
+  }, [channelsOn, load]);
+
   const actions = useBookingActions(() => load());
 
   if (error && !data) return <EmptyState title="Could not load today's information" description={error} action={<Button onClick={load}>Try again</Button>} />;
@@ -350,6 +367,22 @@ export default function DashboardPage() {
             Day sheet
           </a>{" "}
           and enter them when the internet is back.
+        </div>
+      )}
+
+      {siteIssues > 0 && (
+        <div role="alert" className="flex flex-col gap-2 border border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            <b>
+              Booking sites: {siteIssues} thing{siteIssues === 1 ? "" : "s"} to look at.
+            </b>{" "}
+            A booking from a site could not be put in a room by itself.
+          </p>
+          <Link href="/channels" className="shrink-0">
+            <Button size="sm" variant="outline">
+              See what
+            </Button>
+          </Link>
         </div>
       )}
 
