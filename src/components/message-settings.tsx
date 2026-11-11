@@ -64,6 +64,7 @@ function MessageEditor({ kind, s, set, today }: { kind: MessageKind; s: Settings
     timezone: s.timezone,
     messages: { [kind]: text },
     onlinePayments: onlinePaymentWays({ ...s, razorpayKeySecret: s.razorpaySecretSet }).any,
+    reviewLink: s.reviewLink || "https://g.page/r/your-hotel/review",
     siteUrl: typeof window === "undefined" ? "" : window.location.origin,
   });
 

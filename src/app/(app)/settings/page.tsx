@@ -82,6 +82,9 @@ function HotelTab({ s, set }: { s: SettingsDTO; set: (p: Partial<SettingsDTO>) =
         <Field label="Email" optional>
           <Input type="email" value={s.email ?? ""} onChange={(e) => set({ email: e.target.value })} />
         </Field>
+        <Field label="Google review link" optional hint="Sent in the thank-you message at check-out. In Google Maps open your hotel, press “Ask for reviews” and copy the link.">
+          <Input type="url" value={s.reviewLink ?? ""} onChange={(e) => set({ reviewLink: e.target.value.trim() })} placeholder="https://g.page/r/…/review" maxLength={300} />
+        </Field>
         <Field label="GSTIN" optional hint="Your GST number, printed on invoices.">
           <Input value={s.gstin ?? ""} onChange={(e) => set({ gstin: e.target.value.toUpperCase() })} />
         </Field>

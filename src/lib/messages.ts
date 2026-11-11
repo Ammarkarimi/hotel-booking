@@ -20,6 +20,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "",
     "Booking no: #{booking_no}",
     "Room: {room_type} room",
+    "Meals: {meal_plan}",
     "Guests: {guests}",
     "Arrival: {arrival_date}, check-in from {check_in_time}",
     "Departure: {leaving_date}, check-out by {check_out_time}",
@@ -37,6 +38,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "You are checked in. Your stay details:",
     "Booking no: #{booking_no}",
     "Room: {room_no} ({room_type})",
+    "Meals: {meal_plan}",
     "Guests: {guests}",
     "Checked in: {checked_in_at}",
     "Check-out: {leaving_date} by {check_out_time}",
@@ -65,6 +67,7 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "Pay online: {pay_link}",
     "",
     "Thank you for staying at {hotel}! We hope to see you again.",
+    "If you enjoyed your stay, a short review helps us a lot: {review_link}",
     "For your next booking call us on {hotel_phone}.",
   ].join("\n"),
 };
@@ -75,6 +78,7 @@ export const MESSAGE_FIELDS: { key: string; label: string }[] = [
   { key: "booking_no", label: "Booking number" },
   { key: "room_type", label: "Room type" },
   { key: "room_no", label: "Room number" },
+  { key: "meal_plan", label: "Meal plan (only when the booking has one)" },
   { key: "guests", label: "Adults and children" },
   { key: "arrival_date", label: "Arrival date" },
   { key: "leaving_date", label: "Leaving date" },
@@ -88,6 +92,7 @@ export const MESSAGE_FIELDS: { key: string; label: string }[] = [
   { key: "balance", label: "Balance to pay" },
   { key: "invoice_no", label: "Invoice number" },
   { key: "pay_link", label: "Link to pay online (only while something is left to pay)" },
+  { key: "review_link", label: "Your Google review link (Settings → Hotel details)" },
   { key: "hotel_phone", label: "Hotel phone" },
   { key: "hotel_address", label: "Hotel address" },
 ];
@@ -110,6 +115,8 @@ export interface MessageBooking {
   actualCheckIn?: string | null;
   actualCheckOut?: string | null;
   room: { roomNumber: string; type: string };
+  /** The meal plan sold with the room, e.g. "With breakfast (CP)". */
+  mealPlan?: string | null;
   folio: { grandTotal: number; netPaid: number; balance: number; nightCount: number };
   bill?: { invoiceNumber: string | null } | null;
   /** For the payment link: the booking's secret page address. */
@@ -129,6 +136,8 @@ export interface MessageHotel {
   /** The hotel takes payments online (UPI or Razorpay), and this website's address for the link. */
   onlinePayments?: boolean;
   siteUrl?: string;
+  /** The hotel's Google review link, for the check-out message. */
+  reviewLink?: string | null;
 }
 
 export function messageValues(b: MessageBooking, h: MessageHotel): Record<string, string> {
@@ -147,6 +156,7 @@ export function messageValues(b: MessageBooking, h: MessageHotel): Record<string
     booking_no: String(b.number),
     room_type: g ? roomTypesLabel(live.map((r) => r.roomType)) : label(b.room.type),
     room_no: g ? live.map((r) => r.roomNumber).join(", ") : b.room.roomNumber,
+    meal_plan: b.mealPlan ?? "",
     guests: [plural(adults, "adult", "adults"), children ? plural(children, "child", "children") : ""].filter(Boolean).join(", "),
     arrival_date: formatDate(b.checkInDate),
     leaving_date: formatDate(b.checkOutDate),
@@ -160,6 +170,7 @@ export function messageValues(b: MessageBooking, h: MessageHotel): Record<string
     balance: money(balance),
     invoice_no: b.bill?.invoiceNumber ?? "",
     pay_link: h.onlinePayments && h.siteUrl && b.publicToken && balance >= 1 ? `${h.siteUrl.replace(/\/$/, "")}/pay/${b.publicToken}` : "",
+    review_link: h.reviewLink ?? "",
     hotel_phone: h.phone ?? "",
     hotel_address: h.address ?? "",
   };

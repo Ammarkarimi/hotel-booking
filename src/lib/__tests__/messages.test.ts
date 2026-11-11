@@ -91,3 +91,14 @@ test("a group's message is about every room and the group's totals", () => {
   assert.match(text, /Balance to pay: ₹15,000/);
   assert.match(bookingMessage("checkIn", { ...booking, group }, hotel), /Room: 204, 205, 301 \(2 Deluxe, 1 Double\)/);
 });
+
+test("the check-out message asks for a review only when the hotel has a review link", () => {
+  const out = { ...booking, actualCheckOut: "2026-11-12T05:00:00.000Z" };
+  assert.match(bookingMessage("checkOut", out, { ...hotel, reviewLink: "https://g.page/r/abc/review" }), /a short review helps us a lot: https:\/\/g\.page\/r\/abc\/review/);
+  assert.doesNotMatch(bookingMessage("checkOut", out, hotel), /review/);
+});
+
+test("the meal plan is in the message only when the booking has one", () => {
+  assert.match(bookingMessage("booking", { ...booking, mealPlan: "With breakfast (CP)" }, hotel), /Meals: With breakfast \(CP\)/);
+  assert.doesNotMatch(bookingMessage("booking", booking, hotel), /Meals:/);
+});

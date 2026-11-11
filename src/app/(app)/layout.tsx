@@ -51,6 +51,7 @@ export default async function SignedInLayout({ children }: { children: React.Rea
         modules: session.modules ?? [],
         roomPricesIncludeTax: settings.roomPricesIncludeTax,
         onlinePayments: onlinePaymentWays(settings).any,
+        reviewLink: settings.reviewLink,
         messages: { booking: settings.msgBooking, checkIn: settings.msgCheckIn, checkOut: settings.msgCheckOut },
       }}
     >
