@@ -24,7 +24,7 @@ model Hotel {
   bookingSeq           Int                   @default(1000) // last booking number handed out
   // What the hotel can use (src/lib/modules.ts): its package's modules, or `modules` when it has no package.
   packageId            String?
-  modules              String[]              @default(["guest_forms", "pathik", "expenses", "reports", "shifts", "rate_tips", "website"])
+  modules              String[]              @default(["guest_forms", "pathik", "expenses", "reports", "shifts", "rate_tips", "website", "channel_manager"])
   package              Package?              @relation(fields: [packageId], references: [id])
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -46,6 +46,11 @@ model Hotel {
   rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
   paymentLinks         PaymentLink[]
+  channelCalendars     ChannelCalendar[]
+  channelIssues        ChannelIssue[]
+  channexLink          ChannexLink?
+  companies            Company[]
+  menuItems            MenuItem[]
 }
 
 // A package the software provider sells, such as Basic, Standard or Premium: the modules
@@ -143,6 +148,9 @@ model HotelSettings {
   razorpayKeySecret   String? // encrypted (src/lib/secret-box.ts); never sent to the screens
   // Tally export: the ledger names the hotel's accountant uses (src/lib/tally.ts); {} = the defaults.
   tallyLedgers        String  @default("{}")
+  // Meal plans the hotel sells with a room (src/lib/meal-plans.ts): JSON [{ key, name, adult, child }], prices per person per night.
+  mealPlans           String  @default("[]")
+  reviewLink          String? // the hotel's Google review link, sent in the check-out message
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -179,6 +187,7 @@ model Room {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   bookings          Booking[]
+  channelCalendars  ChannelCalendar[]
   hotel             Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
 
@@ -269,6 +278,15 @@ model Booking {
   companions          String? // JSON: [{ name, phone? }] for the other adults in the room
   // Several rooms booked together (a family or a group): every booking of the group has the same groupId.
   groupId             String?
+  // A meal plan sold with the room (src/lib/meal-plans.ts): its name, and what it adds per night for the whole room.
+  mealPlan            String?
+  mealRate            Float     @default(0)
+  // The company that pays this bill (src/lib/companies.ts); null = the guest pays.
+  companyId           String?
+  // A booking that came from a booking site by itself (src/lib/channel-bookings.ts):
+  // "ical:<calendar id>:<event uid>" or "channex:<booking id>:<room no.>". Null = made by the hotel.
+  channelRef          String?
+  channelCalendarId   String? // the calendar link it came from, so it is not sent back to the same site
   originalPrice       String? // JSON: the price first agreed, saved on the first Edit bill: { ratePerNight, fixedRate, discount, gstRate }; null = bill never edited
   createdById         String?
   createdAt           DateTime  @default(now())
@@ -285,6 +303,7 @@ model Booking {
   payoutBankRef       String? // UTR or bank reference of the site's transfer
   guest               Guest     @relation(fields: [guestId], references: [id])
   room                Room      @relation(fields: [roomId], references: [id])
+  company             Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   payments            Payment[]
   charges             Charge[]
   bill                Bill?
@@ -293,7 +312,9 @@ model Booking {
   hotel               Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, number])
+  @@unique([hotelId, channelRef])
   @@index([hotelId, groupId])
+  @@index([hotelId, companyId])
   @@index([roomId, checkInDate, checkOutDate])
   @@index([hotelId, status])
 }
@@ -493,4 +514,105 @@ model RateTipSeen {
 
   @@unique([hotelId, staffId, tipKey])
   @@index([hotelId, createdAt])
+}
+
+// A booking site joined by calendar link (iCal): the hotel gives the site our link (exportToken) so it
+// blocks the nights we sold, and we read the site's link (importUrl) to block the nights it sold.
+// It is for one room, or for a room type (then a night is blocked only when no room of the type is free).
+model ChannelCalendar {
+  id           String    @id @default(cuid())
+  hotelId      String
+  source       String // airbnb, booking_com, agoda, makemytrip, goibibo, expedia, other
+  name         String? // the listing's name on the site
+  roomId       String?
+  roomType     String?
+  exportToken  String    @unique // the secret part of our calendar link
+  importUrl    String? // the site's calendar link; null = we only send, we do not read
+  active       Boolean   @default(true)
+  lastSyncAt   DateTime? // when we last read the site's link
+  lastError    String?
+  lastEvents   Int       @default(0) // how many booked stays the site's link had
+  exportSeenAt DateTime? // when the site last read our link
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  room         Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+}
+
+// Something from a booking site that a person has to look at: a booking that clashes with one
+// already in the room, no free room of the type, a change to a guest who is already staying.
+model ChannelIssue {
+  id         String    @id @default(cuid())
+  hotelId    String
+  source     String // the booking site
+  kind       String // clash, no_room, change, cancel, sync
+  title      String
+  details    String?
+  channelRef String?
+  bookingId  String?
+  status     String    @default("open") // open, closed
+  createdAt  DateTime  @default(now())
+  closedAt   DateTime?
+  closedBy   String?
+  hotel      Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+}
+
+// The hotel's link to Channex (src/lib/channex.ts), which sends its prices and free rooms to the
+// booking sites and brings their bookings in. The API key is the software provider's (CHANNEX_API_KEY).
+model ChannexLink {
+  id          String    @id @default(cuid())
+  hotelId     String    @unique
+  propertyId  String    @unique // the hotel's property in Channex
+  roomMap     String    @default("{}") // JSON { roomType: { roomTypeId, ratePlanId } }
+  webhookId   String?
+  markup      Float     @default(0) // % added to the prices sent to booking sites, to cover their commission
+  pushedHash  String? // what was last sent, so nothing is sent again when nothing changed
+  lastPushAt  DateTime?
+  lastPullAt  DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+}
+
+// A company or travel agent whose guests' bills are paid by the company later (credit).
+model Company {
+  id          String    @id @default(cuid())
+  hotelId     String
+  name        String
+  gstin       String?
+  contactName String?
+  phone       String?
+  email       String?
+  address     String?
+  creditDays  Int       @default(30) // how many days after check-out the company pays
+  notes       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  bookings    Booking[]
+  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+}
+
+// Something the hotel sells again and again (tea, breakfast, laundry per piece): picked from a
+// list when adding extras to a bill, instead of typing the name and price each time.
+model MenuItem {
+  id        String   @id @default(cuid())
+  hotelId   String
+  name      String
+  category  String   @default("food") // a charge category: food, laundry, minibar, transport, extra_bed, damage, other
+  price     Float
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
 }
