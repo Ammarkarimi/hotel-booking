@@ -49,8 +49,6 @@ model Hotel {
   channelCalendars     ChannelCalendar[]
   channelIssues        ChannelIssue[]
   channexLink          ChannexLink?
-  companies            Company[]
-  menuItems            MenuItem[]
 }
 
 // A package the software provider sells, such as Basic, Standard or Premium: the modules
@@ -148,8 +146,6 @@ model HotelSettings {
   razorpayKeySecret   String? // encrypted (src/lib/secret-box.ts); never sent to the screens
   // Tally export: the ledger names the hotel's accountant uses (src/lib/tally.ts); {} = the defaults.
   tallyLedgers        String  @default("{}")
-  // Meal plans the hotel sells with a room (src/lib/meal-plans.ts): JSON [{ key, name, adult, child }], prices per person per night.
-  mealPlans           String  @default("[]")
   reviewLink          String? // the hotel's Google review link, sent in the check-out message
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
@@ -278,11 +274,6 @@ model Booking {
   companions          String? // JSON: [{ name, phone? }] for the other adults in the room
   // Several rooms booked together (a family or a group): every booking of the group has the same groupId.
   groupId             String?
-  // A meal plan sold with the room (src/lib/meal-plans.ts): its name, and what it adds per night for the whole room.
-  mealPlan            String?
-  mealRate            Float     @default(0)
-  // The company that pays this bill (src/lib/companies.ts); null = the guest pays.
-  companyId           String?
   // A booking that came from a booking site by itself (src/lib/channel-bookings.ts):
   // "ical:<calendar id>:<event uid>" or "channex:<booking id>:<room no.>". Null = made by the hotel.
   channelRef          String?
@@ -303,7 +294,6 @@ model Booking {
   payoutBankRef       String? // UTR or bank reference of the site's transfer
   guest               Guest     @relation(fields: [guestId], references: [id])
   room                Room      @relation(fields: [roomId], references: [id])
-  company             Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   payments            Payment[]
   charges             Charge[]
   bill                Bill?
@@ -314,7 +304,6 @@ model Booking {
   @@unique([hotelId, number])
   @@unique([hotelId, channelRef])
   @@index([hotelId, groupId])
-  @@index([hotelId, companyId])
   @@index([roomId, checkInDate, checkOutDate])
   @@index([hotelId, status])
 }
@@ -577,42 +566,4 @@ model ChannexLink {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-}
-
-// A company or travel agent whose guests' bills are paid by the company later (credit).
-model Company {
-  id          String    @id @default(cuid())
-  hotelId     String
-  name        String
-  gstin       String?
-  contactName String?
-  phone       String?
-  email       String?
-  address     String?
-  creditDays  Int       @default(30) // how many days after check-out the company pays
-  notes       String?
-  active      Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  bookings    Booking[]
-  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@index([hotelId])
-}
-
-// Something the hotel sells again and again (tea, breakfast, laundry per piece): picked from a
-// list when adding extras to a bill, instead of typing the name and price each time.
-model MenuItem {
-  id        String   @id @default(cuid())
-  hotelId   String
-  name      String
-  category  String   @default("food") // a charge category: food, laundry, minibar, transport, extra_bed, damage, other
-  price     Float
-  active    Boolean  @default(true)
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-
-  @@index([hotelId])
 }

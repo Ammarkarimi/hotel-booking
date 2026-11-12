@@ -62,8 +62,6 @@ const HOTEL_MODELS = new Set([
   "ChannelCalendar",
   "ChannelIssue",
   "ChannexLink",
-  "Company",
-  "MenuItem",
 ]);
 
 /** Writes that change which rooms are free or what they cost: booking sites must hear of them. */

@@ -11,7 +11,6 @@ import { EXPENSE_CATEGORIES } from "@/lib/utils";
 import { logActivity } from "@/lib/activity";
 import { parseGstSlabs } from "@/lib/pricing";
 import { parseFloors } from "@/lib/rate-tips";
-import { MAX_MEAL_PLANS, cleanMealPlans, parseMealPlans } from "@/lib/meal-plans";
 
 export async function GET() {
   return withAuth(async () => {
@@ -66,18 +65,6 @@ const settingsSchema = z.object({
   upiName: z.string().trim().max(50).optional().nullable(),
   razorpayKeyId: z.string().trim().regex(/^(rzp_(test|live)_[A-Za-z0-9]+)?$/, "A Razorpay key ID starts with rzp_live_ (or rzp_test_ for trying it out)").optional().nullable(),
   razorpayKeySecret: z.string().trim().max(100).optional(),
-  // Meal plans sold with a room: a price per adult and per child per night.
-  mealPlans: z
-    .array(
-      z.object({
-        key: z.string().max(30).optional(),
-        name: z.string().trim().min(1, "Please give each meal plan a name").max(60),
-        adult: z.coerce.number().min(0, "A meal plan price cannot be less than 0").max(100000),
-        child: z.coerce.number().min(0, "A meal plan price cannot be less than 0").max(100000),
-      })
-    )
-    .max(MAX_MEAL_PLANS, `Please keep at most ${MAX_MEAL_PLANS} meal plans`)
-    .optional(),
   // The hotel's Google review link for the check-out message; empty = none.
   reviewLink: z
     .string()
@@ -101,7 +88,6 @@ function shown(settings: Awaited<ReturnType<typeof getStoredSettings>>) {
     gstSlabs: parseGstSlabs(settings.gstSlabs),
     rateTipsFloors: parseFloors(settings.rateTipsFloors),
     tallyLedgers: parseTallyLedgers(settings.tallyLedgers),
-    mealPlans: parseMealPlans(settings.mealPlans),
   };
 }
 
@@ -115,7 +101,7 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Unknown timezone" }, { status: 400 });
       }
     }
-    const { gstSlabs, rateTipsFloors, tallyLedgers, mealPlans, razorpayKeySecret, ...rest } = body;
+    const { gstSlabs, rateTipsFloors, tallyLedgers, razorpayKeySecret, ...rest } = body;
     for (const k of ["msgBooking", "msgCheckIn", "msgCheckOut"] as const) {
       if (rest[k] !== undefined) rest[k] = rest[k]?.trim() ? rest[k] : null;
     }
@@ -140,7 +126,6 @@ export async function PUT(request: NextRequest) {
     const data = {
       ...rest,
       ...(sealed !== undefined && { razorpayKeySecret: sealed }),
-      ...(mealPlans && { mealPlans: JSON.stringify(cleanMealPlans(mealPlans)) }),
       ...(tallyLedgers && { tallyLedgers: JSON.stringify(parseTallyLedgers(JSON.stringify(tallyLedgers))) }),
       ...(rest.currency && { currency: rest.currency.toUpperCase() }),
       ...(rest.gstin !== undefined && { gstin: rest.gstin ? rest.gstin.toUpperCase() : null }),

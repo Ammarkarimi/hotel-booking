@@ -20,7 +20,6 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "",
     "Booking no: #{booking_no}",
     "Room: {room_type} room",
-    "Meals: {meal_plan}",
     "Guests: {guests}",
     "Arrival: {arrival_date}, check-in from {check_in_time}",
     "Departure: {leaving_date}, check-out by {check_out_time}",
@@ -38,7 +37,6 @@ export const DEFAULT_MESSAGES: Record<MessageKind, string> = {
     "You are checked in. Your stay details:",
     "Booking no: #{booking_no}",
     "Room: {room_no} ({room_type})",
-    "Meals: {meal_plan}",
     "Guests: {guests}",
     "Checked in: {checked_in_at}",
     "Check-out: {leaving_date} by {check_out_time}",
@@ -78,7 +76,6 @@ export const MESSAGE_FIELDS: { key: string; label: string }[] = [
   { key: "booking_no", label: "Booking number" },
   { key: "room_type", label: "Room type" },
   { key: "room_no", label: "Room number" },
-  { key: "meal_plan", label: "Meal plan (only when the booking has one)" },
   { key: "guests", label: "Adults and children" },
   { key: "arrival_date", label: "Arrival date" },
   { key: "leaving_date", label: "Leaving date" },
@@ -115,8 +112,6 @@ export interface MessageBooking {
   actualCheckIn?: string | null;
   actualCheckOut?: string | null;
   room: { roomNumber: string; type: string };
-  /** The meal plan sold with the room, e.g. "With breakfast (CP)". */
-  mealPlan?: string | null;
   folio: { grandTotal: number; netPaid: number; balance: number; nightCount: number };
   bill?: { invoiceNumber: string | null } | null;
   /** For the payment link: the booking's secret page address. */
@@ -156,7 +151,6 @@ export function messageValues(b: MessageBooking, h: MessageHotel): Record<string
     booking_no: String(b.number),
     room_type: g ? roomTypesLabel(live.map((r) => r.roomType)) : label(b.room.type),
     room_no: g ? live.map((r) => r.roomNumber).join(", ") : b.room.roomNumber,
-    meal_plan: b.mealPlan ?? "",
     guests: [plural(adults, "adult", "adults"), children ? plural(children, "child", "children") : ""].filter(Boolean).join(", "),
     arrival_date: formatDate(b.checkInDate),
     leaving_date: formatDate(b.checkOutDate),

@@ -1,17 +1,14 @@
--- Channel manager (calendar links and Channex), meal plans, company accounts, the price list for extras and the review link.
+-- Channel manager: calendar links with booking sites, the link to Channex, and things a person must look at.
+-- Also the hotel's Google review link for the check-out message.
 -- AlterTable
 ALTER TABLE "Booking" ADD COLUMN     "channelCalendarId" TEXT,
-ADD COLUMN     "channelRef" TEXT,
-ADD COLUMN     "companyId" TEXT,
-ADD COLUMN     "mealPlan" TEXT,
-ADD COLUMN     "mealRate" DOUBLE PRECISION NOT NULL DEFAULT 0;
+ADD COLUMN     "channelRef" TEXT;
 
 -- AlterTable
 ALTER TABLE "Hotel" ALTER COLUMN "modules" SET DEFAULT ARRAY['guest_forms', 'pathik', 'expenses', 'reports', 'shifts', 'rate_tips', 'website', 'channel_manager']::TEXT[];
 
 -- AlterTable
-ALTER TABLE "HotelSettings" ADD COLUMN     "mealPlans" TEXT NOT NULL DEFAULT '[]',
-ADD COLUMN     "reviewLink" TEXT;
+ALTER TABLE "HotelSettings" ADD COLUMN     "reviewLink" TEXT;
 
 -- CreateTable
 CREATE TABLE "ChannelCalendar" (
@@ -70,40 +67,6 @@ CREATE TABLE "ChannexLink" (
     CONSTRAINT "ChannexLink_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "Company" (
-    "id" TEXT NOT NULL,
-    "hotelId" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "gstin" TEXT,
-    "contactName" TEXT,
-    "phone" TEXT,
-    "email" TEXT,
-    "address" TEXT,
-    "creditDays" INTEGER NOT NULL DEFAULT 30,
-    "notes" TEXT,
-    "active" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Company_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "MenuItem" (
-    "id" TEXT NOT NULL,
-    "hotelId" TEXT NOT NULL,
-    "name" TEXT NOT NULL,
-    "category" TEXT NOT NULL DEFAULT 'food',
-    "price" DOUBLE PRECISION NOT NULL,
-    "active" BOOLEAN NOT NULL DEFAULT true,
-    "sortOrder" INTEGER NOT NULL DEFAULT 0,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "MenuItem_pkey" PRIMARY KEY ("id")
-);
-
 -- CreateIndex
 CREATE UNIQUE INDEX "ChannelCalendar_exportToken_key" ON "ChannelCalendar"("exportToken");
 
@@ -120,19 +83,7 @@ CREATE UNIQUE INDEX "ChannexLink_hotelId_key" ON "ChannexLink"("hotelId");
 CREATE UNIQUE INDEX "ChannexLink_propertyId_key" ON "ChannexLink"("propertyId");
 
 -- CreateIndex
-CREATE INDEX "Company_hotelId_idx" ON "Company"("hotelId");
-
--- CreateIndex
-CREATE INDEX "MenuItem_hotelId_idx" ON "MenuItem"("hotelId");
-
--- CreateIndex
-CREATE INDEX "Booking_hotelId_companyId_idx" ON "Booking"("hotelId", "companyId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Booking_hotelId_channelRef_key" ON "Booking"("hotelId", "channelRef");
-
--- AddForeignKey
-ALTER TABLE "Booking" ADD CONSTRAINT "Booking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "Company"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "ChannelCalendar" ADD CONSTRAINT "ChannelCalendar_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "Room"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -145,12 +96,6 @@ ALTER TABLE "ChannelIssue" ADD CONSTRAINT "ChannelIssue_hotelId_fkey" FOREIGN KE
 
 -- AddForeignKey
 ALTER TABLE "ChannexLink" ADD CONSTRAINT "ChannexLink_hotelId_fkey" FOREIGN KEY ("hotelId") REFERENCES "Hotel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Company" ADD CONSTRAINT "Company_hotelId_fkey" FOREIGN KEY ("hotelId") REFERENCES "Hotel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "MenuItem" ADD CONSTRAINT "MenuItem_hotelId_fkey" FOREIGN KEY ("hotelId") REFERENCES "Hotel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 
 -- Hotels and packages that have the online booking website get the channel manager too.

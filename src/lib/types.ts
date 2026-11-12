@@ -1,6 +1,5 @@
 import type { GroupSummary } from "./groups";
 import type { TallyLedgers } from "./tally";
-import type { MealPlan } from "./meal-plans";
 // Shapes of the JSON our API returns, used by the screens.
 import type { Folio } from "./pricing";
 import type { PayoutSummary } from "./payouts";
@@ -78,12 +77,6 @@ export interface BookingDTO {
   groupId?: string | null;
   /** Sent back when a booking is made: the whole group when several rooms were booked. */
   group?: GroupSummary | null;
-  /** The meal plan sold with the room, and what it adds per night for the whole room. */
-  mealPlan: string | null;
-  mealRate: number;
-  /** The company that pays this bill later; null = the guest pays. */
-  companyId: string | null;
-  company?: { id: string; name: string; gstin: string | null } | null;
   /** Set when the booking came from a booking site by itself (a calendar link or Channex). */
   channelRef: string | null;
   status: string;
@@ -186,8 +179,6 @@ export interface SettingsDTO {
   /** Typed into Settings to replace the saved secret; never filled in from the server. */
   razorpayKeySecret?: string;
   tallyLedgers: TallyLedgers;
-  /** Meal plans sold with a room (src/lib/meal-plans.ts); empty = the hotel sells none. */
-  mealPlans: MealPlan[];
   /** The hotel's Google review link, for the check-out message. */
   reviewLink: string | null;
 }

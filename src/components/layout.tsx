@@ -29,7 +29,6 @@ const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; m
   { href: "/calendar", label: "Calendar", hint: "Which rooms are free" },
   { href: "/bookings", label: "Bookings", hint: "All reservations" },
   { href: "/guests", label: "Guests", hint: "Guest records & IDs" },
-  { href: "/companies", label: "Companies", hint: "Bills paid later by a company or agent" },
   { href: "/guest-forms", label: "Express check-in", hint: "Guests fill in their details on WhatsApp", module: "guest_forms" },
   { href: "/housekeeping", label: "Housekeeping", hint: "Room cleaning" },
   { href: "/payments", label: "Payments", hint: "Money received" },
