@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma, runForHotel } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import { onlinePaymentWays } from "@/lib/online-payments";
 import { todayKey } from "@/lib/dates";
 import { monthLabel, monthOf, subscriptionSummary } from "@/lib/subscription";
 import { PLATFORM_TIMEZONE } from "@/lib/platform";
@@ -49,6 +50,8 @@ export default async function SignedInLayout({ children }: { children: React.Rea
         pathik: settings.pathik,
         modules: session.modules ?? [],
         roomPricesIncludeTax: settings.roomPricesIncludeTax,
+        onlinePayments: onlinePaymentWays(settings).any,
+        reviewLink: settings.reviewLink,
         messages: { booking: settings.msgBooking, checkIn: settings.msgCheckIn, checkOut: settings.msgCheckOut },
       }}
     >

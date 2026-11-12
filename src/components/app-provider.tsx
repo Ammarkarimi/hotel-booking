@@ -29,6 +29,10 @@ export interface ShellSettings {
   modules: ModuleKey[];
   /** Room prices are entered with GST included. */
   roomPricesIncludeTax: boolean;
+  /** Guests can pay online (the hotel's UPI ID or Razorpay is set up in Settings). */
+  onlinePayments: boolean;
+  /** The hotel's Google review link, for the check-out message. */
+  reviewLink: string | null;
 }
 
 type ToastTone = "success" | "error" | "info";

@@ -60,3 +60,40 @@ test("the right message for each stage, and clock times", () => {
   assert.match(out, /Checked out: 5 Nov 2026, 10:30 am/);
   assert.match(out, /Balance: ₹0/);
 });
+
+test("the payment link line shows only when the hotel takes online payments and money is still due", () => {
+  const withToken = { ...booking, publicToken: "tok123" };
+  const online = { ...hotel, onlinePayments: true, siteUrl: "https://innvela.example/" };
+  assert.match(bookingMessage("booking", withToken, online), /Pay online: https:\/\/innvela\.example\/pay\/tok123/);
+  assert.doesNotMatch(bookingMessage("booking", withToken, hotel), /Pay online/);
+  const paid = { ...withToken, folio: { ...withToken.folio, netPaid: 10080, balance: 0 } };
+  assert.doesNotMatch(bookingMessage("booking", paid, online), /Pay online/);
+});
+
+test("a group's message is about every room and the group's totals", () => {
+  const group = {
+    groupId: "g1",
+    adults: 5,
+    children: 1,
+    total: 20000,
+    paid: 5000,
+    balance: 15000,
+    rooms: [
+      { id: "a", number: 1022, roomNumber: "204", roomType: "deluxe", status: "reserved", adults: 2, children: 1, total: 10080, paid: 5000, balance: 5080, invoiceNumber: null },
+      { id: "b", number: 1023, roomNumber: "205", roomType: "deluxe", status: "reserved", adults: 2, children: 0, total: 6000, paid: 0, balance: 6000, invoiceNumber: null },
+      { id: "c", number: 1024, roomNumber: "301", roomType: "double", status: "reserved", adults: 1, children: 0, total: 3920, paid: 0, balance: 3920, invoiceNumber: null },
+    ],
+  };
+  const text = bookingMessage("booking", { ...booking, group }, hotel);
+  assert.match(text, /Room: 2 Deluxe, 1 Double rooms/);
+  assert.match(text, /Guests: 5 adults, 1 child/);
+  assert.match(text, /Total: ₹20,000/);
+  assert.match(text, /Balance to pay: ₹15,000/);
+  assert.match(bookingMessage("checkIn", { ...booking, group }, hotel), /Room: 204, 205, 301 \(2 Deluxe, 1 Double\)/);
+});
+
+test("the check-out message asks for a review only when the hotel has a review link", () => {
+  const out = { ...booking, actualCheckOut: "2026-11-12T05:00:00.000Z" };
+  assert.match(bookingMessage("checkOut", out, { ...hotel, reviewLink: "https://g.page/r/abc/review" }), /a short review helps us a lot: https:\/\/g\.page\/r\/abc\/review/);
+  assert.doesNotMatch(bookingMessage("checkOut", out, hotel), /review/);
+});

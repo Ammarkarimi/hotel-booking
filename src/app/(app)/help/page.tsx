@@ -15,6 +15,27 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/bookings/new", text: "Make a booking now" },
   },
   {
+    q: "How do I book several rooms for one family or group?",
+    steps: [
+      "Press “New booking”, choose the dates and press “Next: choose a room”.",
+      "Turn on “Book more than one room” and tap every room. The first room you tap is the guest's own; tap a room again to take it off.",
+      "Type the guest's details once. On the last step choose how many adults are in each of the other rooms. A price typed there is used for every room.",
+      "An advance is shared over the rooms' bills. Press “Confirm … rooms”.",
+      "Each room has its own booking, bill and invoice. On any of them, the “Group booking” box lists all the rooms, with “Take payment for all rooms” and the group bill.",
+    ],
+    link: { href: "/bookings/new", text: "Make a booking now" },
+  },
+  {
+    q: "How do I ask a guest to pay online?",
+    steps: [
+      "The owner first adds the hotel's UPI ID (and Razorpay, if you use it) in Settings → Payments.",
+      "Open the booking and press “Payment link”. Leave the full amount, or type a smaller amount for an advance, and press “Send on WhatsApp”.",
+      "The guest opens the link and pays by UPI (QR code or the UPI app button), or presses “Pay online” for Razorpay.",
+      "Paid through Razorpay: the payment is added to the booking by itself. Paid by UPI to your own ID: check your bank or UPI app, then press “Take payment” as usual.",
+      "Booking confirmations and welcome messages also carry the link while money is still due.",
+    ],
+  },
+  {
     q: "A guest walked in without a booking",
     steps: ["On the Dashboard, press “Walk-in” in the toolbar (or the F3 key).", "Follow the same steps as a booking. The guest is checked in as soon as you confirm."],
     link: { href: "/bookings/new?walkin=1", text: "Walk-in guest" },
@@ -171,12 +192,47 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/reports", text: "Open reports" },
   },
   {
+    q: "For owners: joining Airbnb, Booking.com or Agoda by calendar link (free)",
+    steps: [
+      "Open “Booking sites” and press “Add a calendar link”. Choose the site and the room the listing is for (or “All … rooms” when the site sells several of your rooms as one listing).",
+      "Step 1: copy our link and paste it on the site. On Airbnb: Calendar → Availability → Connect calendars → Import calendar. On Booking.com: Rates & Availability → Sync calendars.",
+      "Step 2: copy the site's own calendar link from the same place and paste it here. Its stays then come into your bookings by themselves, marked with the site's name.",
+      "A calendar link shares only which nights are taken: no prices and no guest names. Type the guest's name and phone into the booking from the site.",
+      "Sites read the link every few hours, so a night can still be sold twice in that time. If that happens, “Booking sites” and the Dashboard tell you, so you can move one booking.",
+      "MakeMyTrip and Goibibo have no calendar links for hotels: use the full connection for them.",
+    ],
+    link: { href: "/channels", text: "Open Booking sites" },
+  },
+  {
+    q: "For owners: the full connection to MakeMyTrip, Booking.com and the other sites",
+    steps: [
+      "This is switched on by your software provider. Then open “Booking sites” and press “Connect booking sites”.",
+      "Press “Set up booking sites”, choose a site and sign in with your hotel's own account on it (the one you use for its extranet).",
+      "Match each of the site's rooms to your room type and its “Standard rate”, then switch the site on.",
+      "From then on your free rooms and prices go to the sites by themselves whenever something changes here, and their bookings, changes and cancellations come in within moments.",
+      "“Add to prices sent to booking sites” covers the site's commission: with 15%, a ₹2,000 room shows as ₹2,300 on the sites. Your prices at the desk stay the same.",
+      "If a site sells a room that is not free any more, nothing is overwritten: “Booking sites” and the Dashboard show it so you can move a booking or call the guest.",
+    ],
+    link: { href: "/channels", text: "Open Booking sites" },
+  },
+  {
     q: "For owners: MakeMyTrip, Goibibo or Booking.com paid us less than the bill",
     steps: [
       "That's normal: the bill and GST invoice stay on the full amount, and the site takes off its commission, GST on it, TCS and TDS.",
       "If the guest paid on the site, take the payment as “Booking site (prepaid)” so their bill shows paid.",
       "On the booking, open “Booking site payout” and type the deductions from the site's statement (or just the amount it pays you). Tick “The money has reached our bank” when it arrives.",
       "Reports → “Booking site payouts” shows gross, deductions, what the sites pay, and what is still waiting. Download it for Excel to match against the site's own sheet.",
+    ],
+    link: { href: "/reports", text: "Open reports" },
+  },
+  {
+    q: "For owners: sending the accounts to Tally",
+    steps: [
+      "Settings → Payments & Tally: type your ledger names as they are in your Tally company (or keep the suggested ones). Save.",
+      "Reports: choose the period (for example last month). Under “Download for Tally” choose “Without expenses” or “With expenses”, then press “1. Ledgers” and “2. Vouchers”.",
+      "In TallyPrime open your company. Import → Masters, choose file 1. Then Import → Transactions, choose file 2.",
+      "Each GST invoice becomes a Sales voucher (room sales, other sales, CGST, SGST), each payment a Receipt, each refund a Payment voucher. Guests with a GSTIN get their own ledger. Import each period once.",
+      "With expenses: every expense also becomes a Payment voucher from Cash or Bank to its ledger (Salary, Rent, Electricity and Water…). Choose this only if your accountant does not enter the expenses in Tally from the bills, or they will be counted twice.",
     ],
     link: { href: "/reports", text: "Open reports" },
   },
@@ -188,6 +244,7 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
       "Settings → Prices & tax: choose Indian GST slabs or a fixed tax, weekend price change and festival prices.",
       "Settings → Staff: give each staff member their own sign-in. Front-desk accounts cannot see reports or delete records.",
       "Settings → Online booking: copy your booking link and share it on WhatsApp, Instagram and Google Maps.",
+      "Settings → Payments: add your UPI ID so guests can pay from a link or a QR code on the bill. Add Razorpay too if you have an account.",
     ],
   },
 ];

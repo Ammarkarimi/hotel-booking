@@ -27,6 +27,7 @@ import {
   Receipt,
   Repeat,
   Send,
+  RefreshCw,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -115,6 +116,7 @@ const FEATURE_GROUPS = [
       { icon: BarChart3, name: "Profit reports", text: "Profit, occupancy, ADR, RevPAR and GOPPAR for any day, week, month or year, by room type and booking source, ready for Excel." },
       { icon: Banknote, name: "Expense tracker", text: "Salaries, electricity, supplies and repairs, written down as you pay them." },
       { icon: TrendingDown, name: "Rate tips for empty rooms", text: "Later in the day, a lower price for rooms likely to stay empty, from your own booking history and never below your lowest price." },
+      { icon: RefreshCw, name: "Channel manager", text: "Free rooms and prices kept the same on MakeMyTrip, Booking.com, Agoda, Airbnb and more, and their bookings put into your calendar by themselves, so a room is never sold twice." },
       { icon: Landmark, name: "Booking-site payouts", text: "Commission, GST, TCS and TDS from MakeMyTrip, Goibibo, Booking.com and others, and which payouts have reached your bank." },
       { icon: Sparkles, name: "Housekeeping board", text: "Rooms queued for cleaning at check-out, today's arrivals first, and rooms under maintenance kept off sale." },
       { icon: Globe, name: "Your own booking website", text: "Guests book you directly from their phone, with no commission." },
@@ -244,11 +246,19 @@ const FAQS = [
   },
   {
     q: "Does it connect to Booking.com, MakeMyTrip or Airbnb?",
-    a: "Not automatically yet. Bookings from those sites are added in a few taps and tagged by source, so your reports show which channels bring you the most guests. Booking-site payouts tracks the commission, TCS and TDS each site takes and which payouts have reached your bank.",
+    a: "Yes. Airbnb, Booking.com and Agoda can be joined for free with a calendar link per room, so a night sold on one side is closed on the other. The full connection also covers MakeMyTrip and Goibibo: your free rooms and prices go to every site by themselves, and their bookings come into your calendar within moments. Booking-site payouts tracks the commission, TCS and TDS each site takes.",
   },
   {
     q: "Can guests pay online?",
-    a: "Not yet. Guests settle at the property by cash, UPI or card, and you record the payment in one tap. Your booking website shows “pay at hotel”.",
+    a: "Yes. Send a payment link on WhatsApp for the full bill or an advance. Guests pay by UPI straight to your own account (QR code, no charges), or by UPI, card or net banking through your own Razorpay account, which marks the booking as paid by itself. Bills with money still due print a UPI QR code too.",
+  },
+  {
+    q: "Can we book several rooms for one family or group?",
+    a: "Yes. Tap every room in one booking: same guest and dates, the same special price if you agree one, and one advance shared over the rooms. Each room keeps its own bill and GST invoice, and the group has one page, one payment button and a group bill.",
+  },
+  {
+    q: "Does it work with Tally?",
+    a: "Yes. Reports make two files for TallyPrime: the ledgers, then the period's GST invoices as Sales vouchers and every payment and refund as Receipt and Payment vouchers, with or without your expenses. Your accountant imports them in two steps, with your own ledger names.",
   },
   {
     q: "Do we need internet?",

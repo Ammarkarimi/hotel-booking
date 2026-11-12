@@ -5,6 +5,7 @@ import { getBillingContext } from "@/lib/settings";
 import { bookingInclude, folioFor } from "@/lib/bookings";
 import { toDateKey } from "@/lib/dates";
 import { noStore, publicHotel } from "@/lib/public";
+import { onlinePaymentWays } from "@/lib/online-payments";
 
 /** Confirmation page data. Only reachable with the secret token from the booking. */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) {
@@ -27,6 +28,8 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       total: folio.grandTotal,
       paid: folio.netPaid,
       balance: folio.balance,
+      // The hotel takes payments online: the guest can pay from their payment page.
+      payOnline: onlinePaymentWays(ctx.settings).any && folio.balance >= 1 && !["cancelled", "no_show"].includes(booking.status),
       hotel: { ...publicHotel(ctx.settings), slug: booking.hotel.slug },
     });
   } catch (error) {

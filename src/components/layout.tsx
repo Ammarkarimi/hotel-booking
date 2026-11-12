@@ -35,6 +35,7 @@ const NAV: Array<{ href: string; label: string; hint: string; admin?: boolean; m
   { href: "/expenses", label: "Expenses", hint: "Money spent", module: "expenses" },
   { href: "/rooms", label: "Rooms", hint: "Your rooms & prices" },
   { href: "/rate-tips", label: "Rate tips", hint: "Fill tonight's empty rooms", module: "rate_tips" },
+  { href: "/channels", label: "Booking sites", hint: "MakeMyTrip, Booking.com, Airbnb…", module: "channel_manager" },
   { href: "/reports", label: "Reports", hint: "Business summary", admin: true, module: "reports" },
   { href: "/shifts", label: "Shifts", hint: "Attendance & handover notes", admin: true, module: "shifts" },
   { href: "/settings", label: "Settings", hint: "Hotel details & staff", admin: true },

@@ -36,7 +36,7 @@ function dayLabel(key: string) {
 function CalendarView() {
   const router = useRouter();
   const params = useSearchParams();
-  const { settings } = useApp();
+  const { settings, has } = useApp();
   const highlight = params.get("room");
   const [days, setDays] = useState(14);
   const [start, setStart] = useState(addDays(settings.today, -1));
@@ -50,9 +50,21 @@ function CalendarView() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
+  // Goes up when booking sites brought something in, so the calendar is read again.
+  const [round, setRound] = useState(0);
   useEffect(() => {
     api<CalendarData>(`/api/calendar?start=${start}&days=${days}`).then(setData).catch(() => undefined);
-  }, [start, days]);
+  }, [start, days, round]);
+
+  const channelsOn = has("channel_manager");
+  useEffect(() => {
+    if (!channelsOn) return;
+    api<{ calendars: { created: number; updated: number; cancelled: number } | null; channex: { pulled: number } | null }>("/api/channels/sync", { method: "POST", body: {} })
+      .then((r) => {
+        if ((r.calendars?.created ?? 0) + (r.calendars?.updated ?? 0) + (r.calendars?.cancelled ?? 0) + (r.channex?.pulled ?? 0) > 0) setRound((n) => n + 1);
+      })
+      .catch(() => undefined);
+  }, [channelsOn]);
 
   const dayKeys = useMemo(() => Array.from({ length: days }, (_, i) => addDays(start, i)), [start, days]);
   const freeCount = useMemo(() => {

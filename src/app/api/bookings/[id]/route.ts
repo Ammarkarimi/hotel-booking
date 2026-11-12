@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentHotelId, prisma, type Db } from "@/lib/db";
 import { withAuth, withAdmin, fail } from "@/lib/api";
-import { getBillingContext } from "@/lib/settings";
+import { getBillingContext, screenSettings } from "@/lib/settings";
 import { dateFromKey, toDateKey } from "@/lib/dates";
 import {
   assertRoomFree,
@@ -10,6 +10,7 @@ import {
   checkOutBillingDate,
   checkOutPreview,
   folioFor,
+  groupOf,
   loadBooking,
   lockRooms,
   parseStayDate,
@@ -40,7 +41,8 @@ export async function GET(request: NextRequest, { params }: Params) {
     return NextResponse.json({
       ...serializeBooking(booking, ctx),
       guest,
-      settings: ctx.settings,
+      settings: screenSettings(ctx.settings),
+      group: await groupOf(booking, ctx),
       ...(wantsCheckout && { checkout: checkOutPreview({ ...booking, gstRate }, ctx) }),
     });
   });

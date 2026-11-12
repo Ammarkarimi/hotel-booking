@@ -67,6 +67,10 @@ function NewBookingWizard() {
 
   const [rooms, setRooms] = useState<AvailableRoom[] | null>(null);
   const [roomId, setRoomId] = useState(params.get("room") || "");
+  // Several rooms for the same guest and dates (a family or a group): one booking per room.
+  const [multi, setMulti] = useState(false);
+  const [moreRoomIds, setMoreRoomIds] = useState<string[]>([]);
+  const [moreAdults, setMoreAdults] = useState<Record<string, number>>({});
   const [typeFilter, setTypeFilter] = useState("all");
 
   const [guestQuery, setGuestQuery] = useState("");
@@ -227,6 +231,19 @@ function NewBookingWizard() {
   // A walk-in needs the room now, so a room whose guest is leaving today but has not checked out yet cannot be used.
   const stillInside = (r: AvailableRoom) => walkIn && r.status === "occupied";
   const selectedRoom = rooms?.find((r) => r.id === roomId && !stillInside(r)) ?? null;
+  const groupOn = multi && !walkIn;
+  const extraRooms = groupOn ? (rooms ?? []).filter((r) => moreRoomIds.includes(r.id) && !stillInside(r) && r.id !== roomId) : [];
+  const adultsIn = (r: AvailableRoom) => moreAdults[r.id] ?? Math.min(2, r.capacity);
+  /** With several rooms: the first room tapped is the guest's own; tapping again takes a room off. */
+  function pickRoom(id: string) {
+    if (!groupOn) return setRoomId(id);
+    if (id === roomId) {
+      setRoomId(moreRoomIds[0] ?? "");
+      setMoreRoomIds((m) => m.slice(1));
+    } else if (moreRoomIds.includes(id)) setMoreRoomIds((m) => m.filter((x) => x !== id));
+    else if (!selectedRoom) setRoomId(id);
+    else setMoreRoomIds((m) => [...m, id]);
+  }
   const roomTypes = useMemo(() => [...new Set((rooms ?? []).map((r) => r.type))], [rooms]);
   const visibleRooms = (rooms ?? [])
     .filter((r) => typeFilter === "all" || r.type === typeFilter)
@@ -255,6 +272,32 @@ function NewBookingWizard() {
       pricesIncludeTax: settings.roomPricesIncludeTax,
     });
   }, [selectedRoom, settings, customRate, discount, advance, checkIn, checkOut, nights, gstRate]);
+
+  // The other rooms of a group: the same price deal (a special price applies to every room), no discount.
+  const extraQuotes = settings
+    ? extraRooms.map((room) => {
+        const rate = customRate !== "" ? Number(customRate) : room.pricePerNight;
+        const n = priceNights({
+          baseRate: rate,
+          checkIn,
+          checkOut,
+          roomType: room.type,
+          fixedRate: customRate !== "" && Number(customRate) !== room.pricePerNight,
+          rules: { weekendSurcharge: settings.weekendSurcharge, seasonalRates: settings.seasonalRates ?? [] },
+        });
+        const f = computeFolio({
+          nights: n,
+          discount: 0,
+          charges: [],
+          payments: [],
+          tax: { taxMode: settings.taxMode, taxRate: settings.taxRate, gstSlabs: settings.gstSlabs, extrasTaxRate: settings.extrasTaxRate },
+          gstRate,
+          pricesIncludeTax: settings.roomPricesIncludeTax,
+        });
+        return { room, total: f.grandTotal };
+      })
+    : [];
+  const groupTotal = folio ? Math.round((folio.grandTotal + extraQuotes.reduce((t, q) => t + q.total, 0)) * 100) / 100 : 0;
 
   function setNights(n: number) {
     setCheckOut(addDays(checkIn, n));
@@ -305,6 +348,7 @@ function NewBookingWizard() {
       const booking = await api<BookingDTO>("/api/bookings", {
         body: {
           roomId: selectedRoom.id,
+          ...(extraRooms.length > 0 && { moreRooms: extraRooms.map((r) => ({ roomId: r.id, adults: adultsIn(r), children: 0 })) }),
           checkInDate: checkIn,
           checkOutDate: checkOut,
           adults,
@@ -334,7 +378,13 @@ function NewBookingWizard() {
       });
       setCreated(booking);
       if (guestForm) window.dispatchEvent(new Event("guest-forms-changed"));
-      toast(walkIn ? `${booking.guestName} checked in to Room ${booking.room.roomNumber}` : `Booking #${booking.number} confirmed`);
+      toast(
+        walkIn
+          ? `${booking.guestName} checked in to Room ${booking.room.roomNumber}`
+          : booking.group
+            ? `${booking.group.rooms.length} rooms booked for ${booking.guestName}`
+            : `Booking #${booking.number} confirmed`
+      );
     } catch (e) {
       toast((e as Error).message, "error");
     } finally {
@@ -350,21 +400,38 @@ function NewBookingWizard() {
         <Card>
           <CardContent className="py-8 text-center">
             <CheckCircle2 className="mx-auto h-16 w-16 text-emerald-500" />
-            <h1 className="mt-4 text-2xl font-bold">{walkIn ? "Guest checked in!" : "Booking confirmed!"}</h1>
-            <p className="mt-1 text-lg text-slate-600">
-              Booking <b>#{created.number}</b> · {created.guestName} · Room {created.room.roomNumber}
-            </p>
-            <p className="text-slate-500">
-              {formatDate(created.checkInDate)} → {formatDate(created.checkOutDate)} · Total {formatCurrency(created.folio.grandTotal)}
-            </p>
-            {created.folio.balance > 0.5 && <p className="mt-1 font-semibold text-red-600">Still to pay: {formatCurrency(created.folio.balance)}</p>}
+            <h1 className="mt-4 text-2xl font-bold">{walkIn ? "Guest checked in!" : created.group ? "Rooms booked!" : "Booking confirmed!"}</h1>
+            {created.group ? (
+              <>
+                <p className="mt-1 text-lg text-slate-600">
+                  {created.group.rooms.length} rooms for <b>{created.guestName}</b>
+                </p>
+                <p className="text-slate-500">
+                  {created.group.rooms.map((r) => `Room ${r.roomNumber} (#${r.number})`).join(" · ")}
+                </p>
+                <p className="text-slate-500">
+                  {formatDate(created.checkInDate)} → {formatDate(created.checkOutDate)} · Total {formatCurrency(created.group.total)}
+                </p>
+                {created.group.balance > 0.5 && <p className="mt-1 font-semibold text-red-600">Still to pay: {formatCurrency(created.group.balance)}</p>}
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-lg text-slate-600">
+                  Booking <b>#{created.number}</b> · {created.guestName} · Room {created.room.roomNumber}
+                </p>
+                <p className="text-slate-500">
+                  {formatDate(created.checkInDate)} → {formatDate(created.checkOutDate)} · Total {formatCurrency(created.folio.grandTotal)}
+                </p>
+                {created.folio.balance > 0.5 && <p className="mt-1 font-semibold text-red-600">Still to pay: {formatCurrency(created.folio.balance)}</p>}
+              </>
+            )}
             <div className="mt-6 grid gap-2 sm:grid-cols-2">
               <a href={whatsappLink(created.guest.phone, msg)} target="_blank" rel="noopener noreferrer">
                 <Button variant="success" className="w-full">
                   <MessageCircle className="h-5 w-5" /> Send on WhatsApp
                 </Button>
               </a>
-              <a href={`/print/confirmation/${created.id}`} target="_blank" rel="noopener noreferrer">
+              <a href={created.group ? `/print/group/${created.id}` : `/print/confirmation/${created.id}`} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" className="w-full">
                   <Printer className="h-5 w-5" /> Print confirmation
                 </Button>
@@ -474,6 +541,19 @@ function NewBookingWizard() {
               </Select>
             )}
           </div>
+          {!walkIn && (
+            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <Toggle
+                checked={multi}
+                onChange={(v) => {
+                  setMulti(v);
+                  if (!v) setMoreRoomIds([]);
+                }}
+                label="Book more than one room"
+                description="For a family or a group: the same guest and dates, with a bill for each room. Tap every room you want."
+              />
+            </div>
+          )}
           {rooms === null ? (
             <Loading text="Finding free rooms..." />
           ) : visibleRooms.length === 0 ? (
@@ -486,19 +566,22 @@ function NewBookingWizard() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {visibleRooms.map((r) => {
-                const tooSmall = r.capacity < guestsCount;
+                const order = r.id === roomId ? 0 : groupOn && moreRoomIds.includes(r.id) ? moreRoomIds.indexOf(r.id) + 1 : -1;
+                const picked = order === 0 || order > 0;
+                // With several rooms each room has its own people, so "too small" is only for one room.
+                const tooSmall = !groupOn && r.capacity < guestsCount;
                 const occupied = stillInside(r);
                 return (
                   <button
                     key={r.id}
                     type="button"
                     disabled={occupied}
-                    onClick={() => setRoomId(r.id)}
+                    onClick={() => pickRoom(r.id)}
                     className={cn(
                       "rounded-2xl border-2 bg-white p-4 text-left transition",
                       occupied
                         ? "cursor-not-allowed border-slate-200 opacity-60"
-                        : roomId === r.id
+                        : picked
                           ? "border-primary-500 ring-4 ring-primary-100"
                           : "border-slate-200 hover:border-primary-300"
                     )}
@@ -510,7 +593,17 @@ function NewBookingWizard() {
                           {label(r.type)} {r.floor && `· ${r.floor} floor`}
                         </p>
                       </div>
-                      {roomId === r.id ? <CheckCircle2 className="h-6 w-6 text-primary-600" /> : r.housekeeping !== "clean" && <Badge variant={r.housekeeping}>{label(r.housekeeping)}</Badge>}
+                      {picked ? (
+                        groupOn ? (
+                          <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-primary-600 px-2 text-sm font-bold text-white" title={order === 0 ? "The guest's own room" : undefined}>
+                            {order + 1}
+                          </span>
+                        ) : (
+                          <CheckCircle2 className="h-6 w-6 text-primary-600" />
+                        )
+                      ) : (
+                        r.housekeeping !== "clean" && <Badge variant={r.housekeeping}>{label(r.housekeeping)}</Badge>
+                      )}
                     </div>
                     <p className="mt-2 flex items-center gap-1 text-sm text-slate-600">
                       <Users className="h-4 w-4" /> Up to {r.capacity} guest{r.capacity > 1 ? "s" : ""}
@@ -534,7 +627,7 @@ function NewBookingWizard() {
               <ArrowLeft className="h-5 w-5" /> Back
             </Button>
             <Button size="lg" disabled={!selectedRoom} onClick={() => setStep(2)}>
-              Next: guest details <ArrowRight className="h-5 w-5" />
+              Next: guest details{extraRooms.length > 0 && ` (${extraRooms.length + 1} rooms)`} <ArrowRight className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -751,7 +844,15 @@ function NewBookingWizard() {
           <Card className="lg:col-span-3">
             <CardContent className="space-y-4 py-5">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Price per night" htmlFor="price-per-night" hint={`Normal price: ${formatCurrency(selectedRoom.pricePerNight)}${shell.roomPricesIncludeTax ? " with GST" : " before GST"}. Change only for a special deal.`}>
+                <Field
+                  label={extraRooms.length ? "Price per night for every room" : "Price per night"}
+                  htmlFor="price-per-night"
+                  hint={
+                    extraRooms.length
+                      ? `Leave empty for each room's normal price${shell.roomPricesIncludeTax ? " with GST" : " before GST"}. A price typed here is used for all ${extraRooms.length + 1} rooms.`
+                      : `Normal price: ${formatCurrency(selectedRoom.pricePerNight)}${shell.roomPricesIncludeTax ? " with GST" : " before GST"}. Change only for a special deal.`
+                  }
+                >
                   <Input id="price-per-night" type="number" min={0} inputMode="decimal" placeholder={String(selectedRoom.pricePerNight)} value={customRate} onChange={(e) => setCustomRate(e.target.value)} />
                   {tips[selectedRoom.type] && tips[selectedRoom.type].price < selectedRoom.pricePerNight && (
                     <div className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -770,10 +871,24 @@ function NewBookingWizard() {
                     </div>
                   )}
                 </Field>
-                <Field label="Discount (amount)" optional>
+                <Field label={extraRooms.length ? `Discount (amount, on Room ${selectedRoom.roomNumber})` : "Discount (amount)"} optional>
                   <Input type="number" min={0} inputMode="decimal" placeholder="0" value={discount} onChange={(e) => setDiscount(e.target.value)} />
                 </Field>
               </div>
+              {extraRooms.length > 0 && (
+                <Field label="People in the other rooms" hint={`Room ${selectedRoom.roomNumber} has the ${adults} adult${adults > 1 ? "s" : ""} from step 1. Add the other adults' names on each room's booking later.`}>
+                  <div className="space-y-2">
+                    {extraRooms.map((r) => (
+                      <div key={r.id} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                        <span className="font-semibold">
+                          Room {r.roomNumber} <span className="font-normal text-slate-500">({label(r.type)}, up to {r.capacity})</span>
+                        </span>
+                        <CountInput min={1} max={Math.max(1, r.capacity)} value={adultsIn(r)} onChange={(n) => setMoreAdults((m) => ({ ...m, [r.id]: n }))} aria-label={`adults in Room ${r.roomNumber}`} />
+                      </div>
+                    ))}
+                  </div>
+                </Field>
+              )}
               {folio && (
                 <Field label="GST on the room" hint="The default comes from Settings. Change it only if this booking needs a different rate.">
                   <GstPicker value={gstRate} defaultRate={folio.defaultRoomTaxRate} onChange={setGstRate} />
@@ -826,6 +941,11 @@ function NewBookingWizard() {
                   Room {selectedRoom.roomNumber} ({label(selectedRoom.type)}) · {adults} adult{adults > 1 ? "s" : ""}
                   {children > 0 && `, ${children} child${children > 1 ? "ren" : ""}`}
                 </p>
+                {extraRooms.map((r) => (
+                  <p key={r.id} className="text-slate-600">
+                    Room {r.roomNumber} ({label(r.type)}) · {adultsIn(r)} adult{adultsIn(r) > 1 ? "s" : ""}
+                  </p>
+                ))}
                 <p className="text-slate-600">
                   {formatDate(checkIn)} → {formatDate(checkOut)} ({nights} night{nights > 1 ? "s" : ""})
                 </p>
@@ -835,12 +955,24 @@ function NewBookingWizard() {
                   <Row label={folio.pricesIncludeTax ? "Room (before GST)" : "Room"}>{formatCurrency(folio.roomTotal)}</Row>
                   {folio.discount > 0 && <Row label="Discount">− {formatCurrency(folio.discount)}</Row>}
                   <Row label={`GST (${folio.roomTaxRate}%)`}>{formatCurrency(folio.taxTotal)}</Row>
-                  <Row label="Total" strong>
+                  <Row label={extraQuotes.length ? `Room ${selectedRoom.roomNumber} total` : "Total"} strong>
                     {formatCurrency(folio.grandTotal)}
                   </Row>
+                  {extraQuotes.length > 0 && (
+                    <>
+                      {extraQuotes.map((q) => (
+                        <Row key={q.room.id} label={`Room ${q.room.roomNumber} (incl. GST)`}>
+                          {formatCurrency(q.total)}
+                        </Row>
+                      ))}
+                      <Row label={`Total for ${extraQuotes.length + 1} rooms`} strong>
+                        {formatCurrency(groupTotal)}
+                      </Row>
+                    </>
+                  )}
                   {folio.netPaid > 0 && <Row label="Advance">− {formatCurrency(folio.netPaid)}</Row>}
                   <Row label="To pay later" strong>
-                    <span className="text-primary-700">{formatCurrency(Math.max(0, folio.balance))}</span>
+                    <span className="text-primary-700">{formatCurrency(Math.max(0, (extraQuotes.length ? groupTotal : folio.grandTotal) - folio.netPaid))}</span>
                   </Row>
                   {folio.nights.some((n) => n.adjustment !== 0) && <p className="mt-2 text-xs text-slate-500">Includes weekend / special-date price changes.</p>}
                 </div>
@@ -848,7 +980,7 @@ function NewBookingWizard() {
                 <p className="mt-4 text-sm text-slate-500">Calculating price…</p>
               )}
               <Button size="lg" variant={walkIn ? "success" : "primary"} className="mt-5 w-full" loading={saving} onClick={submit}>
-                <Check className="h-5 w-5" /> {walkIn ? "Book & check in now" : "Confirm booking"}
+                <Check className="h-5 w-5" /> {walkIn ? "Book & check in now" : extraRooms.length ? `Confirm ${extraRooms.length + 1} rooms` : "Confirm booking"}
               </Button>
               <Button variant="ghost" className="mt-2 w-full" onClick={() => setStep(2)}>
                 <ArrowLeft className="h-4 w-4" /> Back

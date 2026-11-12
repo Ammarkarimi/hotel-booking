@@ -1,3 +1,5 @@
+import type { GroupSummary } from "./groups";
+import type { TallyLedgers } from "./tally";
 // Shapes of the JSON our API returns, used by the screens.
 import type { Folio } from "./pricing";
 import type { PayoutSummary } from "./payouts";
@@ -71,6 +73,12 @@ export interface BookingDTO {
   id: string;
   number: number;
   publicToken: string;
+  /** Rooms booked together share a groupId (src/lib/groups.ts). */
+  groupId?: string | null;
+  /** Sent back when a booking is made: the whole group when several rooms were booked. */
+  group?: GroupSummary | null;
+  /** Set when the booking came from a booking site by itself (a calendar link or Channex). */
+  channelRef: string | null;
   status: string;
   source: string;
   checkInDate: string;
@@ -163,9 +171,19 @@ export interface SettingsDTO {
   /** The room prices the owner enters already include the room GST. */
   roomPricesIncludeTax: boolean;
   seasonalRates?: Array<{ id: string; name: string; startDate: string; endDate: string; roomType: string | null; percent: number }>;
+  // Online payments. The Razorpay secret never comes to the screen: only whether one is saved.
+  upiId: string | null;
+  upiName: string | null;
+  razorpayKeyId: string | null;
+  razorpaySecretSet?: boolean;
+  /** Typed into Settings to replace the saved secret; never filled in from the server. */
+  razorpayKeySecret?: string;
+  tallyLedgers: TallyLedgers;
+  /** The hotel's Google review link, for the check-out message. */
+  reviewLink: string | null;
 }
 
-export type BookingDetailDTO = BookingDTO & { guest: GuestDTO; settings: SettingsDTO };
+export type BookingDetailDTO = BookingDTO & { guest: GuestDTO; settings: SettingsDTO; group: GroupSummary | null };
 
 export interface ShiftDTO {
   id: string;

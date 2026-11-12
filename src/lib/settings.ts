@@ -56,3 +56,9 @@ export async function getBillingContext() {
 }
 
 export type BillingContext = Awaited<ReturnType<typeof getBillingContext>>;
+
+/** Settings as they may go to the screens: the Razorpay secret never leaves the server. */
+export function screenSettings<T extends { razorpayKeySecret?: string | null }>(settings: T) {
+  const { razorpayKeySecret, ...rest } = settings;
+  return { ...rest, razorpaySecretSet: !!razorpayKeySecret };
+}

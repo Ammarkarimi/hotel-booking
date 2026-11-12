@@ -4,12 +4,15 @@ import type { Metadata } from "next";
 import { prisma, runForHotel } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { getBillingContext } from "@/lib/settings";
-import { bookingInclude, serializeBooking, type SerializedBooking } from "@/lib/bookings";
+import { bookingInclude, groupOf, serializeBooking, type SerializedBooking } from "@/lib/bookings";
 import { amountInWords } from "@/lib/words";
 import { todayKey } from "@/lib/dates";
 import { formatCurrency, formatDate, formatDateTime, label } from "@/lib/utils";
 import type { HotelSettingsRecord } from "@/lib/settings";
 import { PrintButton } from "@/components/print-button";
+import QRCode from "qrcode";
+import type { GroupSummary } from "@/lib/groups";
+import { isUpiId, upiNote, upiPayLink } from "@/lib/online-payments";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Print" };
@@ -47,7 +50,32 @@ function Info({ label: l, children }: { label: string; children: React.ReactNode
   );
 }
 
-function Invoice({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
+/** "Scan to pay": the hotel's UPI QR with the amount filled in, on bills that still have money to pay. */
+async function upiQr(s: HotelSettingsRecord, amount: number, bookingNumber: number) {
+  if (!isUpiId(s.upiId) || amount < 1) return null;
+  const link = upiPayLink({ upiId: s.upiId!, name: s.upiName || s.hotelName, amount: Math.round(amount * 100) / 100, note: upiNote(bookingNumber, s.hotelName) });
+  return { svg: await QRCode.toString(link, { type: "svg", margin: 1, errorCorrectionLevel: "M" }), amount };
+}
+
+type Qr = Awaited<ReturnType<typeof upiQr>>;
+
+function PayByUpi({ qr, s }: { qr: Qr; s: HotelSettingsRecord }) {
+  if (!qr) return null;
+  return (
+    <div className="mt-6 flex items-center gap-4 rounded-lg border border-slate-300 p-3">
+      <div className="h-28 w-28 shrink-0" role="img" aria-label="UPI QR code" dangerouslySetInnerHTML={{ __html: qr.svg }} />
+      <div className="text-sm">
+        <p className="text-base font-bold">Scan to pay {money(qr.amount, s.currency)} by UPI</p>
+        <p className="text-slate-600">Any UPI app: Google Pay, PhonePe, Paytm, BHIM.</p>
+        <p className="text-slate-600">
+          UPI ID: <b>{s.upiId}</b>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Invoice({ b, s, qr }: { b: SerializedBooking; s: HotelSettingsRecord; qr: Qr }) {
   const f = b.folio;
   const cur = s.currency;
   const final = !!b.bill;
@@ -194,6 +222,8 @@ function Invoice({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
         </div>
       )}
 
+      <PayByUpi qr={qr} s={s} />
+
       <div className="mt-16 flex justify-between text-sm">
         <div className="w-56 border-t border-slate-400 pt-1 text-center">Guest signature</div>
         <div className="w-56 border-t border-slate-400 pt-1 text-center">For {s.hotelName}</div>
@@ -203,7 +233,7 @@ function Invoice({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
   );
 }
 
-function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }) {
+function Confirmation({ b, s, qr }: { b: SerializedBooking; s: HotelSettingsRecord; qr: Qr }) {
   const f = b.folio;
   return (
     <>
@@ -247,6 +277,7 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
           <span className="text-slate-500">Notes:</span> {b.notes}
         </p>
       )}
+      <PayByUpi qr={qr} s={s} />
       {s.bookingTerms && (
         <div className="mt-6">
           <p className="mb-1 text-xs font-bold uppercase text-slate-500">Hotel policy</p>
@@ -254,6 +285,81 @@ function Confirmation({ b, s }: { b: SerializedBooking; s: HotelSettingsRecord }
         </div>
       )}
       <p className="mt-8 text-sm">Please carry a valid photo ID for every adult. We look forward to welcoming you!</p>
+    </>
+  );
+}
+
+/** All the rooms booked together on one sheet. Not a tax invoice: each room has its own. */
+function GroupBill({ b, group, s, qr }: { b: SerializedBooking; group: GroupSummary; s: HotelSettingsRecord; qr: Qr }) {
+  const cur = s.currency;
+  return (
+    <>
+      <HotelHeader s={s} title="Group Bill" subtitle={`${group.rooms.length} rooms · not a tax invoice`} />
+      <div className="mt-4 grid grid-cols-2 gap-6">
+        <div>
+          <p className="mb-1 text-xs font-bold uppercase text-slate-500">Booked by</p>
+          <p className="font-semibold">{b.guest.company || b.guestName}</p>
+          {b.guest.company && <p className="text-sm">Guest: {b.guestName}</p>}
+          <p className="text-sm">{b.guest.phone}</p>
+          {b.guest.gstin && <p className="text-sm font-semibold">GSTIN: {b.guest.gstin}</p>}
+        </div>
+        <div>
+          <Info label="Date">{formatDate(todayKey(s.timezone))}</Info>
+          <Info label="Arrival">{formatDate(b.checkInDate)}</Info>
+          <Info label="Departure">{formatDate(b.checkOutDate)}</Info>
+          <Info label="Guests">
+            {group.adults} adult(s){group.children ? `, ${group.children} child(ren)` : ""}
+          </Info>
+        </div>
+      </div>
+      <table className="mt-6 w-full text-sm">
+        <thead>
+          <tr className="border-y border-slate-800 text-left">
+            <th className="py-2">Booking</th>
+            <th className="py-2">Room</th>
+            <th className="py-2">Status</th>
+            <th className="py-2">Invoice</th>
+            <th className="py-2 text-right">Total</th>
+            <th className="py-2 text-right">Paid</th>
+            <th className="py-2 text-right">Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.rooms.map((r) => {
+            const off = r.status === "cancelled" || r.status === "no_show";
+            return (
+              <tr key={r.id} className={off ? "border-b border-slate-200 text-slate-400" : "border-b border-slate-200"}>
+                <td className="py-1.5">#{r.number}</td>
+                <td className="py-1.5">
+                  {r.roomNumber} ({label(r.roomType)})
+                </td>
+                <td className="py-1.5">{label(r.status)}</td>
+                <td className="py-1.5">{r.invoiceNumber ?? "—"}</td>
+                <td className="py-1.5 text-right">{money(r.total, cur)}</td>
+                <td className="py-1.5 text-right">{money(r.paid, cur)}</td>
+                <td className="py-1.5 text-right">{off ? "—" : money(Math.max(0, r.balance), cur)}</td>
+              </tr>
+            );
+          })}
+          <tr className="border-y border-slate-800 text-base font-bold">
+            <td className="py-2" colSpan={4}>
+              Group total
+            </td>
+            <td className="py-2 text-right">{money(group.total, cur)}</td>
+            <td className="py-2 text-right">{money(group.paid, cur)}</td>
+            <td className="py-2 text-right">{money(group.balance, cur)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="mt-3 text-sm">
+        <span className="text-slate-500">Total in words:</span> <b>{amountInWords(group.total, cur)}</b>
+      </p>
+      <p className="mt-2 text-sm text-slate-600">Each room&apos;s GST tax invoice is printed from its own booking when the room checks out.</p>
+      <PayByUpi qr={qr} s={s} />
+      <div className="mt-16 flex justify-between text-sm">
+        <div className="w-56 border-t border-slate-400 pt-1 text-center">Guest signature</div>
+        <div className="w-56 border-t border-slate-400 pt-1 text-center">For {s.hotelName}</div>
+      </div>
     </>
   );
 }
@@ -361,24 +467,27 @@ export default async function PrintPage({ params }: Params) {
   const session = await getSession();
   if (!session) redirect("/api/auth/expired");
   const { kind, id } = await params;
-  if (!["invoice", "confirmation", "registration"].includes(kind)) notFound();
+  if (!["invoice", "confirmation", "registration", "group"].includes(kind)) notFound();
 
   const data = await runForHotel(session.hotelId, async () => {
     const booking = await prisma.booking.findUnique({ where: { id }, include: bookingInclude });
     if (!booking) return null;
-    return { booking, ctx: await getBillingContext() };
+    const ctx = await getBillingContext();
+    return { booking, ctx, group: kind === "group" ? await groupOf(booking, ctx) : null };
   });
-  if (!data) notFound();
+  if (!data || (kind === "group" && !data.group)) notFound();
   const { ctx } = data;
   const b = serializeBooking(data.booking, ctx);
+  const qr = kind === "registration" ? null : await upiQr(ctx.settings, kind === "group" ? data.group!.balance : b.folio.balance, b.number);
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-slate-100">
       <PrintButton />
       <div className="overflow-x-auto px-2 sm:px-4">
         <div className="print-page mx-auto my-6 min-w-[640px] max-w-3xl rounded-lg bg-white p-6 text-slate-900 shadow sm:p-10">
-          {kind === "invoice" && <Invoice b={b} s={ctx.settings} />}
-          {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} />}
+          {kind === "invoice" && <Invoice b={b} s={ctx.settings} qr={qr} />}
+          {kind === "confirmation" && <Confirmation b={b} s={ctx.settings} qr={qr} />}
+          {kind === "group" && <GroupBill b={b} group={data.group!} s={ctx.settings} qr={qr} />}
           {kind === "registration" && <Registration b={b} s={ctx.settings} />}
         </div>
       </div>

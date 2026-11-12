@@ -28,7 +28,9 @@ function groupChoices(days: number): GroupBy[] {
 }
 
 export default function ReportsPage() {
-  const { settings, isAdmin } = useApp();
+  const { settings, isAdmin, has } = useApp();
+  // Tally files with or without the period's expenses.
+  const [tallyExpenses, setTallyExpenses] = useState(false);
   const [period, setPeriod] = useState<PeriodValue>(() => periodFor("month", settings.today));
   const [groupBy, setGroupBy] = useState<GroupBy>(() => defaultGroupBy(period.from, period.to));
   const [data, setData] = useState<Report | null>(null);
@@ -552,6 +554,57 @@ export default function ReportsPage() {
               <Button variant="outline" onClick={() => download("payouts")}>
                 <Download className="h-4 w-4" /> Booking site payouts
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="no-print">
+            <CardHeader
+              title="Download for Tally"
+              description="For your accountant's TallyPrime: this period's GST invoices as Sales vouchers, and payments received and refunds as Receipt and Payment vouchers."
+            />
+            <CardContent className="space-y-3">
+              {has("expenses") && (
+                <div>
+                  <p className="mb-1.5 text-sm font-semibold text-slate-700">Expenses</p>
+                  <div className="inline-flex rounded-lg border border-slate-300 p-0.5" role="radiogroup" aria-label="Expenses in the Tally files">
+                    {[
+                      { v: false, text: "Without expenses" },
+                      { v: true, text: `With expenses (${money(t.expenses)})` },
+                    ].map((o) => (
+                      <button
+                        key={String(o.v)}
+                        type="button"
+                        role="radio"
+                        aria-checked={tallyExpenses === o.v}
+                        onClick={() => setTallyExpenses(o.v)}
+                        className={cn(
+                          "rounded-md px-3 py-1.5 text-sm font-semibold",
+                          tallyExpenses === o.v ? "bg-primary-600 text-white" : "text-slate-600 hover:bg-slate-100"
+                        )}
+                      >
+                        {o.text}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {tallyExpenses
+                      ? "Each expense becomes a Payment voucher: its expense ledger (Salary, Rent…) is debited and Cash or Bank is credited. Choose this if your accountant does not enter expenses in Tally separately."
+                      : "Only sales and money received. Choose this if your accountant enters the hotel's expenses in Tally from the bills."}
+                  </p>
+                </div>
+              )}
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button variant="outline" onClick={() => download(`tally_masters${tallyExpenses ? "&expenses=1" : ""}`)}>
+                  <Download className="h-4 w-4" /> 1. Ledgers (import first)
+                </Button>
+                <Button variant="outline" onClick={() => download(`tally_vouchers${tallyExpenses ? "&expenses=1" : ""}`)}>
+                  <Download className="h-4 w-4" /> 2. Vouchers{tallyExpenses && " with expenses"}
+                </Button>
+              </div>
+              <p className="text-sm text-slate-500">
+                In TallyPrime open the company, then <b>Import → Masters</b> and choose file 1, then <b>Import → Transactions</b> and choose file 2. Import each period once. The ledger names can
+                be changed in <Link href="/settings?tab=payments" className="font-semibold text-primary-600 hover:underline">Settings → Payments &amp; Tally</Link>.
+              </p>
             </CardContent>
           </Card>
 

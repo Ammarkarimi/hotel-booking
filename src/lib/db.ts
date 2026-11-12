@@ -58,7 +58,34 @@ const HOTEL_MODELS = new Set([
   "GuestForm",
   "IdCheck",
   "RateTipSeen",
+  "PaymentLink",
+  "ChannelCalendar",
+  "ChannelIssue",
+  "ChannexLink",
 ]);
+
+/** Writes that change which rooms are free or what they cost: booking sites must hear of them. */
+const WATCHED: Record<string, Set<string>> = {
+  Booking: new Set(["create", "createMany", "createManyAndReturn", "update", "updateMany", "upsert", "delete", "deleteMany"]),
+  Room: new Set(["create", "createMany", "createManyAndReturn", "update", "updateMany", "upsert", "delete", "deleteMany"]),
+  SeasonalRate: new Set(["create", "createMany", "update", "updateMany", "delete", "deleteMany"]),
+  // Not "upsert": the settings row is upserted on every request just to make sure it exists.
+  HotelSettings: new Set(["update"]),
+};
+
+function changesWhatIsFree(model: string, operation: string) {
+  return WATCHED[model]?.has(operation) ?? false;
+}
+
+/**
+ * After a booking, a room or a price changes, the hotel's free rooms and prices are sent to its
+ * booking sites (src/lib/channel-push.ts), once the request has answered. Loaded only when needed,
+ * because that file itself uses this one.
+ */
+function tellBookingSites(hotelId: string) {
+  if (!process.env.CHANNEX_API_KEY) return;
+  void import("./channel-push").then((m) => m.scheduleChannelPush(hotelId)).catch((error) => console.error("Could not plan the update to booking sites", error));
+}
 
 type Args = Record<string, unknown> & { where?: object; data?: unknown; create?: object };
 
@@ -93,9 +120,12 @@ export const prisma = base.$extends({
   name: "hotel-scope",
   query: {
     $allModels: {
-      $allOperations({ model, operation, args, query }) {
+      async $allOperations({ model, operation, args, query }) {
         if (!HOTEL_MODELS.has(model)) return query(args);
-        return query(scopeArgs(operation, args as Args, currentHotelId()) as typeof args);
+        const hotelId = currentHotelId();
+        const result = await query(scopeArgs(operation, args as Args, hotelId) as typeof args);
+        if (changesWhatIsFree(model, operation)) tellBookingSites(hotelId);
+        return result;
       },
     },
   },

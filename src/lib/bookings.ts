@@ -6,6 +6,7 @@ import { payoutSummary } from "./payouts";
 import { parseCompanions } from "./guest-form";
 import type { BillingContext } from "./settings";
 import { fail } from "./api";
+import { summarizeGroup, type GroupSummary } from "./groups";
 
 export const ACTIVE_STATUSES = ["reserved", "checked_in"];
 
@@ -259,4 +260,29 @@ export async function nextBookingNumber(tx: Db) {
     select: { bookingSeq: true },
   });
   return hotel.bookingSeq;
+}
+
+/** The rooms booked together with this one, with each room's bill, or null for a booking on its own. */
+export async function groupOf(booking: { groupId: string | null }, ctx: BillingContext, db: Db = prisma): Promise<GroupSummary | null> {
+  if (!booking.groupId) return null;
+  const list = await db.booking.findMany({ where: { groupId: booking.groupId }, include: bookingInclude, orderBy: { number: "asc" } });
+  return summarizeGroup(
+    booking.groupId,
+    list.map((b) => {
+      const f = folioFor(b, ctx);
+      return {
+        id: b.id,
+        number: b.number,
+        roomNumber: b.room.roomNumber,
+        roomType: b.room.type,
+        status: b.status,
+        adults: b.adults,
+        children: b.children,
+        total: f.grandTotal,
+        paid: f.netPaid,
+        balance: f.balance,
+        invoiceNumber: b.bill?.invoiceNumber ?? null,
+      };
+    })
+  );
 }

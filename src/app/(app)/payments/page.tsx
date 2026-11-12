@@ -31,6 +31,15 @@ export default function PaymentsPage() {
   const [to, setTo] = useState(today);
   const [rows, setRows] = useState<PaymentRow[] | null>(null);
   const [cashSpent, setCashSpent] = useState(0);
+  const [refreshed, setRefreshed] = useState(0);
+
+  // Payments guests made through Razorpay links are added before the list is shown again.
+  useEffect(() => {
+    if (!settings.onlinePayments) return;
+    api<{ recorded: number }>("/api/payments/online", { method: "POST" })
+      .then((r) => r.recorded > 0 && setRefreshed((n) => n + 1))
+      .catch(() => undefined);
+  }, [settings.onlinePayments]);
 
   useEffect(() => {
     const ranges: Record<Exclude<Period, "custom">, [string, string]> = {
@@ -56,7 +65,7 @@ export default function PaymentsPage() {
     api<{ cashSpent: number }>(`/api/expenses?summary=cash&from=${from}&to=${to}`)
       .then((r) => setCashSpent(r.cashSpent))
       .catch(() => setCashSpent(0));
-  }, [from, to, expensesOn]);
+  }, [from, to, expensesOn, refreshed]);
 
   // Payments are real moments in time; group them by the hotel's local date.
   const inRange = useMemo(

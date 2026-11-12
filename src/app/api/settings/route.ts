@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentHotelId, prisma } from "@/lib/db";
-import { withAuth, withAdmin } from "@/lib/api";
-import { getStoredSettings } from "@/lib/settings";
+import { withAuth, withAdmin, fail } from "@/lib/api";
+import { getStoredSettings, screenSettings } from "@/lib/settings";
+import { isUpiId } from "@/lib/online-payments";
+import { checkKeys } from "@/lib/razorpay";
+import { openSecret, sealSecret } from "@/lib/secret-box";
+import { TALLY_LEDGER_KEYS, parseTallyLedgers } from "@/lib/tally";
+import { EXPENSE_CATEGORIES } from "@/lib/utils";
 import { logActivity } from "@/lib/activity";
 import { parseGstSlabs } from "@/lib/pricing";
 import { parseFloors } from "@/lib/rate-tips";
@@ -12,7 +17,7 @@ export async function GET() {
     const settings = await getStoredSettings();
     const seasonalRates = await prisma.seasonalRate.findMany({ orderBy: { startDate: "asc" } });
     const hotel = await prisma.hotel.findUniqueOrThrow({ where: { id: currentHotelId() }, select: { slug: true } });
-    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors), seasonalRates, bookingSlug: hotel.slug });
+    return NextResponse.json({ ...shown(settings), seasonalRates, bookingSlug: hotel.slug });
   });
 }
 
@@ -55,7 +60,36 @@ const settingsSchema = z.object({
   rateTipsStaff: z.boolean(),
   pathik: z.boolean(),
   roomPricesIncludeTax: z.boolean(),
+  // Online payments. An empty Razorpay secret keeps the saved one; a null key ID removes Razorpay.
+  upiId: z.string().trim().max(120).refine((v) => v === "" || isUpiId(v), "Please check the UPI ID. It looks like name@bank, for example sunrise@okaxis").optional().nullable(),
+  upiName: z.string().trim().max(50).optional().nullable(),
+  razorpayKeyId: z.string().trim().regex(/^(rzp_(test|live)_[A-Za-z0-9]+)?$/, "A Razorpay key ID starts with rzp_live_ (or rzp_test_ for trying it out)").optional().nullable(),
+  razorpayKeySecret: z.string().trim().max(100).optional(),
+  // The hotel's Google review link for the check-out message; empty = none.
+  reviewLink: z
+    .string()
+    .trim()
+    .max(300)
+    .refine((v) => v === "" || /^https?:\/\/\S+\.\S+$/.test(v), "Please paste the full review link, starting with https://")
+    .optional()
+    .nullable(),
+  tallyLedgers: z
+    .object({
+      ...Object.fromEntries(TALLY_LEDGER_KEYS.map((k) => [k, z.string().trim().max(100).optional()])),
+      expenses: z.record(z.enum(EXPENSE_CATEGORIES), z.string().trim().max(100)).optional(),
+    })
+    .optional(),
 });
+
+/** What the screens get: no Razorpay secret, lists and JSON ready to use. */
+function shown(settings: Awaited<ReturnType<typeof getStoredSettings>>) {
+  return {
+    ...screenSettings(settings),
+    gstSlabs: parseGstSlabs(settings.gstSlabs),
+    rateTipsFloors: parseFloors(settings.rateTipsFloors),
+    tallyLedgers: parseTallyLedgers(settings.tallyLedgers),
+  };
+}
 
 export async function PUT(request: NextRequest) {
   return withAdmin(async (user) => {
@@ -67,23 +101,42 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: "Unknown timezone" }, { status: 400 });
       }
     }
-    const { gstSlabs, rateTipsFloors, ...rest } = body;
+    const { gstSlabs, rateTipsFloors, tallyLedgers, razorpayKeySecret, ...rest } = body;
     for (const k of ["msgBooking", "msgCheckIn", "msgCheckOut"] as const) {
       if (rest[k] !== undefined) rest[k] = rest[k]?.trim() ? rest[k] : null;
     }
+    const current = await getStoredSettings();
+    // Razorpay: a new key ID or secret is tried with Razorpay before it is saved.
+    let sealed: string | null | undefined;
+    if (rest.razorpayKeyId !== undefined) rest.razorpayKeyId = rest.razorpayKeyId || null;
+    if (rest.razorpayKeyId === null) sealed = null;
+    else if (rest.razorpayKeyId !== undefined || razorpayKeySecret) {
+      const keyId = rest.razorpayKeyId ?? current.razorpayKeyId;
+      const keySecret = razorpayKeySecret || openSecret(current.razorpayKeySecret);
+      if (keyId !== current.razorpayKeyId || razorpayKeySecret) {
+        if (!keyId) fail("Please enter the Razorpay key ID too");
+        if (!keySecret) fail("Please enter the Razorpay key secret");
+        await checkKeys({ keyId, keySecret });
+        if (razorpayKeySecret) sealed = sealSecret(razorpayKeySecret);
+      }
+    }
+    if (rest.upiId !== undefined) rest.upiId = rest.upiId || null;
+    if (rest.upiName !== undefined) rest.upiName = rest.upiName || null;
+    if (rest.reviewLink !== undefined) rest.reviewLink = rest.reviewLink || null;
     const data = {
       ...rest,
+      ...(sealed !== undefined && { razorpayKeySecret: sealed }),
+      ...(tallyLedgers && { tallyLedgers: JSON.stringify(parseTallyLedgers(JSON.stringify(tallyLedgers))) }),
       ...(rest.currency && { currency: rest.currency.toUpperCase() }),
       ...(rest.gstin !== undefined && { gstin: rest.gstin ? rest.gstin.toUpperCase() : null }),
       ...(gstSlabs && { gstSlabs: JSON.stringify(gstSlabs) }),
       ...(rateTipsFloors && { rateTipsFloors: JSON.stringify(Object.fromEntries(Object.entries(rateTipsFloors).filter(([, n]) => n > 0))) }),
     };
-    const current = await getStoredSettings();
     const settings = await prisma.hotelSettings.update({ where: { id: current.id }, data });
     if (body.hotelName) await prisma.hotel.update({ where: { id: currentHotelId() }, data: { name: body.hotelName } });
     // The screen sends every setting on each save: write down only the ones that changed.
     const changed = Object.keys(data).filter((k) => JSON.stringify(current[k as keyof typeof current]) !== JSON.stringify(settings[k as keyof typeof settings]));
     if (changed.length) await logActivity(user, "Settings changed", changed.join(", "));
-    return NextResponse.json({ ...settings, gstSlabs: parseGstSlabs(settings.gstSlabs), rateTipsFloors: parseFloors(settings.rateTipsFloors) });
+    return NextResponse.json(shown(settings));
   });
 }

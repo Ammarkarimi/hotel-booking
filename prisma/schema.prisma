@@ -24,7 +24,7 @@ model Hotel {
   bookingSeq           Int                   @default(1000) // last booking number handed out
   // What the hotel can use (src/lib/modules.ts): its package's modules, or `modules` when it has no package.
   packageId            String?
-  modules              String[]              @default(["guest_forms", "pathik", "expenses", "reports", "shifts", "rate_tips", "website"])
+  modules              String[]              @default(["guest_forms", "pathik", "expenses", "reports", "shifts", "rate_tips", "website", "channel_manager"])
   package              Package?              @relation(fields: [packageId], references: [id])
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -45,6 +45,10 @@ model Hotel {
   idChecks             IdCheck[]
   rateTipsSeen         RateTipSeen[]
   subscriptionPayments SubscriptionPayment[]
+  paymentLinks         PaymentLink[]
+  channelCalendars     ChannelCalendar[]
+  channelIssues        ChannelIssue[]
+  channexLink          ChannexLink?
 }
 
 // A package the software provider sells, such as Basic, Standard or Premium: the modules
@@ -135,6 +139,14 @@ model HotelSettings {
   rateTipsStaff       Boolean  @default(true) // front-desk staff see the tips too, not only the owner
   pathik              Boolean  @default(true) // show "Fill in Pathik" (the Gujarat police guest register)
   roomPricesIncludeTax Boolean @default(false) // the room prices the owner enters already include the room GST
+  // Online payments (src/lib/online-payments.ts): guests pay by UPI to this ID, or through Razorpay.
+  upiId               String? // the hotel's UPI ID, e.g. sunrise@okaxis
+  upiName             String? // the name shown in the guest's UPI app; empty = the hotel name
+  razorpayKeyId       String?
+  razorpayKeySecret   String? // encrypted (src/lib/secret-box.ts); never sent to the screens
+  // Tally export: the ledger names the hotel's accountant uses (src/lib/tally.ts); {} = the defaults.
+  tallyLedgers        String  @default("{}")
+  reviewLink          String? // the hotel's Google review link, sent in the check-out message
   updatedAt           DateTime @updatedAt
   hotel               Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
@@ -171,6 +183,7 @@ model Room {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   bookings          Booking[]
+  channelCalendars  ChannelCalendar[]
   hotel             Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }
 
@@ -259,6 +272,12 @@ model Booking {
   pathikAt            DateTime? // when the front desk marked the stay as entered in Pathik
   pathikByName        String?
   companions          String? // JSON: [{ name, phone? }] for the other adults in the room
+  // Several rooms booked together (a family or a group): every booking of the group has the same groupId.
+  groupId             String?
+  // A booking that came from a booking site by itself (src/lib/channel-bookings.ts):
+  // "ical:<calendar id>:<event uid>" or "channex:<booking id>:<room no.>". Null = made by the hotel.
+  channelRef          String?
+  channelCalendarId   String? // the calendar link it came from, so it is not sent back to the same site
   originalPrice       String? // JSON: the price first agreed, saved on the first Edit bill: { ratePerNight, fixedRate, discount, gstRate }; null = bill never edited
   createdById         String?
   createdAt           DateTime  @default(now())
@@ -279,9 +298,12 @@ model Booking {
   charges             Charge[]
   bill                Bill?
   idChecks            IdCheck[]
+  paymentLinks        PaymentLink[]
   hotel               Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@unique([hotelId, number])
+  @@unique([hotelId, channelRef])
+  @@index([hotelId, groupId])
   @@index([roomId, checkInDate, checkOutDate])
   @@index([hotelId, status])
 }
@@ -321,6 +343,25 @@ model Payment {
   hotel      Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   @@index([hotelId, paidAt])
+}
+
+// A Razorpay payment link sent to a guest. When it is paid the payment is written down on the
+// booking (src/lib/online-payments.ts), once, using Razorpay's payment ID as the reference.
+model PaymentLink {
+  id        String   @id @default(cuid())
+  hotelId   String
+  bookingId String
+  linkId    String   @unique // Razorpay's plink_… ID
+  shortUrl  String
+  amount    Float
+  status    String   @default("created") // created, partially_paid, paid, cancelled, expired
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
 }
 
 // Final invoice snapshot created when the guest checks out.
@@ -462,4 +503,67 @@ model RateTipSeen {
 
   @@unique([hotelId, staffId, tipKey])
   @@index([hotelId, createdAt])
+}
+
+// A booking site joined by calendar link (iCal): the hotel gives the site our link (exportToken) so it
+// blocks the nights we sold, and we read the site's link (importUrl) to block the nights it sold.
+// It is for one room, or for a room type (then a night is blocked only when no room of the type is free).
+model ChannelCalendar {
+  id           String    @id @default(cuid())
+  hotelId      String
+  source       String // airbnb, booking_com, agoda, makemytrip, goibibo, expedia, other
+  name         String? // the listing's name on the site
+  roomId       String?
+  roomType     String?
+  exportToken  String    @unique // the secret part of our calendar link
+  importUrl    String? // the site's calendar link; null = we only send, we do not read
+  active       Boolean   @default(true)
+  lastSyncAt   DateTime? // when we last read the site's link
+  lastError    String?
+  lastEvents   Int       @default(0) // how many booked stays the site's link had
+  exportSeenAt DateTime? // when the site last read our link
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  room         Room?     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+}
+
+// Something from a booking site that a person has to look at: a booking that clashes with one
+// already in the room, no free room of the type, a change to a guest who is already staying.
+model ChannelIssue {
+  id         String    @id @default(cuid())
+  hotelId    String
+  source     String // the booking site
+  kind       String // clash, no_room, change, cancel, sync
+  title      String
+  details    String?
+  channelRef String?
+  bookingId  String?
+  status     String    @default("open") // open, closed
+  createdAt  DateTime  @default(now())
+  closedAt   DateTime?
+  closedBy   String?
+  hotel      Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId, status])
+}
+
+// The hotel's link to Channex (src/lib/channex.ts), which sends its prices and free rooms to the
+// booking sites and brings their bookings in. The API key is the software provider's (CHANNEX_API_KEY).
+model ChannexLink {
+  id          String    @id @default(cuid())
+  hotelId     String    @unique
+  propertyId  String    @unique // the hotel's property in Channex
+  roomMap     String    @default("{}") // JSON { roomType: { roomTypeId, ratePlanId } }
+  webhookId   String?
+  markup      Float     @default(0) // % added to the prices sent to booking sites, to cover their commission
+  pushedHash  String? // what was last sent, so nothing is sent again when nothing changed
+  lastPushAt  DateTime?
+  lastPullAt  DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  hotel       Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 }

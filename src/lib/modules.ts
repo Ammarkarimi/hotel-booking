@@ -12,6 +12,7 @@ export const MODULES = [
   { key: "shifts", label: "Staff shifts", description: "Front-desk staff start and end shifts, with handover notes and a shift report." },
   { key: "rate_tips", label: "Rate tips", description: "Suggests a lower price for rooms still empty for tonight." },
   { key: "website", label: "Online booking website", description: "The hotel's own page where guests book direct, with no commission." },
+  { key: "channel_manager", label: "Channel manager (booking sites)", description: "Keeps free rooms in step with MakeMyTrip, Booking.com, Airbnb and other booking sites, and brings their bookings in." },
 ] as const;
 
 /** Parts of the software every hotel has, whatever its package. */
@@ -50,6 +51,7 @@ const MODULE_PAGES: Array<[string, ModuleKey]> = [
   ["/reports", "reports"],
   ["/shifts", "shifts"],
   ["/rate-tips", "rate_tips"],
+  ["/channels", "channel_manager"],
 ];
 
 /** The module a signed-in page belongs to, if it belongs to one. */
