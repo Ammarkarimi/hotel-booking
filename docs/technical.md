@@ -417,12 +417,44 @@ expense of the period is a Payment voucher (expense ledger Dr, Cash/Bank Cr, num
 Ledger names in `HotelSettings.tallyLedgers` (JSON, with an `expenses` object per
 expense category; defaults in `DEFAULT_TALLY_LEDGERS` / `DEFAULT_EXPENSE_LEDGERS`).
 
+## Channel manager (Booking sites)
+
+Screen `/channels` (module `channel_manager`). Two ways, which can be used together:
+
+- **Calendar links** (`src/lib/ical.ts` pure, `src/lib/channel-calendars.ts`). A
+  `ChannelCalendar` joins one room or one room type to one listing. Our feed
+  `/api/public/ical/<exportToken>.ics` lists the nights already taken (no names, never
+  the bookings that came from that same calendar, maintenance rooms closed). The site's
+  feed (`importUrl`) is read at most every 10 minutes: reservations become bookings;
+  "Not available" blocks that only cover nights we already hold are our own echo and are
+  ignored; stays that leave the feed are cancelled. Only public http(s) hosts are read
+  (each redirect and its DNS answer are checked); `CHANNEL_ALLOW_LOCAL=1` is for tests.
+- **Channex** (`src/lib/channex.ts` client, `src/lib/channex-map.ts` pure,
+  `src/lib/channex-sync.ts`). One property per hotel (`ChannexLink`), one room type and
+  one "Standard rate" plan per room type of ours. **Push:** 365 nights of free rooms
+  per type and the lowest price of the type (weekend and season changes, plus the
+  hotel's `markup` %), joined into ranges, at most one availability and one restrictions
+  request; a sha256 of the payload skips sending when nothing changed (dates are part
+  of it, so the year is sent again once a day). `src/lib/db.ts` calls
+  `scheduleChannelPush()` after every write to Booking, Room, SeasonalRate or
+  HotelSettings; pushes are gathered for 300 ms after the response. **Pull:** the
+  booking revision feed, each revision saved, then acknowledged. Channex's webhook
+  (`/api/public/channex/webhook?hotel=<id>`, header `x-innvela-webhook-secret` =
+  HMAC of the property id) only triggers a pull. The owner joins each site in Channex's
+  own screen in an iframe (`/api/channels/channex/iframe`, one-time token).
+
+Both write through `src/lib/channel-bookings.ts`: `saveChannelStay()` puts a stay in the
+room sold, else another free room of the type, keyed by `Booking.channelRef` (unique per
+hotel) under an advisory lock; when no room is free, or the guest is already staying, it
+changes nothing and raises a `ChannelIssue`, shown on Booking sites and the Dashboard.
+`cancelChannelStay()` cancels only bookings that have not started. `syncChannels()` runs
+when the Dashboard, Calendar or Booking sites screen opens, when a site reads our feed
+(stale imports, in `after()`), and from `/api/public/cron/channels` (`CRON_SECRET`).
+
 ## Not built yet
 
 - Online payment for subscriptions (record them in `/platform` for now), and
   paying on the booking website while booking (guests get a payment link later).
-- OTA channel manager sync with Booking.com, MakeMyTrip and Airbnb. For now,
-  record those bookings with the matching source.
 - One owner running several hotels from a single sign-in.
 - Restaurant POS and GST e-invoicing (IRN).
 - Sending guest details to police portals such as Pathik (Gujarat). The guest

@@ -360,7 +360,7 @@ same choice for both files. Import each period once.
 
 | Tab | What’s there |
 |---|---|
-| Hotel details | Name, tagline, address, phone, email, GSTIN, invoice number prefix, check-in/out times, currency, time zone |
+| Hotel details | Name, tagline, address, phone, email, Google review link (sent in the thank-you message at check-out as `{review_link}`), GSTIN, invoice number prefix, check-in/out times, currency, time zone |
 | Prices & tax | The default GST on rooms: Indian GST slabs (0% up to ₹1,000, 5% up to ₹7,500, 18% above; editable) or one flat rate, which staff can change for one booking; tax on extras; **Room prices include GST** (on: a room priced ₹1,800 costs the guest ₹1,800 and the bill shows ₹1,714.29 + ₹85.71 GST; off: GST is added on top, ₹1,800 + ₹90; a change applies only to bookings made afterwards); weekend price change %; special prices for date ranges (festivals, off-season) |
 | Online booking | Switch online bookings on or off, “About your hotel”, hotel rules / cancellation policy, and the hotel’s booking link to copy and share |
 | Rate tips | Rate tips on or off, the time tips start (1 pm by default), the biggest cut a tip may suggest (20% by default), whether front-desk staff see tips, and the lowest price you accept for each room type (see below) |
@@ -520,6 +520,30 @@ or type an advance, then **Send on WhatsApp** or **Copy link**. The booking
 confirmation, welcome and thank-you messages also carry the link (`{pay_link}`)
 while money is still due; owners who changed the wording can add `{pay_link}`
 themselves.
+
+## Booking sites (channel manager)
+
+**Booking sites** in the menu keeps your free rooms the same on the booking sites and
+puts their bookings into your calendar by themselves. There are two ways:
+
+- **Calendar links** (free, no setup by the provider). For each Airbnb, Booking.com or
+  Agoda listing, press **Add a calendar link**, choose the room (or a room type), copy our
+  link onto the site, and paste the site's calendar link here. Only which nights are
+  taken is shared, with no prices or guest names, and sites read it every few hours.
+  Bookings that come in show the site's name and "Airbnb guest": type the real name
+  and phone from the site. MakeMyTrip and Goibibo do not offer calendar links for hotels.
+- **The full connection**, through Channex, once the software provider has switched it
+  on: **Connect booking sites**, then **Set up booking sites** to join each site with
+  your hotel's own account on it and match its rooms to your room types. Free rooms and
+  prices go out whenever something changes; bookings, changes and cancellations come in
+  within moments, with the guest's details, the price and any amount the site already
+  took. **Add to prices sent to booking sites** raises the sites' prices by a % to cover
+  their commission.
+
+A site's booking goes into the room it sold, or another free room of the same type. If
+no room is free, or the guest is already staying, nothing is changed: a box on Booking
+sites and on the Dashboard says what happened, and **Done** clears it once sorted.
+Bookings from a site are marked **Came from the site** in Bookings.
 
 ## WhatsApp messages to guests
 

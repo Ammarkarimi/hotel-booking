@@ -39,6 +39,10 @@ After changing any of them, **redeploy**: *Deployments* → latest → ⋯ → *
 | `NEXT_PUBLIC_DEMO_MODE` | No | `true` shows demo sign-ins on the login page. Only for a demo site |
 | `SALES_WHATSAPP` | No, but recommended | Your WhatsApp number for the landing page buttons, with country code, e.g. `+91 98765 43210` |
 | `SALES_EMAIL` | No | Your email, shown as a button on the landing page |
+| `CHANNEX_API_KEY` | For the full booking-site connection | Your Channex API key (Channex → profile → API keys). Without it, hotels can still use calendar links; the "Connect booking sites" button stays off |
+| `CHANNEX_API_URL` | No | `https://staging.channex.io/api/v1` (the default, Channex's test server) or `https://app.channex.io/api/v1` for real bookings. The Booking sites screen says when the test server is in use |
+| `CHANNEX_WEBHOOK_SECRET` | No | Signs the messages Channex sends about new bookings. When it is not set, `JWT_SECRET` is used. Changing it later means each hotel must disconnect and connect again |
+| `CRON_SECRET` | No, but recommended | Lets a timer call `/api/public/cron/channels` (see below). A long random string |
 | `STORAGE_DRIVER`, `UPLOAD_DIR` | No | Only for hosting outside Vercel with local file storage |
 
 Without both `PLATFORM_ADMIN_*` values, `/platform` stays locked and its sign-in
@@ -47,6 +51,28 @@ page says so.
 Without `SALES_WHATSAPP` and `SALES_EMAIL`, the landing page has no contact buttons:
 visitors can only watch the tour and sign in. Add at least the WhatsApp number before
 you share the link with hotels.
+
+## Booking sites (channel manager)
+
+Two ways, both on the hotel's **Booking sites** screen:
+
+- **Calendar links** need nothing from you. Each hotel joins Airbnb, Booking.com or
+  Agoda listings itself.
+- **The full connection** goes through Channex, with one Channex account for all your
+  hotels. Set `CHANNEX_API_KEY` (and `CHANNEX_API_URL` for real bookings), redeploy, and
+  each hotel's owner presses **Connect booking sites**. Each hotel becomes one Channex
+  property, billed by Channex. Try it first on the test server with a test hotel.
+
+Bookings come in when a site reads the hotel's calendar link, when Channex sends a
+message, and when the Dashboard, Calendar or Booking sites screen is open. As a safety
+net, have a timer call the address below every 10–15 minutes, for example a free
+cron-job.org job, with the header `Authorization: Bearer <CRON_SECRET>`:
+
+```
+https://<your site>/api/public/cron/channels
+```
+
+`vercel.json` also runs it once a day, which is all Vercel's free plan allows.
 
 ## Change your owner-panel password
 

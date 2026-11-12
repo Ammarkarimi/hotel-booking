@@ -234,8 +234,6 @@ docs/RESEARCH.md          # competitor & customer research
 
 ## Not included (yet)
 
-- OTA channel manager (Booking.com / MakeMyTrip / Airbnb sync) — needs paid
-  partner agreements. Record OTA bookings with the matching *source* for now.
 - Online card payment on the booking website (guests pay at the hotel).
 - Online subscription payments from hotels (record them in `/platform` for now).
 - One owner running several hotels from one sign-in, restaurant POS, GST e-invoicing (IRN).

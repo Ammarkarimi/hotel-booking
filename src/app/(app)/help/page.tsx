@@ -192,6 +192,30 @@ const GUIDES: Array<{ q: string; steps: string[]; link?: { href: string; text: s
     link: { href: "/reports", text: "Open reports" },
   },
   {
+    q: "For owners: joining Airbnb, Booking.com or Agoda by calendar link (free)",
+    steps: [
+      "Open “Booking sites” and press “Add a calendar link”. Choose the site and the room the listing is for (or “All … rooms” when the site sells several of your rooms as one listing).",
+      "Step 1: copy our link and paste it on the site. On Airbnb: Calendar → Availability → Connect calendars → Import calendar. On Booking.com: Rates & Availability → Sync calendars.",
+      "Step 2: copy the site's own calendar link from the same place and paste it here. Its stays then come into your bookings by themselves, marked with the site's name.",
+      "A calendar link shares only which nights are taken: no prices and no guest names. Type the guest's name and phone into the booking from the site.",
+      "Sites read the link every few hours, so a night can still be sold twice in that time. If that happens, “Booking sites” and the Dashboard tell you, so you can move one booking.",
+      "MakeMyTrip and Goibibo have no calendar links for hotels: use the full connection for them.",
+    ],
+    link: { href: "/channels", text: "Open Booking sites" },
+  },
+  {
+    q: "For owners: the full connection to MakeMyTrip, Booking.com and the other sites",
+    steps: [
+      "This is switched on by your software provider. Then open “Booking sites” and press “Connect booking sites”.",
+      "Press “Set up booking sites”, choose a site and sign in with your hotel's own account on it (the one you use for its extranet).",
+      "Match each of the site's rooms to your room type and its “Standard rate”, then switch the site on.",
+      "From then on your free rooms and prices go to the sites by themselves whenever something changes here, and their bookings, changes and cancellations come in within moments.",
+      "“Add to prices sent to booking sites” covers the site's commission: with 15%, a ₹2,000 room shows as ₹2,300 on the sites. Your prices at the desk stay the same.",
+      "If a site sells a room that is not free any more, nothing is overwritten: “Booking sites” and the Dashboard show it so you can move a booking or call the guest.",
+    ],
+    link: { href: "/channels", text: "Open Booking sites" },
+  },
+  {
     q: "For owners: MakeMyTrip, Goibibo or Booking.com paid us less than the bill",
     steps: [
       "That's normal: the bill and GST invoice stay on the full amount, and the site takes off its commission, GST on it, TCS and TDS.",
